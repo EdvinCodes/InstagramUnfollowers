@@ -16,22 +16,23 @@ interface SettingInputProps {
   onChange: (newValue: number) => void;
 }
 
+// Sub-componente corregido para alinear input a la derecha
 const SettingRow = ({ label, value, min, name, onChange }: SettingInputProps) => (
   <div className='row'>
-    <label className='minimun-width' htmlFor={name}>
-      {label}
-    </label>
-    <input
-      type='number'
-      id={name}
-      name={name}
-      min={min}
-      max={999999}
-      value={value}
-      // CORRECCIÓN AQUÍ: Usamos e.currentTarget.value
-      onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(Number(e.currentTarget.value))}
-    />
-    <label className='margin-between-input-and-label'>(ms)</label>
+    <label htmlFor={name}>{label}</label>
+    {/* Nuevo contenedor para agrupar Input + Unidad a la derecha */}
+    <div className='input-group'>
+      <input
+        type='number'
+        id={name}
+        name={name}
+        min={min}
+        max={999999}
+        value={value}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(Number(e.currentTarget.value))}
+      />
+      <span className='unit'>(ms)</span>
+    </div>
   </div>
 );
 

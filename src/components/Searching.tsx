@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   assertUnreachable,
   getCurrentPageUnfollowers,
@@ -20,14 +20,32 @@ export interface SearchingProps {
   UserUncheckIcon: React.FC;
 }
 
+// Icono de Filtros para el botón flotante
+const FilterIcon = () => (
+  <svg
+    width='24'
+    height='24'
+    viewBox='0 0 24 24'
+    fill='none'
+    stroke='currentColor'
+    strokeWidth='2'
+    strokeLinecap='round'
+    strokeLinejoin='round'
+  >
+    <line x1='4' y1='21' x2='4' y2='14' />
+    <line x1='4' y1='10' x2='4' y2='3' />
+    <line x1='12' y1='21' x2='12' y2='12' />
+    <line x1='12' y1='8' x2='12' y2='3' />
+    <line x1='20' y1='21' x2='20' y2='16' />
+    <line x1='20' y1='12' x2='20' y2='3' />
+    <line x1='1' y1='14' x2='7' y2='14' />
+    <line x1='9' y1='8' x2='15' y2='8' />
+    <line x1='17' y1='16' x2='23' y2='16' />
+  </svg>
+);
+
 // --- Sub-component: Filters Sidebar ---
-const FiltersSidebar = ({
-  state,
-  handleScanFilter,
-}: {
-  state: State;
-  handleScanFilter: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}) => (
+const FiltersSidebar = ({ state, handleScanFilter }: { state: State; handleScanFilter: any }) => (
   <menu className='flex column m-clear p-clear'>
     <p style={{ fontWeight: 'bold' }}>Filters</p>
     {[
@@ -41,7 +59,7 @@ const FiltersSidebar = ({
         <input
           type='checkbox'
           name={filter.name}
-          // @ts-ignore (Accessing dynamic property is safe here)
+          // @ts-ignore
           checked={state.filter[filter.name]}
           onChange={handleScanFilter}
         />
@@ -61,6 +79,9 @@ export const Searching = ({
   UserCheckIcon,
   UserUncheckIcon,
 }: SearchingProps) => {
+  // NUEVO: Estado para controlar si el menú móvil está abierto
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   if (state.status !== 'scanning') {
     return null;
   }
@@ -80,31 +101,24 @@ export const Searching = ({
     return <div className='alphabet-character'>{currentLetter}</div>;
   };
 
-  // --- Handlers ---
-
   const handlePageChange = (direction: 'prev' | 'next') => {
     const maxPage = getMaxPage(usersForDisplay);
     let newPage = state.page;
-
     if (direction === 'prev' && state.page > 1) {
       newPage--;
     }
     if (direction === 'next' && state.page < maxPage) {
       newPage++;
     }
-
     if (newPage !== state.page) {
       setState({ ...state, page: newPage });
     }
   };
 
-  // Añadimos <HTMLDivElement> al tipo del evento
   const handleWhitelistToggle = (e: React.MouseEvent<HTMLDivElement>, user: UserNode) => {
     e.preventDefault();
     e.stopPropagation();
-
     let newWhitelisted: readonly UserNode[] = [];
-
     switch (state.currentTab) {
       case 'non_whitelisted':
         newWhitelisted = [...state.whitelistedResults, user];
@@ -115,7 +129,6 @@ export const Searching = ({
       default:
         assertUnreachable(state.currentTab);
     }
-
     localStorage.setItem(WHITELISTED_RESULTS_STORAGE_KEY, JSON.stringify(newWhitelisted));
     setState({ ...state, whitelistedResults: newWhitelisted });
   };
@@ -124,11 +137,12 @@ export const Searching = ({
     if (!confirm(`Are you sure you want to unfollow ${state.selectedResults.length} users?`)) {
       return;
     }
-
     if (state.selectedResults.length === 0) {
       alert('Select at least one user to unfollow.');
       return;
     }
+    // Cerramos el menú móvil al empezar
+    setIsMobileMenuOpen(false);
 
     setState({
       ...state,
@@ -141,7 +155,25 @@ export const Searching = ({
 
   return (
     <section className='flex'>
-      <aside className='app-sidebar'>
+      {/* --- NUEVO: BOTÓN FLOTANTE (SOLO VISIBLE EN MÓVIL) --- */}
+      <button
+        className={`mobile-fab-btn ${isMobileMenuOpen ? 'hidden' : ''}`}
+        onClick={() => setIsMobileMenuOpen(true)}
+      >
+        <FilterIcon />
+        <span>Actions ({state.selectedResults.length})</span>
+      </button>
+
+      {/* --- SIDEBAR (CON CLASE DINÁMICA PARA MÓVIL) --- */}
+      <aside className={`app-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+        {/* Cabecera Móvil (Solo visible cuando se abre el menú) */}
+        <div className='mobile-sidebar-header'>
+          <h3>Filters & Actions</h3>
+          <button className='close-btn' onClick={() => setIsMobileMenuOpen(false)}>
+            ✕
+          </button>
+        </div>
+
         <FiltersSidebar state={state} handleScanFilter={handleScanFilter} />
 
         <div className='grow stats-box'>
@@ -203,11 +235,9 @@ export const Searching = ({
         {getCurrentPageUnfollowers(usersForDisplay, state.page).map(user => {
           const firstLetter = user.username.substring(0, 1).toUpperCase();
           const isNewLetter = firstLetter !== currentLetter;
-
           return (
             <React.Fragment key={user.id}>
               {isNewLetter && renderLetterHeader(firstLetter)}
-
               <label className='result-item'>
                 <div className='flex grow align-center'>
                   <div className='avatar-container' onClick={e => handleWhitelistToggle(e, user)}>
@@ -225,7 +255,6 @@ export const Searching = ({
                       )}
                     </span>
                   </div>
-
                   <div className='flex column m-medium user-info'>
                     <a
                       className='fs-xlarge user-link'
@@ -240,15 +269,9 @@ export const Searching = ({
                       {user.full_name}
                     </span>
                   </div>
-
-                  {user.is_verified && (
-                    <div className='verified-badge' title='Verified'>
-                      ✔
-                    </div>
-                  )}
+                  {user.is_verified && <div className='verified-badge'>✔</div>}
                   {user.is_private && <div className='private-indicator'>Private</div>}
                 </div>
-
                 <input
                   className='account-checkbox'
                   type='checkbox'

@@ -121,30 +121,27 @@ export const Toolbar = ({
         </div>
 
         {/* COPY BUTTON */}
-        <button
-          className='copy-list'
-          onClick={handleCopyClick}
-          disabled={state.status === 'initial'}
-        >
-          Copy List
-        </button>
+        {state.status === 'scanning' && (
+          <button className='copy-list' onClick={handleCopyClick}>
+            Copy List
+          </button>
+        )}
 
         {/* SETTINGS ICON */}
         {state.status === 'initial' && <SettingIcon onClickLogo={() => setSettingMenu(true)} />}
 
-        {/* SEARCH BAR */}
-        <input
-          type='text'
-          className='search-bar'
-          placeholder='Search...'
-          disabled={state.status === 'initial'}
-          value={state.status === 'initial' ? '' : state.searchTerm}
-          // --- AÑADE ESTA LÍNEA EXACTA ---
-          onKeyDown={e => e.stopPropagation()}
-          // -------------------------------
-
-          onChange={handleSearchChange}
-        />
+        {/* SEARCH BAR (Solo visible si NO estamos en inicio) */}
+        {state.status !== 'initial' && (
+          <input
+            type='text'
+            className='search-bar'
+            placeholder='Search...'
+            value={state.searchTerm}
+            // Bloqueamos eventos de teclado de Instagram
+            onKeyDown={e => e.stopPropagation()}
+            onChange={handleSearchChange}
+          />
+        )}
 
         {/* CHECKBOX: SELECT CURRENT PAGE */}
         {state.status === 'scanning' && (
@@ -155,7 +152,7 @@ export const Toolbar = ({
               className='toggle-all-checkbox'
               onClick={toggleCurrentePageUsers}
             />
-            Select Page
+            <span className='checkbox-text'>Select Page</span>
           </label>
         )}
 
@@ -169,7 +166,7 @@ export const Toolbar = ({
               className='toggle-all-checkbox'
               onClick={toggleAllUsers}
             />
-            Select All
+            <span className='checkbox-text'>Select All</span>
           </label>
         )}
       </div>
