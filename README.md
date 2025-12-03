@@ -1,6 +1,6 @@
 # 👁️ Instagram Unfollowers 2025 - Safe & Modern Script
 
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/Edvintrabajo/InstagramUnfollowers)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/edvincodes/InstagramUnfollowers)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Built with](https://img.shields.io/badge/Built%20with-Preact%20%26%20TypeScript-blueviolet)](https://preactjs.com/)
 [![Works with](https://img.shields.io/badge/Instagram-Compatible-E1306C.svg)](https://www.instagram.com/)
@@ -30,7 +30,7 @@ Most "Unfollowers" apps steal your password or get you banned. **Instagram Unfol
 
 ### 🚀 How to Use (Desktop)
 
-1. **Get the Code:** Go to the [Official Tool Page](https://edvintrabajo.github.io/InstagramUnfollowers/) or copy from `dist/dist.js`.
+1. **Get the Code:** Go to the [Official Tool Page](https://edvincodes.github.io/InstagramUnfollowers/) or copy from `dist/dist.js`.
 2. **Copy:** Click "Copy Code to Clipboard".
 3. **Login:** Open [instagram.com](https://www.instagram.com).
 4. **Console:** Press `F12` (Windows) or `Cmd+Opt+J` (Mac).
@@ -38,7 +38,7 @@ Most "Unfollowers" apps steal your password or get you banned. **Instagram Unfol
 
 ### 📱 How to Use (Mobile - iOS/Android)
 
-1. Copy the code from the [Tool Page](https://edvintrabajo.github.io/InstagramUnfollowers/).
+1. Copy the code from the [Tool Page](https://edvincodes.github.io/InstagramUnfollowers/).
 2. Create a new Browser Bookmark named "IG Scan".
 3. Edit the bookmark and paste the code in the URL field.
 4. Open Instagram, type "IG Scan" in the address bar, and tap the bookmark.
@@ -64,7 +64,7 @@ A diferencia de otras herramientas viejas o aplicaciones de pago, este script es
 
 ### 🚀 Cómo usar (PC)
 
-1. **Consigue el código:** Ve a la [Página Oficial](https://edvintrabajo.github.io/InstagramUnfollowers/).
+1. **Consigue el código:** Ve a la [Página Oficial](https://edvincodes.github.io/InstagramUnfollowers/).
 2. **Copia:** Pulsa el botón de copiar.
 3. **Instagram:** Abre [instagram.com](https://www.instagram.com) e inicia sesión.
 4. **Consola:** Presiona `F12` (Windows) o `Cmd+Opt+J` (Mac).
@@ -123,7 +123,7 @@ Para evitar que Instagram bloquee tu cuenta por actividad sospechosa, el script 
 Want to contribute?
 
 ```bash
-git clone https://github.com/Edvintrabajo/InstagramUnfollowers.git
+git clone https://github.com/edvincodes/InstagramUnfollowers.git
 cd InstagramUnfollowers
 npm install
 npm run build
