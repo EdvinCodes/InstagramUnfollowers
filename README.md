@@ -123,7 +123,7 @@ Para evitar que Instagram bloquee tu cuenta por actividad sospechosa, el script 
 Want to contribute?
 
 ```bash
-git clone [https://github.com/Edvintrabajo/InstagramUnfollowers.git](https://github.com/Edvintrabajo/InstagramUnfollowers.git)
+git clone https://github.com/Edvintrabajo/InstagramUnfollowers.git
 cd InstagramUnfollowers
 npm install
 npm run build
