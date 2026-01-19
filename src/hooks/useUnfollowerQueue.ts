@@ -4,6 +4,9 @@ import { UnfollowLogEntry } from '../model/unfollow-log-entry';
 import { Timings } from '../model/timings';
 import { getCookie, sleep, unfollowUserUrlGenerator } from '../utils/utils';
 
+// 1. IMPORTAMOS EL SERVICIO DE HISTORIAL (V4.0)
+import { HistoryService } from '../services/historyService';
+
 interface UnfollowerState {
   isUnfollowing: boolean;
   progress: number; // 0 a 100
@@ -99,6 +102,12 @@ export const useUnfollowerQueue = (timings: Timings) => {
           console.error('Fetch error:', e);
           success = false;
         }
+
+        // --- CONEXIÓN V4.0: GUARDAR EN HISTORIAL ---
+        if (success) {
+          HistoryService.addEvent('YOU_UNFOLLOWED', user);
+        }
+        // -------------------------------------------
 
         // 3. Actualizar Log y Progreso
         counter++;

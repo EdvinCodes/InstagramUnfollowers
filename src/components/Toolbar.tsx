@@ -13,6 +13,9 @@ import {
 import { CopyIcon } from './icons/CopyIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
 
+import { HistoryView } from './HistoryView';
+import { HistoryIcon } from './icons/HistoryIcon';
+
 interface ToolBarProps {
   isActiveProcess: boolean;
   state: State;
@@ -42,6 +45,7 @@ export const Toolbar = ({
   isAllSelected,
 }: ToolBarProps) => {
   const [settingMenu, setSettingMenu] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   // --- Handlers para limpiar el JSX ---
 
@@ -137,9 +141,10 @@ export const Toolbar = ({
 
             {/* BOTÓN EXPORT */}
             <button
-              className='copy-list' // Reusamos clase para forma/tamaño
+              className='copy-list'
               onClick={handleExportClick}
-              style={{ backgroundColor: '#2d3748' }} // Gris oscuro para diferenciar
+              // Movemos el color a una clase CSS si fuera posible, si no, este style está bien
+              style={{ backgroundColor: '#2d3748' }}
               title='Download full report as CSV'
             >
               <DownloadIcon />
@@ -148,8 +153,15 @@ export const Toolbar = ({
           </div>
         )}
 
-        {/* SETTINGS ICON */}
-        {state.status === 'initial' && <SettingIcon onClickLogo={() => setSettingMenu(true)} />}
+        {/* ICONS GROUP (Initial State) */}
+        {state.status === 'initial' && (
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            {/* Nuevo botón Historial */}
+            <HistoryIcon onClick={() => setHistoryOpen(true)} />
+            {/* Botón Ajustes existente */}
+            <SettingIcon onClickLogo={() => setSettingMenu(true)} />
+          </div>
+        )}
 
         {/* SEARCH BAR (Solo visible si NO estamos en inicio) */}
         {state.status !== 'initial' && (
@@ -201,6 +213,9 @@ export const Toolbar = ({
           setTimings={setTimings}
         />
       )}
+
+      {/* HISTORY MODAL */}
+      {historyOpen && <HistoryView onClose={() => setHistoryOpen(false)} />}
     </header>
   );
 };

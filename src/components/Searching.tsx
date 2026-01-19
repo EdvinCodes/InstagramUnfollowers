@@ -9,6 +9,8 @@ import { State } from '../model/state';
 import { UserNode } from '../model/user';
 import { WHITELISTED_RESULTS_STORAGE_KEY } from '../constants/constants';
 
+import { HistoryService } from '../services/historyService';
+
 export interface SearchingProps {
   state: State;
   setState: (state: State) => void;
@@ -160,9 +162,11 @@ export const Searching = ({
       case 'non_whitelisted':
       case 'mutuals':
         newWhitelisted = [...state.whitelistedResults, user];
+        HistoryService.addEvent('WHITELISTED', user);
         break;
       case 'whitelisted':
         newWhitelisted = state.whitelistedResults.filter(u => u.id !== user.id);
+        HistoryService.addEvent('UNWHITELISTED', user);
         break;
       default:
         assertUnreachable(state.currentTab);

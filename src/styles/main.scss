@@ -924,3 +924,40 @@ input[type='checkbox'] {
     } // Centrar input
   }
 }
+
+// Estilo para el botón de borrar historial
+.btn-clear-history {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(239, 68, 68, 0.08); /* Rojo muy suave */
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #fca5a5; /* Texto rojo claro */
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px; /* Un poco menos redondo que los demás para diferenciarlo */
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: auto; /* Para que se pegue a la derecha */
+
+  svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2px;
+  }
+
+  &:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+    filter: grayscale(1);
+  }
+}

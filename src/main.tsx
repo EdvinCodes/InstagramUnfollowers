@@ -29,6 +29,8 @@ import { Timings } from './model/timings';
 import { useScanner } from './hooks/useScanner';
 import { useUnfollowerQueue } from './hooks/useUnfollowerQueue';
 
+import { HistoryService } from './services/historyService';
+
 function App() {
   const [state, setState] = useState<State>({
     status: 'initial',
@@ -83,24 +85,34 @@ function App() {
   // Sincronización del Escáner
   useEffect(() => {
     if (state.status === 'scanning') {
-      // 1. Obtenemos los resultados brutos del hook
       let processedResults = [...scannerState.results];
 
-      // CONDICIÓN RELAJADA: Entramos si ha terminado O si el progreso es 100
       const isFinished =
         !scannerState.isScanning &&
         (scannerState.progress >= 99 || scannerState.statusMessage === 'Completed');
 
       if (isFinished) {
-        // 1. Calculamos los nuevos
+        // 1. Calculamos los nuevos comparando con el último escaneo
         processedResults = identifyNewUnfollowers(scannerState.results);
 
-        // 2. Guardamos snapshot
+        // --- V4.0: GUARDAR TRAIDORES EN EL HISTORIAL ---
+        // Filtramos solo los que tienen la marca "is_new_unfollower"
+        const newTraitors = processedResults.filter(u => u.is_new_unfollower);
+
+        if (newTraitors.length > 0) {
+          console.log(`[History] Recording ${newTraitors.length} new unfollowers...`);
+          newTraitors.forEach(traitor => {
+            // Registramos el evento "DETECTED_UNFOLLOWER" para cada uno
+            HistoryService.addEvent('DETECTED_UNFOLLOWER', traitor);
+          });
+        }
+        // -----------------------------------------------
+
+        // 2. Guardamos snapshot (para que la próxima vez no salgan como nuevos)
         saveScanSnapshot(processedResults);
 
-        // 3. Log de depuración para ver si hay algún "new" detectado
-        const totalNew = processedResults.filter(u => u.is_new_unfollower).length;
-
+        // 3. Log visual (Toast)
+        const totalNew = newTraitors.length; // Usamos la variable que acabamos de crear
         if (totalNew > 0) {
           setToast({ show: true, text: `Scan finished! Found ${totalNew} new unfollowers.` });
         } else {
@@ -110,7 +122,7 @@ function App() {
 
       setState(prev => ({
         ...prev,
-        results: processedResults, // <--- ¡AQUÍ ESTÁ LA CLAVE! Usamos la versión procesada
+        results: processedResults,
         percentage: scannerState.progress,
       }));
     }
