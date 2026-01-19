@@ -95,7 +95,6 @@ function App() {
         // 1. Calculamos los nuevos comparando con el último escaneo
         processedResults = identifyNewUnfollowers(scannerState.results);
 
-        // --- V4.0: GUARDAR TRAIDORES EN EL HISTORIAL ---
         // Filtramos solo los que tienen la marca "is_new_unfollower"
         const newTraitors = processedResults.filter(u => u.is_new_unfollower);
 
