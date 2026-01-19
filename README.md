@@ -1,4 +1,4 @@
-# 👁️ Instagram Unfollowers 2025 - Safe & Modern Script
+# 👁️ Instagram Unfollowers 2026 - Safe & Modern Script
 
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/edvincodes/InstagramUnfollowers)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)

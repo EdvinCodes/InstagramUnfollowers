@@ -17,6 +17,8 @@ import {
   WHITELISTED_RESULTS_STORAGE_KEY,
 } from './constants/constants';
 import { assertUnreachable, getCurrentPageUnfollowers, getUsersForDisplay } from './utils/utils';
+import { identifyNewUnfollowers, saveScanSnapshot } from './utils/history';
+
 import { NotSearching } from './components/NotSearching';
 import { State } from './model/state';
 import { Searching } from './components/Searching';
@@ -81,15 +83,36 @@ function App() {
   // Sincronización del Escáner
   useEffect(() => {
     if (state.status === 'scanning') {
+      // 1. Obtenemos los resultados brutos del hook
+      let processedResults = [...scannerState.results];
+
+      // CONDICIÓN RELAJADA: Entramos si ha terminado O si el progreso es 100
+      const isFinished =
+        !scannerState.isScanning &&
+        (scannerState.progress >= 99 || scannerState.statusMessage === 'Completed');
+
+      if (isFinished) {
+        // 1. Calculamos los nuevos
+        processedResults = identifyNewUnfollowers(scannerState.results);
+
+        // 2. Guardamos snapshot
+        saveScanSnapshot(processedResults);
+
+        // 3. Log de depuración para ver si hay algún "new" detectado
+        const totalNew = processedResults.filter(u => u.is_new_unfollower).length;
+
+        if (totalNew > 0) {
+          setToast({ show: true, text: `Scan finished! Found ${totalNew} new unfollowers.` });
+        } else {
+          setToast({ show: true, text: 'Scanning completed!' });
+        }
+      }
+
       setState(prev => ({
         ...prev,
-        results: scannerState.results,
+        results: processedResults, // <--- ¡AQUÍ ESTÁ LA CLAVE! Usamos la versión procesada
         percentage: scannerState.progress,
       }));
-
-      if (!scannerState.isScanning && scannerState.progress === 100) {
-        setToast({ show: true, text: 'Scanning completed!' });
-      }
     }
   }, [scannerState, state.status]);
 

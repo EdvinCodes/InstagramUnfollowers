@@ -1,6 +1,7 @@
 export const INSTAGRAM_HOSTNAME = 'www.instagram.com';
 export const UNFOLLOWERS_PER_PAGE = 50;
-export const WHITELISTED_RESULTS_STORAGE_KEY = 'iu_whitelisted-results';
+export const WHITELISTED_RESULTS_STORAGE_KEY = 'ig_unfollower_whitelisted_results';
+export const HISTORY_RESULTS_STORAGE_KEY = 'ig_unfollower_history_snapshot';
 
 // TIMINGS CONSTANTS
 export const DEFAULT_TIME_BETWEEN_SEARCH_CYCLES = 1000;

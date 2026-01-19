@@ -282,20 +282,57 @@ export const Searching = ({
                       )}
                     </span>
                   </div>
+
                   <div className='flex column m-medium user-info'>
-                    <a
-                      className='fs-xlarge user-link'
-                      target='_blank'
-                      href={`https://www.instagram.com/${user.username}`}
-                      rel='noreferrer'
-                      title={user.username}
+                    {/* Contenedor Fila: Nombre + Etiqueta */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'row', // Aseguramos que vayan en línea
+                        alignItems: 'center',
+                        gap: '6px',
+                        width: 'fit-content', // <--- CLAVE: Evita que se estire como una barra de vida
+                      }}
                     >
-                      {user.username}
-                    </a>
+                      <a
+                        className='fs-xlarge user-link'
+                        target='_blank'
+                        href={`https://www.instagram.com/${user.username}`}
+                        rel='noreferrer'
+                        title={user.username}
+                        style={{ lineHeight: '1' }} // Ajuste fino para alinear con la etiqueta
+                      >
+                        {user.username}
+                      </a>
+
+                      {/* Etiqueta NEW mejorada */}
+                      {user.is_new_unfollower && (
+                        <span
+                          style={{
+                            background: 'linear-gradient(45deg, #ff3b30, #ff2d55)', // Un degradado sutil queda más "Instagram"
+                            color: 'white',
+                            fontSize: '9px',
+                            fontWeight: 'bold',
+                            padding: '2px 6px',
+                            borderRadius: '10px', // Más redondeado (tipo píldora)
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            boxShadow: '0 2px 4px rgba(255, 45, 85, 0.3)',
+                            height: 'fit-content',
+                            whiteSpace: 'nowrap', // Evita que se rompa si el nombre es muy largo
+                            lineHeight: '1.2',
+                          }}
+                        >
+                          NEW
+                        </span>
+                      )}
+                    </div>
+
                     <span className='fs-medium text-muted' title={user.full_name}>
                       {user.full_name}
                     </span>
                   </div>
+
                   {user.is_verified && (
                     <div
                       className='verified-badge'
