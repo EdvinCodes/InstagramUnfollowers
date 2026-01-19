@@ -4,6 +4,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Built with](https://img.shields.io/badge/Built%20with-Preact%20%26%20TypeScript-blueviolet)](https://preactjs.com/)
 [![Works with](https://img.shields.io/badge/Instagram-Compatible-E1306C.svg)](https://www.instagram.com/)
+[![Version](https://img.shields.io/badge/version-4.0.0-orange.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
 
 [🇺🇸 English](#-english-version) | [🇪🇸 Español](#-versión-en-español)
 
@@ -13,35 +14,40 @@
 
 ## 🇺🇸 English Version
 
-**The safest, open-source tool to see who unfollowed you on Instagram.**
-Unlike other outdated tools, this script uses **Shadow DOM** to run invisibly and safely on your browser.
+**The safest, most advanced tool to manage your Instagram community.**
+Unlike other tools that steal your password, this script runs locally in your browser using **Shadow DOM** for maximum safety.
 
-> **🚀 New v3.1.0:** Features a stunning **Glassmorphism UI**, fully responsive mobile design, and **Anti-Ban protection**.
+> **🚀 v4.0.0 "Time Machine" Update:** Now featuring **Persistent History**, **Analytics Dashboard**, **CSV Export**, and **Mutuals Detection**.
 
-### ✨ Why choose this over others?
+### ✨ New in v4.0 (The Big Update)
 
-Most "Unfollowers" apps steal your password or get you banned. **Instagram Unfollower Pro** is different:
+- **🕰️ Time Machine (History):** The app now **remembers**. It automatically detects _new_ unfollowers since your last scan and logs them in a chronological timeline.
+- **📊 Analytics Dashboard:** See how many traitors you've caught and how many users you've cleaned over time.
+- **🤝 Mutuals Tab:** Easily filter people who **follow you back** (Friends) vs. those who don't (Traitors).
+- **📥 Export to CSV:** Download your full follower report to Excel/Numbers for safekeeping.
+- **🛡️ Smart Whitelist:** Protect your friends with a single click.
 
-- **🛡️ 100% Safe:** Runs locally in your browser console. **No password required.**
-- **🤖 Anti-Ban System:** Includes configurable cooldowns and "human-like" delays.
-- **📱 Mobile Ready:** Works on iPhone and Android via Bookmarklet.
-- **⚡ Modern Tech:** Built with Preact & TypeScript. Zero lag.
-- **🧩 Shadow DOM:** Doesn't break Instagram's layout like older scripts.
+### 💎 Why choose this?
+
+- **🛡️ 100% Safe & Private:** Runs locally. **No password required.** Your data (including history) stays on your machine.
+- **🤖 Anti-Ban System:** "Human-like" delays and cooling periods to prevent Instagram blocks.
+- **📱 Mobile App Experience:** Features a responsive design with swipeable tabs and touch-optimized controls for iOS/Android.
+- **⚡ Modern Tech:** Built with Preact, TypeScript, and local IndexedDB.
 
 ### 🚀 How to Use (Desktop)
 
-1. **Get the Code:** Go to the [Official Tool Page](https://edvincodes.github.io/InstagramUnfollowers/) or copy from `dist/dist.js`.
-2. **Copy:** Click "Copy Code to Clipboard".
-3. **Login:** Open [instagram.com](https://www.instagram.com).
-4. **Console:** Press `F12` (Windows) or `Cmd+Opt+J` (Mac).
-5. **Run:** Paste the code and hit Enter.
+1.  **Get the Code:** Go to the [Official Tool Page](https://edvincodes.github.io/InstagramUnfollowers/) or copy from `dist/dist.js`.
+2.  **Copy:** Click "Copy Code to Clipboard".
+3.  **Login:** Open [instagram.com](https://www.instagram.com).
+4.  **Console:** Press `F12` (Windows) or `Cmd+Opt+J` (Mac).
+5.  **Run:** Paste the code and hit Enter.
 
 ### 📱 How to Use (Mobile - iOS/Android)
 
-1. Copy the code from the [Tool Page](https://edvincodes.github.io/InstagramUnfollowers/).
-2. Create a new Browser Bookmark named "IG Scan".
-3. Edit the bookmark and paste the code in the URL field.
-4. Open Instagram, type "IG Scan" in the address bar, and tap the bookmark.
+1.  Copy the code from the [Tool Page](https://edvincodes.github.io/InstagramUnfollowers/).
+2.  Create a new Browser Bookmark named "IG Scan".
+3.  Edit the bookmark and paste the code in the URL field.
+4.  Open Instagram, type "IG Scan" in the address bar, and tap the bookmark.
 
 ---
 
@@ -49,26 +55,33 @@ Most "Unfollowers" apps steal your password or get you banned. **Instagram Unfol
 
 ## 🇪🇸 Versión en Español
 
-**La herramienta más segura y moderna para ver quién no te sigue en Instagram.**
-A diferencia de otras herramientas viejas o aplicaciones de pago, este script es de código abierto, gratuito y **no requiere tu contraseña**.
+**La herramienta más avanzada y segura para gestionar tu comunidad en Instagram.**
+A diferencia de apps que roban tu contraseña, este script se ejecuta localmente en tu navegador usando **Shadow DOM**.
 
-> **🚀 Nuevo v3.1.0:** Interfaz moderna (Glassmorphism), compatible con móviles y con **Protección Anti-Bloqueo**.
+> **🚀 Actualización v4.0.0 "Máquina del Tiempo":** Ahora con **Historial Persistente**, **Panel de Estadísticas**, **Exportación CSV** y **Detección de Mutuals**.
 
-### ✨ Características Principales
+### ✨ Novedades de la v4.0
 
-- **🛡️ 100% Seguro:** Todo ocurre en tu navegador. Tus datos nunca salen de tu PC.
-- **⛔ Sin Login:** No necesitas dar tu contraseña, lo que evita robos de cuenta.
-- **🤖 Sistema Anti-Ban:** Configuración inteligente de tiempos para evitar bloqueos de Instagram.
-- **📱 Compatible con Móvil:** Funciona en Android y iPhone.
-- **🤍 Lista Blanca:** Protege a amigos o famosos que no quieres dejar de seguir.
+- **🕰️ Máquina del Tiempo (Historial):** La app ahora **tiene memoria**. Detecta automáticamente a los _nuevos_ seguidores que te han dejado de seguir desde el último escaneo.
+- **📊 Panel de Estadísticas:** Visualiza cuántos "traidores" has detectado y a cuántos has dejado de seguir a lo largo del tiempo.
+- **🤝 Pestaña de Mutuals:** Filtra fácilmente a la gente que **sí te sigue** (Amigos) de la que no (Traidores).
+- **📥 Exportar a CSV:** Descarga un informe completo en Excel para tener una copia de seguridad de tus datos.
+- **🛡️ Whitelist Inteligente:** Protege a tus amigos con un solo clic.
+
+### 💎 ¿Por qué elegir esto?
+
+- **🛡️ 100% Seguro y Privado:** Se ejecuta en tu navegador. **No pide contraseña.** Tus datos (incluido el historial) nunca salen de tu PC.
+- **🤖 Sistema Anti-Ban:** Tiempos de espera "humanos" y periodos de enfriamiento para evitar bloqueos.
+- **📱 Experiencia Móvil:** Diseño adaptativo con pestañas deslizables y controles táctiles optimizados para Android/iPhone.
+- **⚡ Tecnología Moderna:** Construido con Preact, TypeScript y base de datos local.
 
 ### 🚀 Cómo usar (PC)
 
-1. **Consigue el código:** Ve a la [Página Oficial](https://edvincodes.github.io/InstagramUnfollowers/).
-2. **Copia:** Pulsa el botón de copiar.
-3. **Instagram:** Abre [instagram.com](https://www.instagram.com) e inicia sesión.
-4. **Consola:** Presiona `F12` (Windows) o `Cmd+Opt+J` (Mac).
-5. **Ejecutar:** Pega el código en la consola y pulsa Enter.
+1.  **Consigue el código:** Ve a la [Página Oficial](https://edvincodes.github.io/InstagramUnfollowers/).
+2.  **Copia:** Pulsa el botón de copiar.
+3.  **Instagram:** Abre [instagram.com](https://www.instagram.com) e inicia sesión.
+4.  **Consola:** Presiona `F12` (Windows) o `Cmd+Opt+J` (Mac).
+5.  **Ejecutar:** Pega el código en la consola y pulsa Enter.
 
 ---
 
@@ -79,27 +92,25 @@ A diferencia de otras herramientas viejas o aplicaciones de pago, este script es
 </p>
 
 <details>
-  <summary><b>👀 Click to see Mobile & Settings / Ver Móvil y Ajustes</b></summary>
+  <summary><b>👀 Click to see New Features (History & Mobile)</b></summary>
   
   <br>
 
+### 🕰️ History & Stats (New in v4.0)
+
+_See exactly when users unfollowed you._
+
+  <p align="center">
+    <img src="assets/desktop/history-view.png" width="80%" alt="History Dashboard">
+  </p>
+
 ### 📱 Mobile Experience
+
+_Fully responsive interface with drawer menu._
 
   <p align="center">
     <img src="assets/mobile/03-results-mobile.png" width="45%" alt="Mobile Results">
     <img src="assets/mobile/04-filters-actions-mobile.png" width="45%" alt="Mobile Actions Menu">
-  </p>
-  
-  <p align="center">
-    <i>Responsive interface with filters and batch actions / Interfaz adaptable con filtros y acciones por lote</i>
-  </p>
-
-### ⚙️ Desktop & Dashboard
-
-  <p align="center">
-    <img src="assets/desktop/02-dashboard-ready.png" width="100%" alt="Dashboard Ready">
-    <br><br>
-    <img src="assets/desktop/04-settings-modal.png" width="80%" alt="Settings Modal">
   </p>
 </details>
 
@@ -108,11 +119,11 @@ A diferencia de otras herramientas viejas o aplicaciones de pago, este script es
 ## ⚙️ Configuration & Safety / Seguridad
 
 To prevent Instagram from flagging your account ("Action Blocked"), we include a **Safe Mode**.
-Para evitar que Instagram bloquee tu cuenta por actividad sospechosa, el script incluye un **Modo Seguro**.
 
 - **Scan Interval:** Speed of checking followers.
 - **Unfollow Interval:** Delay between actions (Crucial for safety).
 - **Cooldowns:** Auto-pause after 5-10 unfollows.
+- **Data Persistence:** History is stored in your browser's LocalStorage. Clearing browser data will reset your history.
 
 > **⚠️ WARNING:** Using aggressive settings may lead to temporary restrictions. Use the default "Safe Mode".
 
@@ -123,10 +134,12 @@ Para evitar que Instagram bloquee tu cuenta por actividad sospechosa, el script 
 Want to contribute?
 
 ```bash
-git clone https://github.com/edvincodes/InstagramUnfollowers.git
+git clone [https://github.com/edvincodes/InstagramUnfollowers.git](https://github.com/edvincodes/InstagramUnfollowers.git)
 cd InstagramUnfollowers
 npm install
 npm run build
+```
+
 ```
 
 ---
@@ -152,3 +165,4 @@ Esta herramienta es un proyecto independiente y no está afiliada, asociada, aut
 Developed with ❤️ by **Edvin**.
 
 Licensed under the [MIT License](https://www.google.com/search?q=LICENSE).
+```
