@@ -16,14 +16,7 @@ import {
   INSTAGRAM_HOSTNAME,
   WHITELISTED_RESULTS_STORAGE_KEY,
 } from './constants/constants';
-import {
-  assertUnreachable,
-  getCookie,
-  getCurrentPageUnfollowers,
-  getUsersForDisplay,
-  sleep,
-  unfollowUserUrlGenerator,
-} from './utils/utils';
+import { assertUnreachable, getCurrentPageUnfollowers, getUsersForDisplay } from './utils/utils';
 import { NotSearching } from './components/NotSearching';
 import { State } from './model/state';
 import { Searching } from './components/Searching';
@@ -31,8 +24,8 @@ import { Toolbar } from './components/Toolbar';
 import { Unfollowing } from './components/Unfollowing';
 import { Timings } from './model/timings';
 
-// 1. IMPORTAMOS TU NUEVO HOOK
 import { useScanner } from './hooks/useScanner';
+import { useUnfollowerQueue } from './hooks/useUnfollowerQueue';
 
 function App() {
   const [state, setState] = useState<State>({
@@ -52,26 +45,40 @@ function App() {
     timeToWaitAfterFiveUnfollows: DEFAULT_TIME_TO_WAIT_AFTER_FIVE_UNFOLLOWS,
   });
 
-  // 2. INICIALIZAMOS EL HOOK
-  const { scannerState, startScan, togglePause, isPaused } = useScanner(timings);
+  // Inicialización de Hooks
+  const {
+    scannerState,
+    startScan,
+    togglePause: toggleScanPause,
+    isPaused: isScanPaused,
+  } = useScanner(timings);
+  const {
+    unfollowerState,
+    startUnfollowing,
+    togglePause: toggleUnfollowPause,
+    isPaused: isUnfollowPaused,
+  } = useUnfollowerQueue(timings);
 
   let isActiveProcess: boolean;
   switch (state.status) {
-    case 'initial':
+    case 'initial': {
       isActiveProcess = false;
       break;
-    case 'scanning':
-      // Ahora dependemos del hook para saber si estamos procesando
+    }
+    case 'scanning': {
       isActiveProcess = scannerState.isScanning;
       break;
-    case 'unfollowing':
-      isActiveProcess = state.percentage < 100;
+    }
+    case 'unfollowing': {
+      isActiveProcess = unfollowerState.isUnfollowing;
       break;
-    default:
+    }
+    default: {
       assertUnreachable(state);
+    }
   }
 
-  // 3. SINCRONIZACIÓN: Cuando el hook actualiza datos, actualizamos la UI
+  // Sincronización del Escáner
   useEffect(() => {
     if (state.status === 'scanning') {
       setState(prev => ({
@@ -80,12 +87,31 @@ function App() {
         percentage: scannerState.progress,
       }));
 
-      // Si el hook termina de escanear, mostramos el mensaje final
       if (!scannerState.isScanning && scannerState.progress === 100) {
         setToast({ show: true, text: 'Scanning completed!' });
       }
     }
   }, [scannerState, state.status]);
+
+  // Sincronización del Unfollower
+  useEffect(() => {
+    if (state.status === 'unfollowing') {
+      setState(prev => {
+        if (prev.status !== 'unfollowing') {
+          return prev;
+        }
+        return {
+          ...prev,
+          percentage: unfollowerState.progress,
+          unfollowLog: unfollowerState.unfollowLog,
+        };
+      });
+
+      if (!unfollowerState.isUnfollowing && unfollowerState.progress === 100) {
+        setToast({ show: true, text: 'Unfollow process finished!' });
+      }
+    }
+  }, [unfollowerState, state.status]);
 
   const onScan = async () => {
     if (state.status !== 'initial') {
@@ -97,7 +123,6 @@ function App() {
     const whitelistedResults: readonly UserNode[] =
       whitelistedResultsFromStorage === null ? [] : JSON.parse(whitelistedResultsFromStorage);
 
-    // Configuramos el estado inicial de la UI
     setState({
       status: 'scanning',
       page: 1,
@@ -116,7 +141,6 @@ function App() {
       },
     });
 
-    // 4. DISPARAMOS EL ESCÁNER DEL HOOK
     startScan();
   };
 
@@ -216,102 +240,52 @@ function App() {
       if (!isActiveProcess) {
         return;
       }
-
-      // Estándar moderno para activar la alerta del navegador
       e.preventDefault();
-
-      // Chrome requiere establecer returnValue (aunque esté obsoleto en la definición de TS)
-      // Usamos este pequeño truco para que TypeScript no marque error rojo.
       (e as any).returnValue = '';
     };
 
     window.addEventListener('beforeunload', onBeforeUnload);
-    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+    };
   }, [isActiveProcess]);
 
-  // ELIMINADO: useEffect gigante de "scan". Ahora lo maneja el hook useScanner.
+  // Función para disparar el proceso de Unfollow desde la UI
+  const onStartUnfollowing = () => {
+    if (state.status !== 'scanning' || state.selectedResults.length === 0) {
+      return;
+    }
 
-  // TODO: Mover esto a useUnfollowerQueue.ts en el futuro
-  useEffect(() => {
-    const unfollow = async () => {
-      if (state.status !== 'unfollowing') {
-        return;
+    const usersToProcess = [...state.selectedResults];
+
+    // ERROR 1 CORREGIDO: Usamos el estado anterior para no perder 'searchTerm' y 'currentTab'
+    setState(prev => {
+      if (prev.status !== 'scanning') {
+        return prev;
       }
+      return {
+        ...prev,
+        status: 'unfollowing',
+        percentage: 0,
+        unfollowLog: [], // TypeScript lo inferirá correctamente del modelo
+        selectedResults: usersToProcess,
+        filter: {
+          ...prev.filter,
+          showSucceeded: true,
+          showFailed: true,
+        },
+      };
+    });
 
-      const csrftoken = getCookie('csrftoken');
-      if (csrftoken === null) {
-        throw new Error('csrftoken cookie is null');
-      }
-
-      let counter = 0;
-      for (const user of state.selectedResults) {
-        counter += 1;
-        const percentage = Math.floor((counter / state.selectedResults.length) * 100);
-        try {
-          await fetch(unfollowUserUrlGenerator(user.id), {
-            headers: {
-              'content-type': 'application/x-www-form-urlencoded',
-              'x-csrftoken': csrftoken,
-            },
-            method: 'POST',
-            mode: 'cors',
-            credentials: 'include',
-          });
-          setState(prevState => {
-            if (prevState.status !== 'unfollowing') {
-              return prevState;
-            }
-            return {
-              ...prevState,
-              percentage,
-              unfollowLog: [...prevState.unfollowLog, { user, unfollowedSuccessfully: true }],
-            };
-          });
-        } catch (e) {
-          console.error(e);
-          setState(prevState => {
-            if (prevState.status !== 'unfollowing') {
-              return prevState;
-            }
-            return {
-              ...prevState,
-              percentage,
-              unfollowLog: [...prevState.unfollowLog, { user, unfollowedSuccessfully: false }],
-            };
-          });
-        }
-
-        if (user === state.selectedResults[state.selectedResults.length - 1]) {
-          break;
-        }
-
-        await sleep(
-          Math.floor(
-            Math.random() * (timings.timeBetweenUnfollows * 1.2 - timings.timeBetweenUnfollows),
-          ) + timings.timeBetweenUnfollows,
-        );
-
-        if (counter % 5 === 0) {
-          setToast({
-            show: true,
-            text: `Sleeping ${
-              timings.timeToWaitAfterFiveUnfollows / 60000
-            } minutes to prevent getting temp blocked`,
-          });
-          await sleep(timings.timeToWaitAfterFiveUnfollows);
-        }
-        setToast({ show: false });
-      }
-    };
-    unfollow();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.status]);
+    startUnfollowing(usersToProcess);
+  };
 
   let markup: React.JSX.Element;
   switch (state.status) {
-    case 'initial':
+    case 'initial': {
       markup = <NotSearching onScan={onScan} />;
       break;
+    }
 
     case 'scanning': {
       markup = (
@@ -319,72 +293,86 @@ function App() {
           state={state}
           handleScanFilter={handleScanFilter}
           toggleUser={toggleUser}
-          pauseScan={togglePause} // Usamos la función del hook
+          pauseScan={toggleScanPause}
           setState={setState}
-          scanningPaused={isPaused} // Usamos el estado del hook
+          scanningPaused={isScanPaused}
           UserCheckIcon={UserCheckIcon}
           UserUncheckIcon={UserUncheckIcon}
+          onStartUnfollowing={onStartUnfollowing}
         />
       );
       break;
     }
 
-    case 'unfollowing':
-      markup = <Unfollowing state={state} handleUnfollowFilter={handleUnfollowFilter} />;
+    case 'unfollowing': {
+      markup = (
+        <Unfollowing
+          state={state}
+          handleUnfollowFilter={handleUnfollowFilter}
+          isPaused={isUnfollowPaused}
+          togglePause={toggleUnfollowPause}
+        />
+      );
       break;
+    }
 
-    default:
+    default: {
       assertUnreachable(state);
+    }
   }
 
   return (
     <main id='main' role='main' className='iu'>
-      {/* --- AÑADE ESTA LÍNEA AQUÍ --- */}
       <style>{styles.toString()}</style>
-      {/* ----------------------------- */}
 
       <section className='overlay'>
         <Toolbar
           state={state}
           setState={setState}
-          scanningPaused={isPaused}
+          scanningPaused={state.status === 'scanning' ? isScanPaused : isUnfollowPaused}
           isActiveProcess={isActiveProcess}
           toggleAllUsers={toggleAllUsers}
           toggleCurrentePageUsers={toggleCurrentePageUsers}
           setTimings={setTimings}
           currentTimings={timings}
-          // --- AÑADIR ESTA LÍNEA ---
-          onShowToast={text => setToast({ show: true, text })}
+          onShowToast={text => {
+            setToast({ show: true, text });
+          }}
         />
 
         {markup}
 
-        {/* Mensaje de estado del hook */}
-        {state.status === 'scanning' && (
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 10,
-              left: 10,
-              background: 'rgba(0,0,0,0.7)',
-              color: 'white',
-              padding: 5,
-              borderRadius: 5,
-            }}
-          >
-            {scannerState.statusMessage}
-          </div>
-        )}
+        {/* Mensajes de estado de los hooks */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 10,
+            left: 10,
+            background: 'rgba(0,0,0,0.7)',
+            color: 'white',
+            padding: 5,
+            borderRadius: 5,
+            pointerEvents: 'none',
+          }}
+        >
+          {state.status === 'scanning' && scannerState.statusMessage}
+          {state.status === 'unfollowing' && unfollowerState.statusMessage}
+        </div>
 
         {toast.show && (
-          <Toast show={toast.show} message={toast.text} onClose={() => setToast({ show: false })} />
+          <Toast
+            show={toast.show}
+            message={toast.text}
+            onClose={() => {
+              setToast({ show: false });
+            }}
+          />
         )}
       </section>
     </main>
   );
 }
 
-// Entry Point
 const APP_ID = 'ig-unfollower-pro-overlay';
 
 if (location.hostname !== INSTAGRAM_HOSTNAME) {
@@ -404,7 +392,6 @@ if (location.hostname !== INSTAGRAM_HOSTNAME) {
     document.body.appendChild(appHost);
     const shadowRoot = appHost.attachShadow({ mode: 'open' });
 
-    // Inyectaremos los estilos aquí más adelante
     render(<App />, shadowRoot as unknown as Element);
   }
 }

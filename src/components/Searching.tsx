@@ -18,6 +18,7 @@ export interface SearchingProps {
   toggleUser: (checked: boolean, user: UserNode) => void;
   UserCheckIcon: React.FC;
   UserUncheckIcon: React.FC;
+  onStartUnfollowing: () => void;
 }
 
 // Icono de Filtros para el botón flotante
@@ -45,7 +46,14 @@ const FilterIcon = () => (
 );
 
 // --- Sub-component: Filters Sidebar ---
-const FiltersSidebar = ({ state, handleScanFilter }: { state: State; handleScanFilter: any }) => (
+// Arreglado el tipo 'any' en handleScanFilter
+const FiltersSidebar = ({
+  state,
+  handleScanFilter,
+}: {
+  state: State;
+  handleScanFilter: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) => (
   <menu className='flex column m-clear p-clear'>
     <p style={{ fontWeight: 'bold' }}>Filters</p>
     {[
@@ -78,8 +86,9 @@ export const Searching = ({
   toggleUser,
   UserCheckIcon,
   UserUncheckIcon,
+  onStartUnfollowing,
 }: SearchingProps) => {
-  // NUEVO: Estado para controlar si el menú móvil está abierto
+  // Estado para controlar si el menú móvil está abierto
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   if (state.status !== 'scanning') {
@@ -144,32 +153,35 @@ export const Searching = ({
     // Cerramos el menú móvil al empezar
     setIsMobileMenuOpen(false);
 
-    setState({
-      ...state,
-      status: 'unfollowing',
-      percentage: 0,
-      unfollowLog: [],
-      filter: { showSucceeded: true, showFailed: true },
-    });
+    // --- CORRECCIÓN CLAVE ---
+    // En lugar de hacer setState manual aquí, llamamos a la función que conecta con el hook
+    onStartUnfollowing();
   };
 
   return (
     <section className='flex'>
-      {/* --- NUEVO: BOTÓN FLOTANTE (SOLO VISIBLE EN MÓVIL) --- */}
+      {/* --- BOTÓN FLOTANTE (MÓVIL) --- */}
       <button
         className={`mobile-fab-btn ${isMobileMenuOpen ? 'hidden' : ''}`}
-        onClick={() => setIsMobileMenuOpen(true)}
+        onClick={() => {
+          setIsMobileMenuOpen(true);
+        }}
       >
         <FilterIcon />
         <span>Actions ({state.selectedResults.length})</span>
       </button>
 
-      {/* --- SIDEBAR (CON CLASE DINÁMICA PARA MÓVIL) --- */}
+      {/* --- SIDEBAR --- */}
       <aside className={`app-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
-        {/* Cabecera Móvil (Solo visible cuando se abre el menú) */}
+        {/* Cabecera Móvil */}
         <div className='mobile-sidebar-header'>
           <h3>Filters & Actions</h3>
-          <button className='close-btn' onClick={() => setIsMobileMenuOpen(false)}>
+          <button
+            className='close-btn'
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+            }}
+          >
             ✕
           </button>
         </div>
@@ -193,13 +205,23 @@ export const Searching = ({
         <div className='grow t-center pagination-controls'>
           <p>Pages</p>
           <div className='flex justify-center align-center'>
-            <button className='btn-icon' onClick={() => handlePageChange('prev')}>
+            <button
+              className='btn-icon'
+              onClick={() => {
+                handlePageChange('prev');
+              }}
+            >
               ❮
             </button>
             <span className='page-indicator'>
               {state.page} / {getMaxPage(usersForDisplay)}
             </span>
-            <button className='btn-icon' onClick={() => handlePageChange('next')}>
+            <button
+              className='btn-icon'
+              onClick={() => {
+                handlePageChange('next');
+              }}
+            >
               ❯
             </button>
           </div>
@@ -240,7 +262,12 @@ export const Searching = ({
               {isNewLetter && renderLetterHeader(firstLetter)}
               <label className='result-item'>
                 <div className='flex grow align-center'>
-                  <div className='avatar-container' onClick={e => handleWhitelistToggle(e, user)}>
+                  <div
+                    className='avatar-container'
+                    onClick={e => {
+                      handleWhitelistToggle(e, user);
+                    }}
+                  >
                     <img
                       className='avatar'
                       alt={user.username}
@@ -301,7 +328,9 @@ export const Searching = ({
                   className='account-checkbox'
                   type='checkbox'
                   checked={state.selectedResults.some(r => r.id === user.id)}
-                  onChange={e => toggleUser(e.currentTarget.checked, user)}
+                  onChange={e => {
+                    toggleUser(e.currentTarget.checked, user);
+                  }}
                 />
               </label>
             </React.Fragment>

@@ -6,6 +6,8 @@ import { UnfollowLogEntry } from '../model/unfollow-log-entry';
 interface UnfollowingProps {
   state: State;
   handleUnfollowFilter: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  isPaused: boolean;
+  togglePause: () => void;
 }
 
 // --- Sub-componente para limpiar la lógica de renderizado ---
@@ -44,7 +46,12 @@ const LogEntryItem = ({ entry, index, total }: LogEntryProps) => {
 };
 
 // --- Componente Principal ---
-export const Unfollowing = ({ state, handleUnfollowFilter }: UnfollowingProps) => {
+export const Unfollowing = ({
+  state,
+  handleUnfollowFilter,
+  isPaused,
+  togglePause,
+}: UnfollowingProps) => {
   if (state.status !== 'unfollowing') {
     return null;
   }
@@ -80,6 +87,22 @@ export const Unfollowing = ({ state, handleUnfollowFilter }: UnfollowingProps) =
             />
             &nbsp;Failed
           </label>
+
+          {/* --- AÑADIDO: Controles de Pausa para el Unfollow --- */}
+          {!isFinished && (
+            <div style={{ marginTop: '20px', borderTop: '1px solid #333', paddingTop: '10px' }}>
+              <p className='p-small' style={{ fontWeight: 'bold' }}>
+                Actions
+              </p>
+              <button
+                className={`button-control ${isPaused ? 'btn-resume' : 'btn-pause'}`}
+                style={{ width: '100%', padding: '8px' }}
+                onClick={togglePause}
+              >
+                {isPaused ? 'Resume' : 'Pause'}
+              </button>
+            </div>
+          )}
         </menu>
       </aside>
 
