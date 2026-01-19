@@ -179,3 +179,70 @@ export function urlGenerator(nextCode?: string): string {
 export function unfollowUserUrlGenerator(idToUnfollow: string): string {
   return `https://www.instagram.com/web/friendships/${idToUnfollow}/unfollow/`;
 }
+
+/**
+ * Genera y descarga un archivo CSV con los resultados del escaneo.
+ */
+export const exportToCSV = (
+  results: readonly UserNode[],
+  whitelistedResults: readonly UserNode[],
+) => {
+  if (results.length === 0) {
+    return;
+  }
+
+  // 1. Definir Cabeceras
+  const headers = [
+    'Username',
+    'Full Name',
+    'Profile URL',
+    'Relation', // Mutual vs Non-Follower
+    'Status', // New vs Old
+    'Is Whitelisted',
+    'Is Verified',
+    'Is Private',
+    'ID',
+  ];
+
+  // 2. Construir filas
+  const csvRows = results.map(user => {
+    const isWhitelisted = whitelistedResults.some(w => w.id === user.id);
+    const relation = user.follows_viewer ? 'Mutual (Friend)' : 'Non-Follower (Traitor)';
+    const status = user.is_new_unfollower ? 'NEW' : 'Old';
+    const profileUrl = `https://www.instagram.com/${user.username}`;
+
+    // Escapar comillas dobles para evitar romper el CSV
+    const escape = (text: string) => `"${text.replace(/"/g, '""')}"`;
+
+    return [
+      escape(user.username),
+      escape(user.full_name),
+      escape(profileUrl),
+      escape(relation),
+      escape(status),
+      isWhitelisted ? 'Yes' : 'No',
+      user.is_verified ? 'Yes' : 'No',
+      user.is_private ? 'Yes' : 'No',
+      escape(user.id),
+    ].join(',');
+  });
+
+  // 3. Unir todo (Cabeceras + Filas)
+  const csvContent = [headers.join(','), ...csvRows].join('\n');
+
+  // 4. Crear Blob con BOM para soporte UTF-8 (Emojis y Tildes en Excel)
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+  // 5. Crear enlace de descarga y clicarlo
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+
+  // Nombre del archivo con fecha: ig_unfollowers_2026-01-14.csv
+  const dateStr = new Date().toISOString().split('T')[0];
+  link.setAttribute('download', `ig_unfollowers_report_${dateStr}.csv`);
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};

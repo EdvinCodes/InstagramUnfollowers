@@ -1,10 +1,17 @@
 import React, { ChangeEvent, useState } from 'react';
 import { State } from '../model/state';
-import { assertUnreachable, copyListToClipboard, getUsersForDisplay } from '../utils/utils';
 import { SettingMenu } from './SettingMenu';
 import { SettingIcon } from './icons/SettingIcon';
 import { Timings } from '../model/timings';
 import { Logo } from './icons/Logo';
+import {
+  exportToCSV,
+  assertUnreachable,
+  copyListToClipboard,
+  getUsersForDisplay,
+} from '../utils/utils';
+import { CopyIcon } from './icons/CopyIcon';
+import { DownloadIcon } from './icons/DownloadIcon';
 
 interface ToolBarProps {
   isActiveProcess: boolean;
@@ -70,6 +77,13 @@ export const Toolbar = ({
     }
   };
 
+  const handleExportClick = () => {
+    if (state.status === 'scanning') {
+      exportToCSV(state.results, state.whitelistedResults);
+      onShowToast(`Exported ${state.results.length} users to CSV!`);
+    }
+  };
+
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.currentTarget.value;
     switch (state.status) {
@@ -108,11 +122,30 @@ export const Toolbar = ({
           </div>
         </div>
 
-        {/* COPY BUTTON */}
+        {/* ACTION BUTTONS GROUP */}
         {state.status === 'scanning' && (
-          <button className='copy-list' onClick={handleCopyClick}>
-            Copy List
-          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            {/* BOTÓN COPY (Con icono añadido) */}
+            <button
+              className='copy-list'
+              onClick={handleCopyClick}
+              title='Copy visible list to clipboard'
+            >
+              <CopyIcon />
+              Copy List
+            </button>
+
+            {/* BOTÓN EXPORT */}
+            <button
+              className='copy-list' // Reusamos clase para forma/tamaño
+              onClick={handleExportClick}
+              style={{ backgroundColor: '#2d3748' }} // Gris oscuro para diferenciar
+              title='Download full report as CSV'
+            >
+              <DownloadIcon />
+              Export CSV
+            </button>
+          </div>
         )}
 
         {/* SETTINGS ICON */}
