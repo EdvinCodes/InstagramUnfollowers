@@ -691,10 +691,7 @@ input[type='checkbox'] {
   margin: 1.5rem 0 0.5rem 0;
 }
 .unfollow-log-container {
-  flex: 1;
-  padding: 2rem;
-  overflow-y: auto;
-  height: 100%;
+  width: 100%;
   .p-medium {
     padding: 0.8rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -959,5 +956,22 @@ input[type='checkbox'] {
     opacity: 0.5;
     cursor: default;
     filter: grayscale(1);
+  }
+}
+
+// Animación para el gráfico
+.chart-segment {
+  transition: stroke-dasharray 1s ease-out;
+  animation: fillChart 1.5s ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes fillChart {
+  from {
+    opacity: 0;
+    stroke-dasharray: 0 500; /* 500 es aprox la circunferencia */
+  }
+  to {
+    opacity: 1;
   }
 }
