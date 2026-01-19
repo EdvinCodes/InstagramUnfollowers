@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   assertUnreachable,
   getCurrentPageUnfollowers,
@@ -21,7 +21,7 @@ export interface SearchingProps {
   onStartUnfollowing: () => void;
 }
 
-// Icono de Filtros para el botón flotante
+// Icono de Filtros
 const FilterIcon = () => (
   <svg
     width='24'
@@ -45,8 +45,6 @@ const FilterIcon = () => (
   </svg>
 );
 
-// --- Sub-component: Filters Sidebar ---
-// Arreglado el tipo 'any' en handleScanFilter
 const FiltersSidebar = ({
   state,
   handleScanFilter,
@@ -77,6 +75,11 @@ const FiltersSidebar = ({
   </menu>
 );
 
+// --- CONSTANTE ESTABLE PARA REFERENCIAS VACÍAS ---
+// Definirla fuera asegura que la referencia de memoria sea siempre la misma
+// y evita que el useMemo se dispare innecesariamente.
+const EMPTY_LIST: readonly UserNode[] = [];
+
 export const Searching = ({
   state,
   setState,
@@ -88,23 +91,47 @@ export const Searching = ({
   UserUncheckIcon,
   onStartUnfollowing,
 }: SearchingProps) => {
-  // Estado para controlar si el menú móvil está abierto
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // UX: Estado para dar feedback inmediato al pulsar el botón
+  const [isTogglingPause, setIsTogglingPause] = useState(false);
+
+  // UX: Cuando la propiedad real cambia, quitamos el estado de "cargando"
+  useEffect(() => {
+    setIsTogglingPause(false);
+  }, [scanningPaused]);
+
+  // --- EXTRACCIÓN SEGURA Y ESTABLE ---
+  // Usamos EMPTY_LIST en lugar de [] para mantener la referencia estable.
+  const scanResults = state.status === 'scanning' ? state.results : EMPTY_LIST;
+  const whitelistedResults = state.status === 'scanning' ? state.whitelistedResults : EMPTY_LIST;
+
+  // Primitivos (strings) y undefined son seguros por naturaleza
+  const currentTab = state.status === 'scanning' ? state.currentTab : 'non_whitelisted';
+  const searchTerm = state.status === 'scanning' ? state.searchTerm : '';
+  const filter = state.status === 'scanning' ? state.filter : undefined;
+
+  // OPTIMIZACIÓN: Memorizamos la lista
+  const usersForDisplay = useMemo(() => {
+    if (!filter) {
+      return EMPTY_LIST;
+    }
+
+    return getUsersForDisplay(scanResults, whitelistedResults, currentTab, searchTerm, filter);
+  }, [
+    // Ahora todas estas dependencias son estables y seguras
+    scanResults,
+    whitelistedResults,
+    currentTab,
+    searchTerm,
+    filter,
+  ]);
 
   if (state.status !== 'scanning') {
     return null;
   }
 
-  const usersForDisplay = getUsersForDisplay(
-    state.results,
-    state.whitelistedResults,
-    state.currentTab,
-    state.searchTerm,
-    state.filter,
-  );
-
   let currentLetter = '';
-
   const renderLetterHeader = (firstLetter: string) => {
     currentLetter = firstLetter;
     return <div className='alphabet-character'>{currentLetter}</div>;
@@ -128,8 +155,10 @@ export const Searching = ({
     e.preventDefault();
     e.stopPropagation();
     let newWhitelisted: readonly UserNode[] = [];
+
     switch (state.currentTab) {
       case 'non_whitelisted':
+      case 'mutuals':
         newWhitelisted = [...state.whitelistedResults, user];
         break;
       case 'whitelisted':
@@ -138,6 +167,7 @@ export const Searching = ({
       default:
         assertUnreachable(state.currentTab);
     }
+
     localStorage.setItem(WHITELISTED_RESULTS_STORAGE_KEY, JSON.stringify(newWhitelisted));
     setState({ ...state, whitelistedResults: newWhitelisted });
   };
@@ -150,38 +180,34 @@ export const Searching = ({
       alert('Select at least one user to unfollow.');
       return;
     }
-    // Cerramos el menú móvil al empezar
     setIsMobileMenuOpen(false);
-
-    // --- CORRECCIÓN CLAVE ---
-    // En lugar de hacer setState manual aquí, llamamos a la función que conecta con el hook
     onStartUnfollowing();
+  };
+
+  // UX: Handler para el botón de Pausa con feedback inmediato
+  const onTogglePauseClick = () => {
+    setIsTogglingPause(true);
+    setTimeout(() => {
+      pauseScan();
+    }, 10);
   };
 
   return (
     <section className='flex'>
-      {/* --- BOTÓN FLOTANTE (MÓVIL) --- */}
+      {/* FAB Mobile */}
       <button
         className={`mobile-fab-btn ${isMobileMenuOpen ? 'hidden' : ''}`}
-        onClick={() => {
-          setIsMobileMenuOpen(true);
-        }}
+        onClick={() => setIsMobileMenuOpen(true)}
       >
         <FilterIcon />
         <span>Actions ({state.selectedResults.length})</span>
       </button>
 
-      {/* --- SIDEBAR --- */}
+      {/* Sidebar */}
       <aside className={`app-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
-        {/* Cabecera Móvil */}
         <div className='mobile-sidebar-header'>
           <h3>Filters & Actions</h3>
-          <button
-            className='close-btn'
-            onClick={() => {
-              setIsMobileMenuOpen(false);
-            }}
-          >
+          <button className='close-btn' onClick={() => setIsMobileMenuOpen(false)}>
             ✕
           </button>
         </div>
@@ -194,34 +220,36 @@ export const Searching = ({
         </div>
 
         <div className='controls'>
+          {/* BOTÓN PAUSA MEJORADO */}
           <button
             className={`button-control ${scanningPaused ? 'btn-resume' : 'btn-pause'}`}
-            onClick={pauseScan}
+            onClick={onTogglePauseClick}
+            disabled={isTogglingPause}
+            style={{
+              opacity: isTogglingPause ? 0.7 : 1,
+              cursor: isTogglingPause ? 'wait' : 'pointer',
+            }}
           >
-            {scanningPaused ? 'Resume Scan' : 'Pause Scan'}
+            {isTogglingPause
+              ? scanningPaused
+                ? 'Resuming...'
+                : 'Pausing...'
+              : scanningPaused
+                ? 'Resume Scan'
+                : 'Pause Scan'}
           </button>
         </div>
 
         <div className='grow t-center pagination-controls'>
           <p>Pages</p>
           <div className='flex justify-center align-center'>
-            <button
-              className='btn-icon'
-              onClick={() => {
-                handlePageChange('prev');
-              }}
-            >
+            <button className='btn-icon' onClick={() => handlePageChange('prev')}>
               ❮
             </button>
             <span className='page-indicator'>
               {state.page} / {getMaxPage(usersForDisplay)}
             </span>
-            <button
-              className='btn-icon'
-              onClick={() => {
-                handlePageChange('next');
-              }}
-            >
+            <button className='btn-icon' onClick={() => handlePageChange('next')}>
               ❯
             </button>
           </div>
@@ -236,19 +264,30 @@ export const Searching = ({
         </button>
       </aside>
 
+      {/* Lista de Resultados */}
       <article className='results-container'>
         <nav className='tabs-container'>
           <div
             className={`tab ${state.currentTab === 'non_whitelisted' ? 'tab-active' : ''}`}
             onClick={() =>
-              setState({ ...state, currentTab: 'non_whitelisted', selectedResults: [] })
+              setState({ ...state, currentTab: 'non_whitelisted', selectedResults: [], page: 1 })
             }
           >
-            Non-Whitelisted
+            Non-Followers
+          </div>
+          <div
+            className={`tab ${state.currentTab === 'mutuals' ? 'tab-active' : ''}`}
+            onClick={() =>
+              setState({ ...state, currentTab: 'mutuals', selectedResults: [], page: 1 })
+            }
+          >
+            Mutuals
           </div>
           <div
             className={`tab ${state.currentTab === 'whitelisted' ? 'tab-active' : ''}`}
-            onClick={() => setState({ ...state, currentTab: 'whitelisted', selectedResults: [] })}
+            onClick={() =>
+              setState({ ...state, currentTab: 'whitelisted', selectedResults: [], page: 1 })
+            }
           >
             Whitelisted
           </div>
@@ -257,17 +296,13 @@ export const Searching = ({
         {getCurrentPageUnfollowers(usersForDisplay, state.page).map(user => {
           const firstLetter = user.username.substring(0, 1).toUpperCase();
           const isNewLetter = firstLetter !== currentLetter;
+
           return (
             <React.Fragment key={user.id}>
               {isNewLetter && renderLetterHeader(firstLetter)}
               <label className='result-item'>
                 <div className='flex grow align-center'>
-                  <div
-                    className='avatar-container'
-                    onClick={e => {
-                      handleWhitelistToggle(e, user);
-                    }}
-                  >
+                  <div className='avatar-container' onClick={e => handleWhitelistToggle(e, user)}>
                     <img
                       className='avatar'
                       alt={user.username}
@@ -284,14 +319,13 @@ export const Searching = ({
                   </div>
 
                   <div className='flex column m-medium user-info'>
-                    {/* Contenedor Fila: Nombre + Etiqueta */}
                     <div
                       style={{
                         display: 'flex',
-                        flexDirection: 'row', // Aseguramos que vayan en línea
+                        flexDirection: 'row',
                         alignItems: 'center',
                         gap: '6px',
-                        width: 'fit-content', // <--- CLAVE: Evita que se estire como una barra de vida
+                        width: 'fit-content',
                       }}
                     >
                       <a
@@ -300,26 +334,25 @@ export const Searching = ({
                         href={`https://www.instagram.com/${user.username}`}
                         rel='noreferrer'
                         title={user.username}
-                        style={{ lineHeight: '1' }} // Ajuste fino para alinear con la etiqueta
+                        style={{ lineHeight: '1' }}
                       >
                         {user.username}
                       </a>
 
-                      {/* Etiqueta NEW mejorada */}
                       {user.is_new_unfollower && (
                         <span
                           style={{
-                            background: 'linear-gradient(45deg, #ff3b30, #ff2d55)', // Un degradado sutil queda más "Instagram"
+                            background: 'linear-gradient(45deg, #ff3b30, #ff2d55)',
                             color: 'white',
                             fontSize: '9px',
                             fontWeight: 'bold',
                             padding: '2px 6px',
-                            borderRadius: '10px', // Más redondeado (tipo píldora)
+                            borderRadius: '10px',
                             textTransform: 'uppercase',
                             letterSpacing: '0.5px',
                             boxShadow: '0 2px 4px rgba(255, 45, 85, 0.3)',
                             height: 'fit-content',
-                            whiteSpace: 'nowrap', // Evita que se rompa si el nombre es muy largo
+                            whiteSpace: 'nowrap',
                             lineHeight: '1.2',
                           }}
                         >
@@ -365,9 +398,7 @@ export const Searching = ({
                   className='account-checkbox'
                   type='checkbox'
                   checked={state.selectedResults.some(r => r.id === user.id)}
-                  onChange={e => {
-                    toggleUser(e.currentTarget.checked, user);
-                  }}
+                  onChange={e => toggleUser(e.currentTarget.checked, user)}
                 />
               </label>
             </React.Fragment>

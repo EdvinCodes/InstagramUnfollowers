@@ -1,1 +1,1 @@
-export type ScanningTab = 'non_whitelisted' | 'whitelisted';
+export type ScanningTab = 'non_whitelisted' | 'whitelisted' | 'mutuals';

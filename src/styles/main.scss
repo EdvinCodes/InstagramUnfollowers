@@ -43,7 +43,11 @@
 // --- RESET GLOBAL ---
 :host {
   all: initial;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    sans-serif;
   font-size: 16px;
   color: variables.$text-main;
   line-height: 1.5;
@@ -460,14 +464,34 @@ input[type='checkbox'] {
   background: rgba(0, 0, 0, 0.3);
   padding: 0.3rem;
   border-radius: 50px;
+
+  /* --- CAMBIO 1: Permitir scroll horizontal si no cabe --- */
+  overflow-x: auto;
+
+  /* --- CAMBIO 2: Ocultar la barra de scroll (estético) --- */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+  &::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+  }
+
   .tab {
-    flex: 1;
+    /* --- CAMBIO 3: La magia del Flex --- */
+    /* Antes tenías: flex: 1; (Esto obligaba a encogerse) */
+    /* Ahora ponemos: flex: 1 0 auto; */
+    /* Significa: "Crece para llenar espacio (1), pero NO te encojas (0), usa tu tamaño real (auto)" */
+    flex: 1 0 auto;
+
     text-align: center;
-    padding: 0.6rem;
+    padding: 0.6rem 1.2rem; /* Un poco más de padding lateral para el dedo */
     cursor: pointer;
     border-radius: 40px;
     color: variables.$text-muted;
     font-weight: 600;
+
+    /* --- CAMBIO 4: Prohibido romper líneas --- */
+    white-space: nowrap;
+
     &:hover {
       color: variables.$text-main;
     }

@@ -17,6 +17,8 @@ interface ToolBarProps {
   setTimings: (timings: Timings) => void;
   // Nueva prop para mostrar feedback al usuario
   onShowToast: (message: string) => void;
+  isPageSelected: boolean;
+  isAllSelected: boolean;
 }
 
 export const Toolbar = ({
@@ -29,6 +31,8 @@ export const Toolbar = ({
   currentTimings,
   setTimings,
   onShowToast,
+  isPageSelected,
+  isAllSelected,
 }: ToolBarProps) => {
   const [settingMenu, setSettingMenu] = useState(false);
 
@@ -78,22 +82,6 @@ export const Toolbar = ({
       default:
         assertUnreachable(state);
     }
-  };
-
-  // Helper para calcular si "Select All" debe estar marcado
-  const isSelectAllChecked = () => {
-    if (state.status !== 'scanning') {
-      return false;
-    }
-
-    const displayedUsers = getUsersForDisplay(
-      state.results,
-      state.whitelistedResults,
-      state.currentTab,
-      state.searchTerm,
-      state.filter,
-    );
-    return state.selectedResults.length === displayedUsers.length && displayedUsers.length > 0;
   };
 
   return (
@@ -151,6 +139,7 @@ export const Toolbar = ({
               disabled={state.percentage < 100 && !scanningPaused}
               className='toggle-all-checkbox'
               onClick={toggleCurrentePageUsers}
+              checked={isPageSelected}
             />
             <span className='checkbox-text'>Select Page</span>
           </label>
@@ -162,7 +151,7 @@ export const Toolbar = ({
             <input
               type='checkbox'
               disabled={state.percentage < 100 && !scanningPaused}
-              checked={isSelectAllChecked()}
+              checked={isAllSelected}
               className='toggle-all-checkbox'
               onClick={toggleAllUsers}
             />

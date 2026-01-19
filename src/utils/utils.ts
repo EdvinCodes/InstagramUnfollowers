@@ -47,25 +47,45 @@ export function getUsersForDisplay(
   return results.filter(user => {
     const isWhitelisted = whitelistedResults.some(w => w.id === user.id);
 
-    // 1. Tab Filtering
-    if (currentTab === 'non_whitelisted' && isWhitelisted) {
-      return false;
-    }
-    if (currentTab === 'whitelisted' && !isWhitelisted) {
-      return false;
+    // 1. LÓGICA DE PESTAÑAS (Usando Switch para evitar quejas del Linter)
+    switch (currentTab) {
+      case 'whitelisted': {
+        if (!isWhitelisted) {
+          return false;
+        }
+        break;
+      }
+      case 'non_whitelisted': {
+        if (isWhitelisted) {
+          return false;
+        }
+        // Solo mostrar si NO te siguen
+        if (user.follows_viewer) {
+          return false;
+        }
+        break;
+      }
+      case 'mutuals': {
+        if (isWhitelisted) {
+          return false;
+        }
+        // Solo mostrar si SÍ te siguen
+        if (!user.follows_viewer) {
+          return false;
+        }
+        break;
+      }
+      default: {
+        // Esto satisface el chequeo de exhaustividad de TypeScript
+        return false;
+      }
     }
 
-    // 2. Checkbox Filters
+    // 2. FILTROS DE ATRIBUTOS (Con llaves {} para satisfacer eslintcurly)
     if (!filter.showPrivate && user.is_private) {
       return false;
     }
     if (!filter.showVerified && user.is_verified) {
-      return false;
-    }
-    if (!filter.showFollowers && user.follows_viewer) {
-      return false;
-    }
-    if (!filter.showNonFollowers && !user.follows_viewer) {
       return false;
     }
 
@@ -76,7 +96,7 @@ export function getUsersForDisplay(
       return false;
     }
 
-    // 3. Search Term
+    // 3. BUSCADOR
     if (searchTerm !== '') {
       const matchesSearch =
         user.username.toLowerCase().includes(lowerSearchTerm) ||

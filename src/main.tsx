@@ -303,6 +303,38 @@ function App() {
     startUnfollowing(usersToProcess);
   };
 
+  // ---------------------------------------------------------------------------
+  // 1. CÁLCULO DE CHECKBOXES INTELIGENTES (CORREGIDO)
+  // ---------------------------------------------------------------------------
+
+  // Inicializamos en false por defecto (para cuando estemos en 'initial' o 'unfollowing')
+  let isPageSelected = false;
+  let isAllSelected = false;
+
+  // Solo hacemos los cálculos matemáticos si estamos escaneando (cuando existen los datos)
+  if (state.status === 'scanning') {
+    // A. Obtenemos la lista exacta de usuarios que se están viendo ahora
+    const usersDisplayed = getUsersForDisplay(
+      state.results,
+      state.whitelistedResults,
+      state.currentTab,
+      state.searchTerm,
+      state.filter,
+    );
+
+    // B. Obtenemos solo los de la página actual
+    const usersOnCurrentPage = getCurrentPageUnfollowers(usersDisplayed, state.page);
+
+    // C. Calculamos: ¿Están todos los de ESTA página seleccionados?
+    isPageSelected =
+      usersOnCurrentPage.length > 0 &&
+      usersOnCurrentPage.every(u => state.selectedResults.some(s => s.id === u.id));
+
+    // D. Calculamos: ¿Están TODOS (de todas las páginas) seleccionados?
+    isAllSelected =
+      usersDisplayed.length > 0 && usersDisplayed.length === state.selectedResults.length;
+  }
+
   let markup: React.JSX.Element;
   switch (state.status) {
     case 'initial': {
@@ -361,6 +393,8 @@ function App() {
           onShowToast={text => {
             setToast({ show: true, text });
           }}
+          isPageSelected={isPageSelected}
+          isAllSelected={isAllSelected}
         />
 
         {markup}
