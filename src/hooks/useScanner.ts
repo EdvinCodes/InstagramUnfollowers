@@ -23,7 +23,6 @@ export const useScanner = (timings: Timings) => {
 
   const togglePause = useCallback(() => {
     isPausedRef.current = !isPausedRef.current;
-    console.log('Pause toggled:', isPausedRef.current);
   }, []);
 
   const stopScan = useCallback(() => {

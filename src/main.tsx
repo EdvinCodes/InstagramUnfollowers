@@ -101,7 +101,6 @@ function App() {
         const newTraitors = processedResults.filter(u => u.is_new_unfollower);
 
         if (newTraitors.length > 0) {
-          console.log(`[History] Recording ${newTraitors.length} new unfollowers...`);
           newTraitors.forEach(traitor => {
             HistoryService.addEvent('DETECTED_UNFOLLOWER', traitor);
           });
