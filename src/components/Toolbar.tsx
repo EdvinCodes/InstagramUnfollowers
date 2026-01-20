@@ -16,6 +16,24 @@ import { DownloadIcon } from './icons/DownloadIcon';
 import { HistoryView } from './HistoryView';
 import { HistoryIcon } from './icons/HistoryIcon';
 
+// Icono simple de Minimizar
+const MinimizeIcon = ({ onClick }: { onClick: () => void }) => (
+  <div className='icon-button minimize-btn' onClick={onClick} title='Minimize overlay'>
+    <svg
+      width='24'
+      height='24'
+      viewBox='0 0 24 24'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth='2'
+      strokeLinecap='round'
+      strokeLinejoin='round'
+    >
+      <polyline points='6 9 12 15 18 9' />
+    </svg>
+  </div>
+);
+
 interface ToolBarProps {
   isActiveProcess: boolean;
   state: State;
@@ -25,10 +43,10 @@ interface ToolBarProps {
   toggleCurrentePageUsers: (e: ChangeEvent<HTMLInputElement>) => void;
   currentTimings: Timings;
   setTimings: (timings: Timings) => void;
-  // Nueva prop para mostrar feedback al usuario
   onShowToast: (message: string) => void;
   isPageSelected: boolean;
   isAllSelected: boolean;
+  onMinimize: () => void;
 }
 
 export const Toolbar = ({
@@ -43,11 +61,10 @@ export const Toolbar = ({
   onShowToast,
   isPageSelected,
   isAllSelected,
+  onMinimize,
 }: ToolBarProps) => {
   const [settingMenu, setSettingMenu] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
-
-  // --- Handlers para limpiar el JSX ---
 
   const handleLogoClick = () => {
     if (isActiveProcess) {
@@ -104,6 +121,42 @@ export const Toolbar = ({
 
   return (
     <header className='app-header'>
+      {/* CSS RESPONSIVO INLINE */}
+      <style>{`
+        .minimize-btn {
+           cursor: pointer;
+           padding: 8px;
+           display: flex;
+           align-items: center;
+           border-radius: 50%;
+           transition: background 0.2s;
+        }
+        .minimize-btn:hover {
+           background: rgba(255,255,255,0.1);
+        }
+        
+        /* REGLAS MOVIL (< 500px) */
+        @media (max-width: 500px) {
+          .logo-text {
+            display: none !important; 
+          }
+          /* OCULTAMOS SEARCH BAR EN MOVIL */
+          .search-bar {
+            display: none !important;
+          }
+          .app-header-content {
+            gap: 0.5rem;
+            justify-content: space-between; /* Espaciado máximo */
+          }
+          .checkbox-label {
+             margin-right: 5px;
+          }
+          .checkbox-text {
+             font-size: 0.8rem;
+          }
+        }
+      `}</style>
+
       {isActiveProcess && (
         <progress
           className='progressbar'
@@ -117,7 +170,12 @@ export const Toolbar = ({
         <div
           className='logo'
           onClick={handleLogoClick}
-          style={{ cursor: isActiveProcess ? 'default' : 'pointer' }}
+          style={{
+            cursor: isActiveProcess ? 'default' : 'pointer',
+            marginRight: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+          }}
         >
           <Logo />
           <div className='logo-text'>
@@ -126,86 +184,93 @@ export const Toolbar = ({
           </div>
         </div>
 
-        {/* ACTION BUTTONS GROUP */}
-        {state.status === 'scanning' && (
-          <div style={{ display: 'flex', gap: '10px' }}>
-            {/* BOTÓN COPY (Con icono añadido) */}
-            <button
-              className='copy-list'
-              onClick={handleCopyClick}
-              title='Copy visible list to clipboard'
-            >
-              <CopyIcon />
-              Copy List
-            </button>
-
-            {/* BOTÓN EXPORT */}
-            <button
-              className='copy-list'
-              onClick={handleExportClick}
-              // Movemos el color a una clase CSS si fuera posible, si no, este style está bien
-              style={{ backgroundColor: '#2d3748' }}
-              title='Download full report as CSV'
-            >
-              <DownloadIcon />
-              Export CSV
-            </button>
-          </div>
-        )}
-
-        {/* ICONS GROUP (Initial State) */}
-        {state.status === 'initial' && (
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            {/* Nuevo botón Historial */}
-            <HistoryIcon onClick={() => setHistoryOpen(true)} />
-            {/* Botón Ajustes existente */}
-            <SettingIcon onClickLogo={() => setSettingMenu(true)} />
-          </div>
-        )}
-
-        {/* SEARCH BAR (Solo visible si NO estamos en inicio) */}
+        {/* SEARCH BAR (Ahora se oculta sola con el CSS de arriba) */}
         {state.status !== 'initial' && (
           <input
             type='text'
             className='search-bar'
             placeholder='Search...'
             value={state.searchTerm}
-            // Bloqueamos eventos de teclado de Instagram
             onKeyDown={e => e.stopPropagation()}
             onChange={handleSearchChange}
+            style={{ margin: '0 1rem' }}
           />
         )}
 
-        {/* CHECKBOX: SELECT CURRENT PAGE */}
+        {/* CHECKBOXES */}
         {state.status === 'scanning' && (
-          <label className='checkbox-label' title='Select all visible users on this page'>
-            <input
-              type='checkbox'
-              disabled={state.percentage < 100 && !scanningPaused}
-              className='toggle-all-checkbox'
-              onClick={toggleCurrentePageUsers}
-              checked={isPageSelected}
-            />
-            <span className='checkbox-text'>Select Page</span>
-          </label>
+          <div style={{ display: 'flex', gap: '8px', marginRight: '0.5rem', alignItems: 'center' }}>
+            <label className='checkbox-label' title='Select Page'>
+              <input
+                type='checkbox'
+                disabled={state.percentage < 100 && !scanningPaused}
+                className='toggle-all-checkbox'
+                onClick={toggleCurrentePageUsers}
+                checked={isPageSelected}
+              />
+              <span className='checkbox-text'>Page</span>
+            </label>
+            <label className='checkbox-label' title='Select All'>
+              <input
+                type='checkbox'
+                disabled={state.percentage < 100 && !scanningPaused}
+                checked={isAllSelected}
+                className='toggle-all-checkbox'
+                onClick={toggleAllUsers}
+              />
+              <span className='checkbox-text'>All</span>
+            </label>
+          </div>
         )}
 
-        {/* CHECKBOX: SELECT ALL GLOBAL */}
-        {state.status === 'scanning' && (
-          <label className='checkbox-label' title='Select absolutely everyone found'>
-            <input
-              type='checkbox'
-              disabled={state.percentage < 100 && !scanningPaused}
-              checked={isAllSelected}
-              className='toggle-all-checkbox'
-              onClick={toggleAllUsers}
-            />
-            <span className='checkbox-text'>Select All</span>
-          </label>
-        )}
+        {/* RIGHT ACTIONS GROUP */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+          {/* Scanning Actions */}
+          {state.status === 'scanning' && (
+            <>
+              <button
+                className='copy-list'
+                onClick={handleCopyClick}
+                title='Copy visible list'
+                style={{ padding: '0.5rem' }}
+              >
+                <CopyIcon />
+              </button>
+              <button
+                className='copy-list'
+                onClick={handleExportClick}
+                style={{ backgroundColor: '#2d3748', padding: '0.5rem' }}
+                title='Export CSV'
+              >
+                <DownloadIcon />
+              </button>
+            </>
+          )}
+
+          {/* Initial Actions */}
+          {state.status === 'initial' && (
+            <>
+              <HistoryIcon onClick={() => setHistoryOpen(true)} />
+              <SettingIcon onClickLogo={() => setSettingMenu(true)} />
+            </>
+          )}
+
+          {/* Separador vertical sutil */}
+          <div
+            style={{
+              width: '1px',
+              height: '20px',
+              background: 'rgba(255,255,255,0.2)',
+              margin: '0 5px',
+            }}
+          />
+
+          {/* MINIMIZE BUTTON */}
+          <MinimizeIcon onClick={onMinimize} />
+        </div>
       </div>
 
-      {/* SETTINGS MODAL */}
+      {/* MODALS */}
       {settingMenu && (
         <SettingMenu
           setSettingState={setSettingMenu}
@@ -214,7 +279,6 @@ export const Toolbar = ({
         />
       )}
 
-      {/* HISTORY MODAL */}
       {historyOpen && <HistoryView onClose={() => setHistoryOpen(false)} />}
     </header>
   );

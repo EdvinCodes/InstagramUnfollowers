@@ -30,6 +30,7 @@ import { useScanner } from './hooks/useScanner';
 import { useUnfollowerQueue } from './hooks/useUnfollowerQueue';
 
 import { HistoryService } from './services/historyService';
+import { Logo } from './components/icons/Logo';
 
 function App() {
   const [state, setState] = useState<State>({
@@ -41,6 +42,9 @@ function App() {
   >({
     show: false,
   });
+
+  // Estado para minimizar
+  const [isMinimized, setIsMinimized] = useState(false);
 
   const [timings, setTimings] = useState<Timings>({
     timeBetweenSearchCycles: DEFAULT_TIME_BETWEEN_SEARCH_CYCLES,
@@ -56,6 +60,7 @@ function App() {
     togglePause: toggleScanPause,
     isPaused: isScanPaused,
   } = useScanner(timings);
+
   const {
     unfollowerState,
     startUnfollowing,
@@ -92,26 +97,19 @@ function App() {
         (scannerState.progress >= 99 || scannerState.statusMessage === 'Completed');
 
       if (isFinished) {
-        // 1. Calculamos los nuevos comparando con el último escaneo
         processedResults = identifyNewUnfollowers(scannerState.results);
-
-        // Filtramos solo los que tienen la marca "is_new_unfollower"
         const newTraitors = processedResults.filter(u => u.is_new_unfollower);
 
         if (newTraitors.length > 0) {
           console.log(`[History] Recording ${newTraitors.length} new unfollowers...`);
           newTraitors.forEach(traitor => {
-            // Registramos el evento "DETECTED_UNFOLLOWER" para cada uno
             HistoryService.addEvent('DETECTED_UNFOLLOWER', traitor);
           });
         }
-        // -----------------------------------------------
 
-        // 2. Guardamos snapshot (para que la próxima vez no salgan como nuevos)
         saveScanSnapshot(processedResults);
 
-        // 3. Log visual (Toast)
-        const totalNew = newTraitors.length; // Usamos la variable que acabamos de crear
+        const totalNew = newTraitors.length;
         if (totalNew > 0) {
           setToast({ show: true, text: `Scan finished! Found ${totalNew} new unfollowers.` });
         } else {
@@ -203,6 +201,7 @@ function App() {
     if (state.status !== 'unfollowing') {
       return;
     }
+
     setState({
       ...state,
       filter: {
@@ -216,6 +215,7 @@ function App() {
     if (state.status !== 'scanning') {
       return;
     }
+
     if (newStatus) {
       setState({ ...state, selectedResults: [...state.selectedResults, user] });
     } else {
@@ -230,6 +230,7 @@ function App() {
     if (state.status !== 'scanning') {
       return;
     }
+
     if (e.currentTarget.checked) {
       setState({
         ...state,
@@ -250,6 +251,7 @@ function App() {
     if (state.status !== 'scanning') {
       return;
     }
+
     if (e.currentTarget.checked) {
       setState({
         ...state,
@@ -274,6 +276,7 @@ function App() {
       if (!isActiveProcess) {
         return;
       }
+
       e.preventDefault();
       (e as any).returnValue = '';
     };
@@ -284,7 +287,6 @@ function App() {
     };
   }, [isActiveProcess]);
 
-  // Función para disparar el proceso de Unfollow desde la UI
   const onStartUnfollowing = () => {
     if (state.status !== 'scanning' || state.selectedResults.length === 0) {
       return;
@@ -292,16 +294,16 @@ function App() {
 
     const usersToProcess = [...state.selectedResults];
 
-    // ERROR 1 CORREGIDO: Usamos el estado anterior para no perder 'searchTerm' y 'currentTab'
     setState(prev => {
       if (prev.status !== 'scanning') {
         return prev;
       }
+
       return {
         ...prev,
         status: 'unfollowing',
         percentage: 0,
-        unfollowLog: [], // TypeScript lo inferirá correctamente del modelo
+        unfollowLog: [],
         selectedResults: usersToProcess,
         filter: {
           ...prev.filter,
@@ -314,17 +316,11 @@ function App() {
     startUnfollowing(usersToProcess);
   };
 
-  // ---------------------------------------------------------------------------
-  // 1. CÁLCULO DE CHECKBOXES INTELIGENTES (CORREGIDO)
-  // ---------------------------------------------------------------------------
-
-  // Inicializamos en false por defecto (para cuando estemos en 'initial' o 'unfollowing')
+  // Checkboxes
   let isPageSelected = false;
   let isAllSelected = false;
 
-  // Solo hacemos los cálculos matemáticos si estamos escaneando (cuando existen los datos)
   if (state.status === 'scanning') {
-    // A. Obtenemos la lista exacta de usuarios que se están viendo ahora
     const usersDisplayed = getUsersForDisplay(
       state.results,
       state.whitelistedResults,
@@ -332,16 +328,10 @@ function App() {
       state.searchTerm,
       state.filter,
     );
-
-    // B. Obtenemos solo los de la página actual
     const usersOnCurrentPage = getCurrentPageUnfollowers(usersDisplayed, state.page);
-
-    // C. Calculamos: ¿Están todos los de ESTA página seleccionados?
     isPageSelected =
       usersOnCurrentPage.length > 0 &&
       usersOnCurrentPage.every(u => state.selectedResults.some(s => s.id === u.id));
-
-    // D. Calculamos: ¿Están TODOS (de todas las páginas) seleccionados?
     isAllSelected =
       usersDisplayed.length > 0 && usersDisplayed.length === state.selectedResults.length;
   }
@@ -352,7 +342,6 @@ function App() {
       markup = <NotSearching onScan={onScan} />;
       break;
     }
-
     case 'scanning': {
       markup = (
         <Searching
@@ -369,7 +358,6 @@ function App() {
       );
       break;
     }
-
     case 'unfollowing': {
       markup = (
         <Unfollowing
@@ -381,62 +369,115 @@ function App() {
       );
       break;
     }
-
     default: {
       assertUnreachable(state);
     }
   }
 
   return (
-    <main id='main' role='main' className='iu'>
+    <main
+      id='main'
+      role='main'
+      className='iu'
+      // ARREGLO CLAVE: Si está minimizado, el fondo es transparente y los clics atraviesan
+      style={
+        isMinimized
+          ? {
+              background: 'transparent',
+              backgroundImage: 'none',
+              pointerEvents: 'none',
+            }
+          : {}
+      }
+    >
       <style>{styles.toString()}</style>
 
-      <section className='overlay'>
-        <Toolbar
-          state={state}
-          setState={setState}
-          scanningPaused={state.status === 'scanning' ? isScanPaused : isUnfollowPaused}
-          isActiveProcess={isActiveProcess}
-          toggleAllUsers={toggleAllUsers}
-          toggleCurrentePageUsers={toggleCurrentePageUsers}
-          setTimings={setTimings}
-          currentTimings={timings}
-          onShowToast={text => {
-            setToast({ show: true, text });
-          }}
-          isPageSelected={isPageSelected}
-          isAllSelected={isAllSelected}
-        />
-
-        {markup}
-
-        {/* Mensajes de estado de los hooks */}
+      {/* LÓGICA DE MINIMIZADO */}
+      {isMinimized ? (
         <div
+          onClick={() => setIsMinimized(false)}
+          title='Open Tool'
           style={{
-            position: 'absolute',
-            bottom: 10,
-            left: 10,
-            background: 'rgba(0,0,0,0.7)',
-            color: 'white',
-            padding: 5,
-            borderRadius: 5,
-            pointerEvents: 'none',
+            position: 'fixed',
+            bottom: '30px',
+            right: '30px',
+            width: '60px',
+            height: '60px',
+            borderRadius: '50%',
+            // CAMBIO: Gradiente Azul para coincidir con tu app
+            background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+            boxShadow: '0 4px 15px rgba(29, 78, 216, 0.4)', // Sombra azulada
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            zIndex: 999999,
+            pointerEvents: 'auto', // ARREGLO: Esto sí tiene que recibir clics
+            transition: 'transform 0.2s, box-shadow 0.2s',
+            border: '2px solid rgba(255,255,255,0.1)',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.transform = 'scale(1.1)';
+            e.currentTarget.style.boxShadow = '0 6px 20px rgba(29, 78, 216, 0.6)';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.boxShadow = '0 4px 15px rgba(29, 78, 216, 0.4)';
           }}
         >
-          {state.status === 'scanning' && scannerState.statusMessage}
-          {state.status === 'unfollowing' && unfollowerState.statusMessage}
+          {/* Logo flotante */}
+          <div style={{ transform: 'scale(1.4)' }}>
+            <Logo />
+          </div>
         </div>
-
-        {toast.show && (
-          <Toast
-            show={toast.show}
-            message={toast.text}
-            onClose={() => {
-              setToast({ show: false });
+      ) : (
+        <section className='overlay'>
+          <Toolbar
+            state={state}
+            setState={setState}
+            scanningPaused={state.status === 'scanning' ? isScanPaused : isUnfollowPaused}
+            isActiveProcess={isActiveProcess}
+            toggleAllUsers={toggleAllUsers}
+            toggleCurrentePageUsers={toggleCurrentePageUsers}
+            setTimings={setTimings}
+            currentTimings={timings}
+            onShowToast={text => {
+              setToast({ show: true, text });
             }}
+            isPageSelected={isPageSelected}
+            isAllSelected={isAllSelected}
+            onMinimize={() => setIsMinimized(true)}
           />
-        )}
-      </section>
+
+          {markup}
+
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 10,
+              left: 10,
+              background: 'rgba(0,0,0,0.7)',
+              color: 'white',
+              padding: 5,
+              borderRadius: 5,
+              pointerEvents: 'none',
+            }}
+          >
+            {state.status === 'scanning' && scannerState.statusMessage}
+            {state.status === 'unfollowing' && unfollowerState.statusMessage}
+          </div>
+
+          {toast.show && (
+            <Toast
+              show={toast.show}
+              message={toast.text}
+              onClose={() => {
+                setToast({ show: false });
+              }}
+            />
+          )}
+        </section>
+      )}
     </main>
   );
 }
@@ -455,7 +496,7 @@ if (location.hostname !== INSTAGRAM_HOSTNAME) {
     appHost.style.width = '100vw';
     appHost.style.height = '100vh';
     appHost.style.zIndex = '99999';
-    appHost.style.pointerEvents = 'none';
+    appHost.style.pointerEvents = 'none'; // Importante para la carga inicial
 
     document.body.appendChild(appHost);
     const shadowRoot = appHost.attachShadow({ mode: 'open' });
