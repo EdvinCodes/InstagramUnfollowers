@@ -23,7 +23,6 @@ export interface SearchingProps {
   onStartUnfollowing: () => void;
 }
 
-// Icono de Filtros
 const FilterIcon = () => (
   <svg
     width='24'
@@ -77,9 +76,6 @@ const FiltersSidebar = ({
   </menu>
 );
 
-// --- CONSTANTE ESTABLE PARA REFERENCIAS VACÍAS ---
-// Definirla fuera asegura que la referencia de memoria sea siempre la misma
-// y evita que el useMemo se dispare innecesariamente.
 const EMPTY_LIST: readonly UserNode[] = [];
 
 export const Searching = ({
@@ -94,40 +90,24 @@ export const Searching = ({
   onStartUnfollowing,
 }: SearchingProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // UX: Estado para dar feedback inmediato al pulsar el botón
   const [isTogglingPause, setIsTogglingPause] = useState(false);
 
-  // UX: Cuando la propiedad real cambia, quitamos el estado de "cargando"
   useEffect(() => {
     setIsTogglingPause(false);
   }, [scanningPaused]);
 
-  // --- EXTRACCIÓN SEGURA Y ESTABLE ---
-  // Usamos EMPTY_LIST en lugar de [] para mantener la referencia estable.
   const scanResults = state.status === 'scanning' ? state.results : EMPTY_LIST;
   const whitelistedResults = state.status === 'scanning' ? state.whitelistedResults : EMPTY_LIST;
-
-  // Primitivos (strings) y undefined son seguros por naturaleza
   const currentTab = state.status === 'scanning' ? state.currentTab : 'non_whitelisted';
   const searchTerm = state.status === 'scanning' ? state.searchTerm : '';
   const filter = state.status === 'scanning' ? state.filter : undefined;
 
-  // OPTIMIZACIÓN: Memorizamos la lista
   const usersForDisplay = useMemo(() => {
     if (!filter) {
       return EMPTY_LIST;
     }
-
     return getUsersForDisplay(scanResults, whitelistedResults, currentTab, searchTerm, filter);
-  }, [
-    // Ahora todas estas dependencias son estables y seguras
-    scanResults,
-    whitelistedResults,
-    currentTab,
-    searchTerm,
-    filter,
-  ]);
+  }, [scanResults, whitelistedResults, currentTab, searchTerm, filter]);
 
   if (state.status !== 'scanning') {
     return null;
@@ -188,7 +168,6 @@ export const Searching = ({
     onStartUnfollowing();
   };
 
-  // UX: Handler para el botón de Pausa con feedback inmediato
   const onTogglePauseClick = () => {
     setIsTogglingPause(true);
     setTimeout(() => {
@@ -223,26 +202,28 @@ export const Searching = ({
           <p>Total: {state.results.length}</p>
         </div>
 
-        <div className='controls'>
-          {/* BOTÓN PAUSA MEJORADO */}
-          <button
-            className={`button-control ${scanningPaused ? 'btn-resume' : 'btn-pause'}`}
-            onClick={onTogglePauseClick}
-            disabled={isTogglingPause}
-            style={{
-              opacity: isTogglingPause ? 0.7 : 1,
-              cursor: isTogglingPause ? 'wait' : 'pointer',
-            }}
-          >
-            {isTogglingPause
-              ? scanningPaused
-                ? 'Resuming...'
-                : 'Pausing...'
-              : scanningPaused
-                ? 'Resume Scan'
-                : 'Pause Scan'}
-          </button>
-        </div>
+        {/* AQUÍ ESTÁ EL ARREGLO: Solo mostramos el botón si NO ha terminado */}
+        {state.percentage < 100 && (
+          <div className='controls'>
+            <button
+              className={`button-control ${scanningPaused ? 'btn-resume' : 'btn-pause'}`}
+              onClick={onTogglePauseClick}
+              disabled={isTogglingPause}
+              style={{
+                opacity: isTogglingPause ? 0.7 : 1,
+                cursor: isTogglingPause ? 'wait' : 'pointer',
+              }}
+            >
+              {isTogglingPause
+                ? scanningPaused
+                  ? 'Resuming...'
+                  : 'Pausing...'
+                : scanningPaused
+                  ? 'Resume Scan'
+                  : 'Pause Scan'}
+            </button>
+          </div>
+        )}
 
         <div className='grow t-center pagination-controls'>
           <p>Pages</p>
