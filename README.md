@@ -134,12 +134,10 @@ To prevent Instagram from flagging your account ("Action Blocked"), we include a
 Want to contribute?
 
 ```bash
-git clone [https://github.com/edvincodes/InstagramUnfollowers.git](https://github.com/edvincodes/InstagramUnfollowers.git)
+git clone https://github.com/edvincodes/InstagramUnfollowers.git
 cd InstagramUnfollowers
 npm install
 npm run build
-```
-
 ```
 
 ---
@@ -165,4 +163,3 @@ Esta herramienta es un proyecto independiente y no está afiliada, asociada, aut
 Developed with ❤️ by **Edvin**.
 
 Licensed under the [MIT License](https://www.google.com/search?q=LICENSE).
-```
