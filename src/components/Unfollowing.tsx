@@ -61,7 +61,7 @@ export const Unfollowing = ({
     state.unfollowLog.length === state.selectedResults.length && state.selectedResults.length > 0;
 
   return (
-    <section className='flex'>
+    <section className='flex' style={{ height: '100%', overflow: 'hidden' }}>
       <aside className='app-sidebar'>
         <menu className='flex column grow m-clear p-clear'>
           <p className='p-small' style={{ fontWeight: 'bold' }}>
@@ -106,7 +106,16 @@ export const Unfollowing = ({
         </menu>
       </aside>
 
-      <article className='unfollow-log-container'>
+      {/* ARREGLO AQUÍ: Altura máxima y scroll automático */}
+      <article
+        className='unfollow-log-container'
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          height: '100%',
+          paddingBottom: '20px', // Espacio extra al final
+        }}
+      >
         {isFinished && (
           <div style={{ textAlign: 'center', margin: '20px 0' }}>
             <hr />
