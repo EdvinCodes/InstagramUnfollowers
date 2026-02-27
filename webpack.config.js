@@ -1,9 +1,20 @@
-// @ts-nocheck
 const path = require('path');
+const fs = require('fs');
+
+// Plugin personalizado simple para copiar el manifest a /dist
+class CopyManifestPlugin {
+  apply(compiler) {
+    compiler.hooks.done.tap('CopyManifestPlugin', () => {
+      fs.copyFileSync(
+        path.resolve(__dirname, 'manifest.json'),
+        path.resolve(__dirname, 'dist', 'manifest.json'),
+      );
+    });
+  }
+}
 
 module.exports = {
   entry: './src/main.tsx',
-  // Modo producción para que minifique el código (opcional, puedes cambiarlo a 'development')
   mode: 'production',
   module: {
     rules: [
@@ -14,13 +25,7 @@ module.exports = {
       },
       {
         test: /\.s[ac]ss$/i,
-        use: [
-          // CAMBIO IMPORTANTE: Usamos to-string-loader en lugar de style-loader
-          // Esto nos permite importar el CSS como una variable de texto.
-          'to-string-loader',
-          'css-loader',
-          'sass-loader',
-        ],
+        use: ['to-string-loader', 'css-loader', 'sass-loader'],
       },
     ],
   },
@@ -32,8 +37,11 @@ module.exports = {
     },
   },
   output: {
-    filename: 'dist.js',
+    filename: 'content.js', // Cambiado de dist.js a content.js
     path: path.resolve(__dirname, 'dist'),
-    clean: true, // Limpia la carpeta dist antes de compilar
+    clean: true,
   },
+  plugins: [
+    new CopyManifestPlugin(), // Añadimos nuestro plugin copiador
+  ],
 };

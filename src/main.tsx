@@ -49,7 +49,7 @@ function App() {
   });
 
   // Estado para minimizar
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(true);
 
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
