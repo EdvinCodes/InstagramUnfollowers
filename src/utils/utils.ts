@@ -246,3 +246,12 @@ export const exportToCSV = (
   link.click();
   document.body.removeChild(link);
 };
+
+/**
+ * Genera una clave de almacenamiento única para la cuenta de Instagram activa.
+ * Esto evita que se mezclen datos entre diferentes cuentas en el mismo navegador.
+ */
+export function getDynamicStorageKey(baseKey: string): string {
+  const userId = getCookie('ds_user_id') || 'unknown_user';
+  return `${baseKey}_${userId}`;
+}

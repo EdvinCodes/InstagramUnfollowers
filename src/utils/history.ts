@@ -1,5 +1,6 @@
 import { HISTORY_RESULTS_STORAGE_KEY } from '../constants/constants';
 import { UserNode } from '../model/user';
+import { getDynamicStorageKey } from './utils';
 
 interface HistorySnapshot {
   timestamp: number;
@@ -15,14 +16,14 @@ export function saveScanSnapshot(results: readonly UserNode[]): void {
     timestamp: Date.now(),
     ids: results.map(u => u.id),
   };
-  localStorage.setItem(HISTORY_RESULTS_STORAGE_KEY, JSON.stringify(snapshot));
+  localStorage.setItem(getDynamicStorageKey(HISTORY_RESULTS_STORAGE_KEY), JSON.stringify(snapshot));
 }
 
 /**
  * Carga el snapshot anterior y devuelve un Set de IDs para búsqueda rápida.
  */
 export function loadPreviousSnapshotIds(): Set<string> | null {
-  const stored = localStorage.getItem(HISTORY_RESULTS_STORAGE_KEY);
+  const stored = localStorage.getItem(getDynamicStorageKey(HISTORY_RESULTS_STORAGE_KEY));
   if (!stored) {
     return null;
   }

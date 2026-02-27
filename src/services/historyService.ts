@@ -1,19 +1,24 @@
 import { HistoryEvent, HistoryEventType } from '../model/history';
 import { UserNode } from '../model/user';
+import { getCookie } from '../utils/utils'; // <-- Importamos getCookie
 
-const HISTORY_STORAGE_KEY = 'ig_unfollowers_history_v1';
-const MAX_HISTORY_ITEMS = 1000; // Límite para no petar la memoria del navegador
+const BASE_HISTORY_STORAGE_KEY = 'ig_unfollowers_history_v1';
+const MAX_HISTORY_ITEMS = 1000;
 
-// Helper para generar IDs únicos simples
+// Generador de ID único
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
 
+// <-- FIX MULTI-CUENTA: Creamos una key dinámica basada en el usuario logueado
+const getStorageKey = () => {
+  const userId = getCookie('ds_user_id') || 'unknown_user';
+  return `${BASE_HISTORY_STORAGE_KEY}_${userId}`;
+};
+
 export const HistoryService = {
-  /**
-   * Obtiene todo el historial ordenado (más reciente primero)
-   */
   getHistory: (): HistoryEvent[] => {
     try {
-      const stored = localStorage.getItem(HISTORY_STORAGE_KEY);
+      // Usamos la key dinámica
+      const stored = localStorage.getItem(getStorageKey());
       return stored ? JSON.parse(stored) : [];
     } catch (e) {
       console.error('Error reading history', e);
@@ -21,46 +26,45 @@ export const HistoryService = {
     }
   },
 
-  /**
-   * Guarda un nuevo evento en el historial
-   */
   addEvent: (type: HistoryEventType, user: UserNode) => {
     const history = HistoryService.getHistory();
+
+    // <-- FIX MEMORIA: Limpiamos la basura de IG y guardamos solo lo vital
+    const minimalUser: Partial<UserNode> = {
+      id: user.id,
+      username: user.username,
+      profile_pic_url: user.profile_pic_url,
+      full_name: user.full_name,
+    };
 
     const newEvent: HistoryEvent = {
       id: generateId(),
       timestamp: Date.now(),
       type,
-      user,
+      user: minimalUser as UserNode, // Casteamos para mantener tipado
     };
 
-    // Añadimos al principio del array
     const updatedHistory = [newEvent, ...history];
 
-    // Mantenemos el límite de tamaño (limpieza automática)
     if (updatedHistory.length > MAX_HISTORY_ITEMS) {
       updatedHistory.length = MAX_HISTORY_ITEMS;
     }
 
-    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(updatedHistory));
+    // Usamos la key dinámica
+    localStorage.setItem(getStorageKey(), JSON.stringify(updatedHistory));
   },
 
-  /**
-   * Borra todo el historial (botón de pánico o limpieza)
-   */
   clearHistory: () => {
-    localStorage.removeItem(HISTORY_STORAGE_KEY);
+    localStorage.removeItem(getStorageKey());
   },
 
-  /**
-   * Obtiene estadísticas básicas
-   */
-  getStats: () => {
+  getStats() {
     const history = HistoryService.getHistory();
     return {
       totalUnfollowedByYou: history.filter(h => h.type === 'YOU_UNFOLLOWED').length,
       totalTraitorsDetected: history.filter(h => h.type === 'DETECTED_UNFOLLOWER').length,
-      lastScanDate: history.find(h => h.type === 'DETECTED_UNFOLLOWER')?.timestamp || null,
+      totalWhitelisted: history.filter(h => h.type === 'WHITELISTED').length,
+      lastScanDate: history.find(h => h.type === 'DETECTED_UNFOLLOWER')?.timestamp ?? null,
     };
   },
 };

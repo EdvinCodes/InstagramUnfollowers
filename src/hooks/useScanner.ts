@@ -71,6 +71,13 @@ export const useScanner = (timings: Timings) => {
         setScannerState(prev => ({ ...prev, statusMessage: 'Fetching data...' }));
 
         const response = await fetch(url);
+        // <-- FIX QUERY HASH: Interceptamos si IG nos corta el grifo
+        if (!response.ok) {
+          throw new Error(
+            `API Error (${response.status}). The query hash might be outdated or Instagram is temporarily blocking your requests.`,
+          );
+        }
+
         const json = await response.json();
         const data: User = json.data.user.edge_follow;
 
@@ -101,7 +108,7 @@ export const useScanner = (timings: Timings) => {
         await sleep(randomSleep);
 
         scrollCycle++;
-        if (scrollCycle > 6) {
+        if (scrollCycle >= 5) {
           scrollCycle = 0;
           setScannerState(prev => ({
             ...prev,

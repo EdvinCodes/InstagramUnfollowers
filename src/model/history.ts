@@ -18,5 +18,6 @@ export interface HistoryEvent {
 export interface HistoryStats {
   totalUnfollowedByYou: number;
   totalTraitorsDetected: number;
+  totalWhitelisted: number;
   lastScanDate: number | null;
 }

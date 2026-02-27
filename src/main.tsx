@@ -16,7 +16,12 @@ import {
   INSTAGRAM_HOSTNAME,
   WHITELISTED_RESULTS_STORAGE_KEY,
 } from './constants/constants';
-import { assertUnreachable, getCurrentPageUnfollowers, getUsersForDisplay } from './utils/utils';
+import {
+  assertUnreachable,
+  getCurrentPageUnfollowers,
+  getUsersForDisplay,
+  getDynamicStorageKey,
+} from './utils/utils';
 import { identifyNewUnfollowers, saveScanSnapshot } from './utils/history';
 
 import { NotSearching } from './components/NotSearching';
@@ -100,13 +105,10 @@ function App() {
         processedResults = identifyNewUnfollowers(scannerState.results);
         const newTraitors = processedResults.filter(u => u.is_new_unfollower);
 
-        if (newTraitors.length > 0) {
-          newTraitors.forEach(traitor => {
-            HistoryService.addEvent('DETECTED_UNFOLLOWER', traitor);
-          });
-        }
-
         saveScanSnapshot(processedResults);
+        if (newTraitors.length > 0) {
+          newTraitors.forEach(traitor => HistoryService.addEvent('DETECTED_UNFOLLOWER', traitor));
+        }
 
         const totalNew = newTraitors.length;
         if (totalNew > 0) {
@@ -148,11 +150,19 @@ function App() {
     if (state.status !== 'initial') {
       return;
     }
-    const whitelistedResultsFromStorage: string | null = localStorage.getItem(
-      WHITELISTED_RESULTS_STORAGE_KEY,
-    );
-    const whitelistedResults: readonly UserNode[] =
-      whitelistedResultsFromStorage === null ? [] : JSON.parse(whitelistedResultsFromStorage);
+
+    // <-- LEER WHITELIST CON CLAVE DINÁMICA
+    const dynamicWhitelistKey = getDynamicStorageKey(WHITELISTED_RESULTS_STORAGE_KEY);
+    const whitelistedResultsFromStorage: string | null = localStorage.getItem(dynamicWhitelistKey);
+
+    let whitelistedResults: readonly UserNode[] = [];
+    if (whitelistedResultsFromStorage !== null) {
+      try {
+        whitelistedResults = JSON.parse(whitelistedResultsFromStorage);
+      } catch {
+        localStorage.removeItem(dynamicWhitelistKey);
+      }
+    }
 
     setState({
       status: 'scanning',

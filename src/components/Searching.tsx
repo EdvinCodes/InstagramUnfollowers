@@ -4,6 +4,7 @@ import {
   getCurrentPageUnfollowers,
   getMaxPage,
   getUsersForDisplay,
+  getDynamicStorageKey,
 } from '../utils/utils';
 import { State } from '../model/state';
 import { UserNode } from '../model/user';
@@ -67,7 +68,7 @@ const FiltersSidebar = ({
           type='checkbox'
           name={filter.name}
           // @ts-ignore
-          checked={state.filter[filter.name]}
+          checked={state.filter[filter.name as keyof ScanningFilter]}
           onChange={handleScanFilter}
         />
         &nbsp;{filter.label}
@@ -152,7 +153,10 @@ export const Searching = ({
         assertUnreachable(state.currentTab);
     }
 
-    localStorage.setItem(WHITELISTED_RESULTS_STORAGE_KEY, JSON.stringify(newWhitelisted));
+    // <-- GUARDAR WHITELIST CON CLAVE DINÁMICA
+    const dynamicWhitelistKey = getDynamicStorageKey(WHITELISTED_RESULTS_STORAGE_KEY);
+    localStorage.setItem(dynamicWhitelistKey, JSON.stringify(newWhitelisted));
+
     setState({ ...state, whitelistedResults: newWhitelisted });
   };
 
