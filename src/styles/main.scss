@@ -975,3 +975,127 @@ input[type='checkbox'] {
     opacity: 1;
   }
 }
+
+// ==========================================
+// MODO CLARO (THEME-LIGHT OVERRIDES)
+// ==========================================
+.iu.theme-light {
+  background-color: #f8fafc;
+  background-image: radial-gradient(circle at 50% 100%, #e2e8f0 0%, #f1f5f9 60%);
+  color: #0f172a;
+
+  .app-header {
+    background: rgba(255, 255, 255, 0.85);
+    border-bottom-color: rgba(0, 0, 0, 0.1);
+  }
+  .logo .logo-text {
+    color: #0f172a;
+  }
+
+  .app-sidebar {
+    background: rgba(255, 255, 255, 0.7);
+    border-right-color: rgba(0, 0, 0, 0.1);
+  }
+  .app-sidebar p {
+    color: #64748b;
+  }
+
+  .result-item {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    &:hover {
+      background: #fff;
+      border-color: rgba(0, 0, 0, 0.15);
+    }
+    .user-info .user-link {
+      color: #0f172a;
+    }
+    .user-info span.text-muted {
+      color: #64748b;
+    }
+  }
+
+  .badge {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #0f172a;
+  }
+  .badge:hover {
+    background: #fff;
+  }
+
+  .tabs-container {
+    background: rgba(0, 0, 0, 0.05);
+  }
+  .tabs-container .tab {
+    color: #64748b;
+  }
+  .tabs-container .tab:hover {
+    color: #0f172a;
+  }
+  .tabs-container .tab.tab-active {
+    color: #fff;
+    background: #06b6d4;
+  }
+
+  button,
+  .btn {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #0f172a;
+  }
+  button:hover,
+  .btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+  }
+
+  input[type='text'],
+  input[type='number'] {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #0f172a;
+  }
+  input[type='text']:focus,
+  input[type='number']:focus {
+    background: #fff;
+    border-color: #06b6d4;
+  }
+
+  .setting-menu {
+    background: #f8fafc;
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+  }
+  .setting-menu h3 {
+    color: #0f172a;
+  }
+  .setting-menu .row label {
+    color: #64748b;
+  }
+
+  .empty-state-container {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+  .empty-state-container .empty-state-title {
+    background: linear-gradient(135deg, #0f172a, #64748b);
+    -webkit-background-clip: text;
+  }
+
+  .alphabet-character {
+    color: #0f172a;
+  }
+  .unfollow-log-container .p-medium {
+    border-bottom-color: rgba(0, 0, 0, 0.05);
+  }
+
+  .checkbox-label {
+    color: #64748b;
+    background: rgba(0, 0, 0, 0.05);
+  }
+  .checkbox-label:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #0f172a;
+  }
+}

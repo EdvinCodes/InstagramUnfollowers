@@ -47,6 +47,8 @@ interface ToolBarProps {
   isPageSelected: boolean;
   isAllSelected: boolean;
   onMinimize: () => void;
+  theme: 'dark' | 'light';
+  toggleTheme: () => void;
 }
 
 export const Toolbar = ({
@@ -62,6 +64,8 @@ export const Toolbar = ({
   isPageSelected,
   isAllSelected,
   onMinimize,
+  theme,
+  toggleTheme,
 }: ToolBarProps) => {
   const [settingMenu, setSettingMenu] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -276,6 +280,8 @@ export const Toolbar = ({
           setSettingState={setSettingMenu}
           currentTimings={currentTimings}
           setTimings={setTimings}
+          theme={theme}
+          toggleTheme={toggleTheme}
         />
       )}
 

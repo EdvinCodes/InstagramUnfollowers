@@ -51,6 +51,8 @@ function App() {
   // Estado para minimizar
   const [isMinimized, setIsMinimized] = useState(false);
 
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
   const [timings, setTimings] = useState<Timings>({
     timeBetweenSearchCycles: DEFAULT_TIME_BETWEEN_SEARCH_CYCLES,
     timeToWaitAfterFiveSearchCycles: DEFAULT_TIME_TO_WAIT_AFTER_FIVE_SEARCH_CYCLES,
@@ -91,6 +93,20 @@ function App() {
       assertUnreachable(state);
     }
   }
+
+  // Recuperar el tema al iniciar
+  useEffect(() => {
+    const storedTheme = localStorage.getItem('ig_unfollowers_theme');
+    if (storedTheme === 'light') {
+      setTheme('light');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    localStorage.setItem('ig_unfollowers_theme', newTheme);
+  };
 
   // Sincronización del Escáner
   useEffect(() => {
@@ -388,7 +404,7 @@ function App() {
     <main
       id='main'
       role='main'
-      className='iu'
+      className={`iu theme-${theme}`}
       // ARREGLO CLAVE: Si está minimizado, el fondo es transparente y los clics atraviesan
       style={
         isMinimized
@@ -457,6 +473,8 @@ function App() {
             isPageSelected={isPageSelected}
             isAllSelected={isAllSelected}
             onMinimize={() => setIsMinimized(true)}
+            theme={theme}
+            toggleTheme={toggleTheme}
           />
 
           {markup}

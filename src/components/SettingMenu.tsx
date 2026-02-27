@@ -7,6 +7,8 @@ interface SettingMenuProps {
   setSettingState: (state: boolean) => void;
   currentTimings: Timings;
   setTimings: (timings: Timings) => void;
+  theme: 'dark' | 'light';
+  toggleTheme: () => void;
 }
 
 interface SettingInputProps {
@@ -35,7 +37,13 @@ const SettingRow = ({ label, value, min, name, onChange }: SettingInputProps) =>
   </div>
 );
 
-export const SettingMenu = ({ setSettingState, currentTimings, setTimings }: SettingMenuProps) => {
+export const SettingMenu = ({
+  setSettingState,
+  currentTimings,
+  setTimings,
+  theme,
+  toggleTheme,
+}: SettingMenuProps) => {
   const [timeBetweenSearchCycles, setTimeBetweenSearchCycles] = useState(
     currentTimings.timeBetweenSearchCycles,
   );
@@ -164,6 +172,38 @@ export const SettingMenu = ({ setSettingState, currentTimings, setTimings }: Set
             value={timeToWaitAfterFiveUnfollows}
             onChange={setTimeToWaitAfterFiveUnfollows}
           />
+
+          <SettingRow
+            label='Default time to wait after five unfollows'
+            name='timeAfterFiveUnfollows'
+            min={70000}
+            value={timeToWaitAfterFiveUnfollows}
+            onChange={setTimeToWaitAfterFiveUnfollows}
+          />
+
+          {/* <-- SECCIÓN DE TEMA AÑADIDA --> */}
+          <div
+            className='row'
+            style={{
+              marginTop: '1.5rem',
+              borderTop: '1px solid rgba(255,255,255,0.05)',
+              paddingTop: '1.5rem',
+            }}
+          >
+            <label>App Visual Theme</label>
+            <button
+              type='button'
+              className='btn'
+              onClick={toggleTheme}
+              style={{
+                minWidth: '140px',
+                background: theme === 'dark' ? 'rgba(255,255,255,0.1)' : '#06b6d4',
+                color: theme === 'dark' ? 'white' : '#0f172a',
+              }}
+            >
+              {theme === 'dark' ? '🌙 Dark Mode' : '☀️ Light Mode'}
+            </button>
+          </div>
 
           {/* SECCIÓN DE BACKUP Y RESTAURACIÓN */}
           <div
