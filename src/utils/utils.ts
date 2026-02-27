@@ -35,6 +35,22 @@ export function getCurrentPageUnfollowers(
   return sortedList.slice(startIndex, startIndex + UNFOLLOWERS_PER_PAGE);
 }
 
+export function isGhostUser(user: UserNode): boolean {
+  // 1. ¿Tiene la foto por defecto de Instagram?
+  const hasDefaultPic = WITHOUT_PROFILE_PICTURE_URL_IDS.some(id =>
+    user.profile_pic_url.includes(id),
+  );
+
+  // 2. ¿No ha configurado su nombre real?
+  const hasNoFullName = !user.full_name || user.full_name.trim() === '';
+
+  // 3. ¿Su @usuario parece generado automáticamente (ej. user12398471)?
+  const hasNumbersInName = (user.username.match(/\d/g) || []).length >= 4;
+
+  // Es fantasma si tiene la foto por defecto Y alguna de las otras dos red flags
+  return hasDefaultPic && (hasNoFullName || hasNumbersInName);
+}
+
 export function getUsersForDisplay(
   results: readonly UserNode[],
   whitelistedResults: readonly UserNode[],
@@ -94,6 +110,10 @@ export function getUsersForDisplay(
       WITHOUT_PROFILE_PICTURE_URL_IDS.some(id => user.profile_pic_url.includes(id))
     ) {
       return false;
+    }
+
+    if (filter.showGhostsOnly && !isGhostUser(user)) {
+      return false; // Si el filtro está activo y NO es fantasma, lo ocultamos
     }
 
     // 3. BUSCADOR

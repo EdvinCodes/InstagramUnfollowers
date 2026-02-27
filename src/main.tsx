@@ -179,6 +179,7 @@ function App() {
         showVerified: true,
         showPrivate: true,
         showWithOutProfilePicture: true,
+        showGhostsOnly: false,
       },
     });
 

@@ -5,6 +5,7 @@ import {
   getMaxPage,
   getUsersForDisplay,
   getDynamicStorageKey,
+  isGhostUser,
 } from '../utils/utils';
 import { State } from '../model/state';
 import { UserNode } from '../model/user';
@@ -62,6 +63,7 @@ const FiltersSidebar = ({
       { name: 'showVerified', label: 'Verified' },
       { name: 'showPrivate', label: 'Private' },
       { name: 'showWithOutProfilePicture', label: 'No Profile Pic' },
+      { name: 'showGhostsOnly', label: '👻 Ghosts / Bots Only' },
     ].map(filter => (
       <label key={filter.name} className='badge m-small' style={{ cursor: 'pointer' }}>
         <input
@@ -364,6 +366,29 @@ export const Searching = ({
                           }}
                         >
                           NEW
+                        </span>
+                      )}
+
+                      {/* <-- ETIQUETA GHOST AÑADIDA --> */}
+                      {isGhostUser(user) && (
+                        <span
+                          style={{
+                            background: 'rgba(148, 163, 184, 0.15)',
+                            color: '#94a3b8',
+                            border: '1px solid rgba(148, 163, 184, 0.3)',
+                            fontSize: '9px',
+                            fontWeight: 'bold',
+                            padding: '2px 6px',
+                            borderRadius: '10px',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            height: 'fit-content',
+                            whiteSpace: 'nowrap',
+                            lineHeight: '1.2',
+                          }}
+                          title='Potential bot or inactive account'
+                        >
+                          👻 GHOST
                         </span>
                       )}
                     </div>
