@@ -72,9 +72,12 @@ export const HistoryView = ({ onClose }: HistoryViewProps) => {
         return { icon: '🛡️', color: '#60a5fa', label: 'Whitelisted' };
       case 'UNWHITELISTED':
         return { icon: '🔓', color: '#94a3b8', label: 'Un-whitelisted' };
+      case 'SOFT_BLOCKED': // <-- Añadido para el Soft Block
+        return { icon: '🚫', color: '#eab308', label: 'Removed Follower' };
+      default: // <-- Seguridad para que TypeScript no se queje
+        return { icon: '📝', color: '#ffffff', label: 'Unknown Event' };
     }
   };
-
   return (
     <div className='backdrop' onClick={onClose} style={{ padding: '0' }}>
       {/* ARREGLO 1: Padding 0 en backdrop para aprovechar espacio en móvil */}
