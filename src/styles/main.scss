@@ -977,56 +977,66 @@ input[type='checkbox'] {
 }
 
 // ==========================================
-// MODO CLARO (THEME-LIGHT OVERRIDES)
+// MODO CLARO (THEME-LIGHT REDESIGN)
 // ==========================================
 .iu.theme-light {
-  background-color: #f8fafc;
-  background-image: radial-gradient(circle at 50% 100%, #e2e8f0 0%, #f1f5f9 60%);
-  color: #0f172a;
+  background-color: #f1f5f9; // Gris muy clarito de fondo
+  background-image: none; // Fuera gradientes sucios
+  color: #334155;
 
+  // Header
   .app-header {
-    background: rgba(255, 255, 255, 0.85);
-    border-bottom-color: rgba(0, 0, 0, 0.1);
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
   }
   .logo .logo-text {
     color: #0f172a;
   }
 
+  // Sidebar (Filtros)
   .app-sidebar {
-    background: rgba(255, 255, 255, 0.7);
-    border-right-color: rgba(0, 0, 0, 0.1);
+    background: #f8fafc;
+    border-right: 1px solid #e2e8f0;
   }
   .app-sidebar p {
     color: #64748b;
+    font-weight: 500;
   }
 
+  // Tarjetas de usuarios (Cards)
   .result-item {
-    background: rgba(255, 255, 255, 0.9);
-    border-color: rgba(0, 0, 0, 0.05);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     &:hover {
-      background: #fff;
-      border-color: rgba(0, 0, 0, 0.15);
+      background: #f8fafc;
+      border-color: #cbd5e1;
     }
     .user-info .user-link {
       color: #0f172a;
+      font-weight: 600;
     }
     .user-info span.text-muted {
       color: #64748b;
     }
   }
 
+  // Etiquetas (Bot, Private, Ghost, etc)
   .badge {
-    background: rgba(255, 255, 255, 0.9);
-    border-color: rgba(0, 0, 0, 0.1);
-    color: #0f172a;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
   }
   .badge:hover {
-    background: #fff;
+    background: #e2e8f0;
   }
 
+  // Pestañas (Tabs)
   .tabs-container {
-    background: rgba(0, 0, 0, 0.05);
+    background: #e2e8f0;
+    border-radius: 8px;
+    padding: 4px;
   }
   .tabs-container .tab {
     color: #64748b;
@@ -1035,67 +1045,93 @@ input[type='checkbox'] {
     color: #0f172a;
   }
   .tabs-container .tab.tab-active {
-    color: #fff;
-    background: #06b6d4;
+    color: #0f172a;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 
+  // Botones generales
   button,
   .btn {
-    background: rgba(0, 0, 0, 0.05);
-    border-color: rgba(0, 0, 0, 0.1);
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
     color: #0f172a;
   }
   button:hover,
   .btn:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background: #f1f5f9;
   }
 
+  // Botones primarios (Save, etc) mantendrán sus colores si usan clases específicas,
+  // pero los botones por defecto serán claros.
+
+  // Inputs
   input[type='text'],
   input[type='number'] {
-    background: rgba(0, 0, 0, 0.03);
-    border-color: rgba(0, 0, 0, 0.1);
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
     color: #0f172a;
   }
   input[type='text']:focus,
   input[type='number']:focus {
-    background: #fff;
+    background: #ffffff;
     border-color: #06b6d4;
+    box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
   }
 
+  // Modales (Settings, History)
   .setting-menu {
-    background: #f8fafc;
-    border-color: rgba(0, 0, 0, 0.1);
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow:
+      0 20px 25px -5px rgba(0, 0, 0, 0.1),
+      0 10px 10px -5px rgba(0, 0, 0, 0.04);
   }
   .setting-menu h3 {
     color: #0f172a;
   }
   .setting-menu .row label {
-    color: #64748b;
+    color: #475569;
+    font-weight: 500;
+  }
+  .setting-menu .close-btn {
+    color: #64748b !important;
+  }
+  .setting-menu .close-btn:hover {
+    color: #0f172a !important;
   }
 
-  .empty-state-container {
-    background: rgba(255, 255, 255, 0.9);
-    border-color: rgba(0, 0, 0, 0.1);
-  }
-  .empty-state-container .empty-state-title {
-    background: linear-gradient(135deg, #0f172a, #64748b);
-    -webkit-background-clip: text;
-  }
-
-  .alphabet-character {
-    color: #0f172a;
+  // Timeline (History View)
+  .unfollow-log-container {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
   }
   .unfollow-log-container .p-medium {
-    border-bottom-color: rgba(0, 0, 0, 0.05);
+    border-bottom-color: #e2e8f0;
   }
+  .unfollow-log-container span[style*='color: white'] {
+    color: #0f172a !important;
+  } // Fix nombres
 
+  // Checkboxes del Sidebar
   .checkbox-label {
-    color: #64748b;
-    background: rgba(0, 0, 0, 0.05);
+    color: #475569;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
   }
   .checkbox-label:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+
+  // Empty State (cuando no hay resultados)
+  .empty-state-container {
+    background: #ffffff;
+    border: 1px dashed #cbd5e1;
+  }
+  .empty-state-container .empty-state-title {
+    background: none;
     color: #0f172a;
+    -webkit-text-fill-color: initial;
   }
 }

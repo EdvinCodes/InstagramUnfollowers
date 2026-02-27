@@ -137,10 +137,32 @@ export const SettingMenu = ({
     <form onSubmit={handleSave}>
       <div className='backdrop'>
         <div className='setting-menu'>
-          <div>
-            <h3>Settings & Backup</h3>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1.5rem',
+            }}
+          >
+            <h3 style={{ margin: 0 }}>Settings & Backup</h3>
+            <button
+              type='button'
+              className='close-btn'
+              onClick={() => setSettingState(false)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                fontSize: '1.5rem',
+                cursor: 'pointer',
+                color: 'inherit',
+                padding: '0.5rem',
+                lineHeight: 1,
+              }}
+            >
+              ✕
+            </button>
           </div>
-
           <SettingRow
             label='Default time between search cycles'
             name='searchCycles'
