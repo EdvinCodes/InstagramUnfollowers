@@ -2,7 +2,12 @@ import { useState, useRef, useCallback } from 'preact/hooks';
 import { UserNode } from '../model/user';
 import { UnfollowLogEntry } from '../model/unfollow-log-entry';
 import { Timings } from '../model/timings';
-import { getCookie, sleep, unfollowUserUrlGenerator } from '../utils/utils';
+import {
+  getCookie,
+  sleep,
+  unfollowUserUrlGenerator,
+  removeFollowerUrlGenerator,
+} from '../utils/utils';
 
 // 1. IMPORTAMOS EL SERVICIO DE HISTORIAL (V4.0)
 import { HistoryService } from '../services/historyService';
@@ -34,7 +39,10 @@ export const useUnfollowerQueue = (timings: Timings) => {
   }, []);
 
   const startUnfollowing = useCallback(
-    async (usersToUnfollow: UserNode[]) => {
+    async (
+      usersToUnfollow: UserNode[],
+      actionType: 'unfollow' | 'remove_follower' = 'unfollow',
+    ) => {
       if (usersToUnfollow.length === 0) {
         return;
       }
@@ -84,11 +92,21 @@ export const useUnfollowerQueue = (timings: Timings) => {
         }
 
         // 2. Acción de Unfollow
-        setUnfollowerState(prev => ({ ...prev, statusMessage: `Unfollowing ${user.username}...` }));
+        const actionText = actionType === 'unfollow' ? 'Unfollowing' : 'Removing';
+        setUnfollowerState(prev => ({
+          ...prev,
+          statusMessage: `${actionText} ${user.username}...`,
+        }));
 
         let success = false;
         try {
-          const response = await fetch(unfollowUserUrlGenerator(user.id), {
+          // Decidimos qué endpoint usar
+          const targetUrl =
+            actionType === 'unfollow'
+              ? unfollowUserUrlGenerator(user.id)
+              : removeFollowerUrlGenerator(user.id);
+
+          const response = await fetch(targetUrl, {
             headers: {
               'content-type': 'application/x-www-form-urlencoded',
               'x-csrftoken': csrftoken,
@@ -105,7 +123,8 @@ export const useUnfollowerQueue = (timings: Timings) => {
 
         // --- CONEXIÓN V4.0: GUARDAR EN HISTORIAL ---
         if (success) {
-          HistoryService.addEvent('YOU_UNFOLLOWED', user);
+          const historyAction = actionType === 'unfollow' ? 'YOU_UNFOLLOWED' : 'SOFT_BLOCKED';
+          HistoryService.addEvent(historyAction, user);
         }
         // -------------------------------------------
 

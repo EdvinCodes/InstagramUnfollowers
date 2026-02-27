@@ -296,7 +296,7 @@ function App() {
     };
   }, [isActiveProcess]);
 
-  const onStartUnfollowing = () => {
+  const onStartUnfollowing = (actionType: 'unfollow' | 'remove_follower' = 'unfollow') => {
     if (state.status !== 'scanning' || state.selectedResults.length === 0) {
       return;
     }
@@ -322,7 +322,7 @@ function App() {
       };
     });
 
-    startUnfollowing(usersToProcess);
+    startUnfollowing(usersToProcess, actionType); // <-- Pasamos el actionType aquí
   };
 
   // Checkboxes

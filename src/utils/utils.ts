@@ -255,3 +255,7 @@ export function getDynamicStorageKey(baseKey: string): string {
   const userId = getCookie('ds_user_id') || 'unknown_user';
   return `${baseKey}_${userId}`;
 }
+
+export function removeFollowerUrlGenerator(idToRemove: string): string {
+  return `https://www.instagram.com/web/friendships/${idToRemove}/remove_follower/`;
+}

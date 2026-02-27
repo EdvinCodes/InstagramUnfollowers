@@ -5,7 +5,8 @@ export type HistoryEventType =
   | 'DETECTED_UNFOLLOWER' // El escáner detectó que te dejó de seguir
   | 'YOU_UNFOLLOWED' // Tú le diste al botón de Unfollow a través de la app
   | 'WHITELISTED' // Lo protegiste (movido a whitelist)
-  | 'UNWHITELISTED'; // Lo desprotegiste
+  | 'UNWHITELISTED' // Lo desprotegiste
+  | 'SOFT_BLOCKED'; // <-- AÑADIDO: Para cuando eliminas a un seguidor
 
 export interface HistoryEvent {
   id: string; // Un ID único para el evento (uuid)

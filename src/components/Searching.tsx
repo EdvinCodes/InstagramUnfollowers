@@ -21,7 +21,7 @@ export interface SearchingProps {
   toggleUser: (checked: boolean, user: UserNode) => void;
   UserCheckIcon: React.FC;
   UserUncheckIcon: React.FC;
-  onStartUnfollowing: () => void;
+  onStartUnfollowing: (actionType: 'unfollow' | 'remove_follower') => void;
 }
 
 const FilterIcon = () => (
@@ -160,16 +160,17 @@ export const Searching = ({
     setState({ ...state, whitelistedResults: newWhitelisted });
   };
 
-  const handleUnfollowStart = () => {
-    if (!confirm(`Are you sure you want to unfollow ${state.selectedResults.length} users?`)) {
+  const handleUnfollowStart = (actionType: 'unfollow' | 'remove_follower') => {
+    const actionName = actionType === 'unfollow' ? 'unfollow' : 'remove';
+    if (!confirm(`Are you sure you want to ${actionName} ${state.selectedResults.length} users?`)) {
       return;
     }
     if (state.selectedResults.length === 0) {
-      alert('Select at least one user to unfollow.');
+      alert(`Select at least one user to ${actionName}.`);
       return;
     }
     setIsMobileMenuOpen(false);
-    onStartUnfollowing();
+    onStartUnfollowing(actionType);
   };
 
   const onTogglePauseClick = () => {
@@ -244,9 +245,26 @@ export const Searching = ({
           </div>
         </div>
 
+        {/* Mostrar botón de REMOVE FOLLOWER solo en la pestaña Mutuals */}
+        {state.currentTab === 'mutuals' && (
+          <button
+            className='unfollow'
+            style={{
+              marginBottom: '10px',
+              background: 'rgba(234, 179, 8, 0.15)',
+              color: '#eab308',
+              borderColor: 'rgba(234, 179, 8, 0.3)',
+            }}
+            onClick={() => handleUnfollowStart('remove_follower')}
+            disabled={state.selectedResults.length === 0}
+          >
+            REMOVE FOLLOWER ({state.selectedResults.length})
+          </button>
+        )}
+
         <button
           className='unfollow btn-danger'
-          onClick={handleUnfollowStart}
+          onClick={() => handleUnfollowStart('unfollow')}
           disabled={state.selectedResults.length === 0}
         >
           UNFOLLOW ({state.selectedResults.length})
