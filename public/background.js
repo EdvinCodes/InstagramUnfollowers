@@ -47,4 +47,13 @@ async function checkIfScanNeeded() {
       });
     }
   });
+
+  // Limpia el badge rojo cuando el usuario inicia un nuevo scan
+  chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'local' && changes.ig_last_scan_date) {
+      if (chrome.action) {
+        chrome.action.setBadgeText({ text: '' });
+      }
+    }
+  });
 }

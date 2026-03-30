@@ -218,6 +218,7 @@ function App() {
     }
     setState({
       ...state,
+      page: 1,
       selectedResults: [],
       filter: {
         ...state.filter,

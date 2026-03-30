@@ -118,9 +118,9 @@ export const Searching = ({
     return null;
   }
 
-  let currentLetter = '';
+  let currentLetter = ''; // ← se muta durante el render
   const renderLetterHeader = (firstLetter: string) => {
-    currentLetter = firstLetter;
+    currentLetter = firstLetter; // ← mutación directa
     return <div className='alphabet-character'>{currentLetter}</div>;
   };
 

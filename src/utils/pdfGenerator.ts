@@ -40,34 +40,41 @@ export const generateHealthReportPDF = async (
   canvas.style.display = 'none';
   document.body.appendChild(canvas);
 
-  const chart = new Chart(canvas, {
-    type: 'doughnut',
-    data: {
-      labels: ['Safe', 'Suspicious', 'Ghosts', 'Bots'],
-      datasets: [
-        {
-          data: [safe, suspicious, ghosts, bots],
-          backgroundColor: ['#4ade80', '#fbbf24', '#f87171', '#ef4444'],
-          borderWidth: 0,
-        },
-      ],
-    },
-    options: {
-      animation: false,
-      responsive: false,
-      cutout: '65%',
-      plugins: {
-        legend: {
-          position: 'right',
-          labels: { font: { size: 12 }, boxWidth: 12, padding: 10 },
+  let chartImageBase64 = '';
+
+  try {
+    const chart = new Chart(canvas, {
+      type: 'doughnut',
+      data: {
+        labels: ['Safe', 'Suspicious', 'Ghosts', 'Bots'],
+        datasets: [
+          {
+            data: [safe, suspicious, ghosts, bots],
+            backgroundColor: ['#4ade80', '#fbbf24', '#f87171', '#ef4444'],
+            borderWidth: 0,
+          },
+        ],
+      },
+      options: {
+        animation: false,
+        responsive: false,
+        cutout: '65%',
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: { font: { size: 12 }, boxWidth: 12, padding: 10 },
+          },
         },
       },
-    },
-  });
-
-  const chartImageBase64 = chart.toBase64Image();
-  chart.destroy();
-  document.body.removeChild(canvas);
+    });
+    chartImageBase64 = chart.toBase64Image();
+    chart.destroy();
+  } finally {
+    // Siempre se ejecuta, haya error o no
+    if (canvas.parentNode) {
+      canvas.parentNode.removeChild(canvas);
+    }
+  }
 
   // --- Cálculos de salud ---
   const totalRisky = bots + ghosts + Math.round(suspicious * 0.5);

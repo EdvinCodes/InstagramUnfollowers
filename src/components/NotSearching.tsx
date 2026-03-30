@@ -25,15 +25,11 @@ const ScanIcon = () => (
 export const NotSearching = ({ onScan }: NotSearchingProps) => {
   // 1. Creamos el interceptor del clic
   const handleStartScan = () => {
-    // A. Silenciamos el recordatorio de background.js y quitamos el globo rojo
+    // Solo guardamos la fecha — el Service Worker limpiará el badge
     if (typeof chrome !== 'undefined' && chrome.storage) {
       chrome.storage.local.set({ ig_last_scan_date: Date.now() });
-      if (chrome.action) {
-        chrome.action.setBadgeText({ text: '' });
-      }
     }
 
-    // B. Ejecutamos el escaneo original
     if (onScan) {
       onScan();
     }
