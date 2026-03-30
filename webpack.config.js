@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const Dotenv = require('dotenv-webpack');
 
 // Plugin personalizado simple para copiar el manifest a /dist
 class CopyManifestPlugin {
@@ -42,6 +43,7 @@ module.exports = {
     clean: true,
   },
   plugins: [
+    new Dotenv(),
     new CopyManifestPlugin(), // Añadimos nuestro plugin copiador
   ],
 };
