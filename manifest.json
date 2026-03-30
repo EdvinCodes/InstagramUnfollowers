@@ -6,7 +6,8 @@
   "permissions": ["storage", "alarms", "notifications"],
   "host_permissions": ["https://*.instagram.com/*"],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "scripts": ["background.js"]
   },
   "content_scripts": [
     {
@@ -14,5 +15,11 @@
       "js": ["content.js"],
       "run_at": "document_idle"
     }
-  ]
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "igpro@edvincodes.com",
+      "strict_min_version": "109.0"
+    }
+  }
 }

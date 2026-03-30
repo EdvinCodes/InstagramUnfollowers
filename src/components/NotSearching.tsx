@@ -22,20 +22,39 @@ const ScanIcon = () => (
   </svg>
 );
 
-export const NotSearching = ({ onScan }: NotSearchingProps) => (
-  <section className='empty-state-container'>
-    <div className='empty-state-icon'>
-      <ScanIcon />
-    </div>
+export const NotSearching = ({ onScan }: NotSearchingProps) => {
+  // 1. Creamos el interceptor del clic
+  const handleStartScan = () => {
+    // A. Silenciamos el recordatorio de background.js y quitamos el globo rojo
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      chrome.storage.local.set({ ig_last_scan_date: Date.now() });
+      if (chrome.action) {
+        chrome.action.setBadgeText({ text: '' });
+      }
+    }
 
-    <h2 className='empty-state-title'>Ready to Analyze?</h2>
+    // B. Ejecutamos el escaneo original
+    if (onScan) {
+      onScan();
+    }
+  };
 
-    <p className='empty-state-description'>
-      Start scanning your profile to detect users who are not following you back.
-    </p>
+  return (
+    <section className='empty-state-container'>
+      <div className='empty-state-icon'>
+        <ScanIcon />
+      </div>
 
-    <button className='run-scan-btn' onClick={onScan}>
-      START SCANNING
-    </button>
-  </section>
-);
+      <h2 className='empty-state-title'>Ready to Analyze?</h2>
+
+      <p className='empty-state-description'>
+        Start scanning your profile to detect users who are not following you back.
+      </p>
+
+      {/* 2. Conectamos el botón a nuestra nueva función */}
+      <button className='run-scan-btn' onClick={handleStartScan}>
+        START SCANNING
+      </button>
+    </section>
+  );
+};
