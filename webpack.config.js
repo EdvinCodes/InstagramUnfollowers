@@ -2,13 +2,26 @@ const path = require('path');
 const fs = require('fs');
 const Dotenv = require('dotenv-webpack');
 
-// Plugin personalizado simple para copiar el manifest a /dist
+// Plugin personalizado simple para copiar el manifest y el background script a /dist
 class CopyManifestPlugin {
   apply(compiler) {
     compiler.hooks.done.tap('CopyManifestPlugin', () => {
+      // 1. Copiamos el manifest
       fs.copyFileSync(
         path.resolve(__dirname, 'manifest.json'),
         path.resolve(__dirname, 'dist', 'manifest.json'),
+      );
+
+      // 2. Copiamos el cerebro de fondo (background.js)
+      fs.copyFileSync(
+        path.resolve(__dirname, 'public', 'background.js'),
+        path.resolve(__dirname, 'dist', 'background.js'),
+      );
+
+      // (Opcional) Si tienes tu icono en public para que salga en la notificación:
+      fs.copyFileSync(
+        path.resolve(__dirname, 'public', 'favicon.svg'),
+        path.resolve(__dirname, 'dist', 'favicon.svg'),
       );
     });
   }

@@ -3,13 +3,16 @@
   "name": "Instagram Unfollowers Pro",
   "version": "5.0.0",
   "description": "Safe, local tool to manage your Instagram community. Runs in your browser.",
-  "permissions": ["storage"],
+  "permissions": ["storage", "alarms", "notifications"],
+  "host_permissions": ["https://*.instagram.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": ["https://*.instagram.com/*"],
       "js": ["content.js"],
       "run_at": "document_idle"
     }
-  ],
-  "host_permissions": ["https://*.instagram.com/*"]
+  ]
 }
