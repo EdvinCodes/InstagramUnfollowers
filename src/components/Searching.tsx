@@ -5,8 +5,8 @@ import {
   getMaxPage,
   getUsersForDisplay,
   getDynamicStorageKey,
-  isGhostUser,
 } from '../utils/utils';
+import { calculateGhostScore, getGhostLabel, getGhostColor } from '../utils/ghostScore';
 import { State } from '../model/state';
 import { UserNode } from '../model/user';
 import { WHITELISTED_RESULTS_STORAGE_KEY } from '../constants/constants';
@@ -370,27 +370,34 @@ export const Searching = ({
                       )}
 
                       {/* <-- ETIQUETA GHOST AÑADIDA --> */}
-                      {isGhostUser(user) && (
-                        <span
-                          style={{
-                            background: 'rgba(148, 163, 184, 0.15)',
-                            color: '#94a3b8',
-                            border: '1px solid rgba(148, 163, 184, 0.3)',
-                            fontSize: '9px',
-                            fontWeight: 'bold',
-                            padding: '2px 6px',
-                            borderRadius: '10px',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px',
-                            height: 'fit-content',
-                            whiteSpace: 'nowrap',
-                            lineHeight: '1.2',
-                          }}
-                          title='Potential bot or inactive account'
-                        >
-                          👻 GHOST
-                        </span>
-                      )}
+                      {(() => {
+                        const ghost = calculateGhostScore(user);
+                        if (ghost.level === 'safe') {
+                          return null;
+                        }
+                        return (
+                          <span
+                            style={{
+                              background: 'rgba(148, 163, 184, 0.1)',
+                              color: getGhostColor(ghost.level),
+                              border: `1px solid ${getGhostColor(ghost.level)}40`,
+                              fontSize: '9px',
+                              fontWeight: 'bold',
+                              padding: '2px 6px',
+                              borderRadius: '10px',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px',
+                              height: 'fit-content',
+                              whiteSpace: 'nowrap',
+                              lineHeight: '1.2',
+                              cursor: 'default',
+                            }}
+                            title={ghost.reasons.join(' · ')}
+                          >
+                            {getGhostLabel(ghost.level)} {ghost.score}
+                          </span>
+                        );
+                      })()}
                     </div>
 
                     <span className='fs-medium text-muted' title={user.full_name}>

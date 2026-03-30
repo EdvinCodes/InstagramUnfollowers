@@ -4,6 +4,7 @@ import { SettingMenu } from './SettingMenu';
 import { SettingIcon } from './icons/SettingIcon';
 import { Timings } from '../model/timings';
 import { Logo } from './icons/Logo';
+import { KofiButton } from './icons/KofiIcon';
 import {
   exportToCSV,
   assertUnreachable,
@@ -254,6 +255,7 @@ export const Toolbar = ({
           {/* Initial Actions */}
           {state.status === 'initial' && (
             <>
+              <KofiButton />
               <HistoryIcon onClick={() => setHistoryOpen(true)} />
               <SettingIcon onClickLogo={() => setSettingMenu(true)} />
             </>

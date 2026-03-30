@@ -1135,3 +1135,24 @@ input[type='checkbox'] {
     -webkit-text-fill-color: initial;
   }
 }
+
+.kofi-btn {
+  display: flex;
+  align-items: center;
+  padding: 0.4rem 0.8rem;
+  background: linear-gradient(135deg, #ff5e5b, #ff8c42);
+  color: white;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  flex-shrink: 0;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    opacity: 0.9;
+  }
+}

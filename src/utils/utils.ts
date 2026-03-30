@@ -4,6 +4,7 @@ import { ScanningTab } from '../model/scanning-tab';
 import { ScanningFilter } from '../model/scanning-filter';
 import { UnfollowLogEntry } from '../model/unfollow-log-entry';
 import { UnfollowFilter } from '../model/unfollow-filter';
+import { calculateGhostScore } from './ghostScore';
 
 /**
  * Copies the list of usernames to the clipboard.
@@ -33,22 +34,6 @@ export function getCurrentPageUnfollowers(
   // Use slice instead of splice to avoid mutation confusion (although we cloned it)
   const startIndex = UNFOLLOWERS_PER_PAGE * (currentPage - 1);
   return sortedList.slice(startIndex, startIndex + UNFOLLOWERS_PER_PAGE);
-}
-
-export function isGhostUser(user: UserNode): boolean {
-  // 1. ¿Tiene la foto por defecto de Instagram?
-  const hasDefaultPic = WITHOUT_PROFILE_PICTURE_URL_IDS.some(id =>
-    user.profile_pic_url.includes(id),
-  );
-
-  // 2. ¿No ha configurado su nombre real?
-  const hasNoFullName = !user.full_name || user.full_name.trim() === '';
-
-  // 3. ¿Su @usuario parece generado automáticamente (ej. user12398471)?
-  const hasNumbersInName = (user.username.match(/\d/g) || []).length >= 4;
-
-  // Es fantasma si tiene la foto por defecto Y alguna de las otras dos red flags
-  return hasDefaultPic && (hasNoFullName || hasNumbersInName);
 }
 
 export function getUsersForDisplay(
@@ -112,8 +97,8 @@ export function getUsersForDisplay(
       return false;
     }
 
-    if (filter.showGhostsOnly && !isGhostUser(user)) {
-      return false; // Si el filtro está activo y NO es fantasma, lo ocultamos
+    if (filter.showGhostsOnly && calculateGhostScore(user).level === 'safe') {
+      return false;
     }
 
     // 3. BUSCADOR
