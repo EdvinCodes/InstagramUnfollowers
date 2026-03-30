@@ -216,7 +216,8 @@ export const Searching = ({
           <p>Total: {state.results.length}</p>
         </div>
 
-        {Math.round(state.percentage) < 100 && (
+        {/* Solo mostramos los controles si realmente hay un escaneo en curso y no ha llegado al final */}
+        {state.percentage > 0 && state.percentage < 99.9 && (
           <div className='controls'>
             <button
               className={`button-control ${scanningPaused ? 'btn-resume' : 'btn-pause'}`}
