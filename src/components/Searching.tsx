@@ -208,16 +208,13 @@ export const Searching = ({
             ✕
           </button>
         </div>
-
         <FiltersSidebar state={state} handleScanFilter={handleScanFilter} />
-
         <div className='grow stats-box'>
           <p>Displayed: {usersForDisplay.length}</p>
           <p>Total: {state.results.length}</p>
         </div>
-
         {/* Solo mostramos los controles si realmente hay un escaneo en curso y no ha llegado al final */}
-        {state.percentage > 0 && state.percentage < 99.9 && (
+        {state.percentage > 0 && state.percentage < 98 && (
           <div className='controls'>
             <button
               className={`button-control ${scanningPaused ? 'btn-resume' : 'btn-pause'}`}
@@ -238,7 +235,6 @@ export const Searching = ({
             </button>
           </div>
         )}
-
         <div className='grow t-center pagination-controls'>
           <p>Pages</p>
           <div className='flex justify-center align-center'>
@@ -253,7 +249,6 @@ export const Searching = ({
             </button>
           </div>
         </div>
-
         {state.currentTab === 'mutuals' && (
           <button
             className='unfollow'
@@ -269,7 +264,6 @@ export const Searching = ({
             REMOVE FOLLOWER ({state.selectedResults.length})
           </button>
         )}
-
         <button
           className='unfollow btn-danger'
           onClick={() => handleUnfollowStart('unfollow')}

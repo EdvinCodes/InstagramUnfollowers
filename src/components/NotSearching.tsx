@@ -25,7 +25,7 @@ const ScanIcon = () => (
 export const NotSearching = ({ onScan }: NotSearchingProps) => {
   // 1. Creamos el interceptor del clic
   const handleStartScan = () => {
-    // Solo guardamos la fecha — el Service Worker limpiará el badge
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (typeof chrome !== 'undefined' && chrome.storage) {
       chrome.storage.local.set({ ig_last_scan_date: Date.now() });
     }

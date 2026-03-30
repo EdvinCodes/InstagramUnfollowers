@@ -140,7 +140,7 @@ function App() {
       setState(prev => ({
         ...prev,
         results: processedResults,
-        percentage: scannerState.progress,
+        percentage: isFinished ? 100 : scannerState.progress,
       }));
     }
   }, [scannerState, state.status]);
