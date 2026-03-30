@@ -1,10 +1,10 @@
-# 👁️ Instagram Unfollowers 2026 - Safe & Modern Script
+# 👁️ Instagram Unfollowers PRO 2026 - Safe & Modern Tool
 
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/edvincodes/InstagramUnfollowers)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Built with](https://img.shields.io/badge/Built%20with-Preact%20%26%20TypeScript-blueviolet)](https://preactjs.com/)
 [![Works with](https://img.shields.io/badge/Instagram-Compatible-E1306C.svg)](https://www.instagram.com/)
-[![Version](https://img.shields.io/badge/version-5.0.0-orange.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
+[![Version](https://img.shields.io/badge/version-6.0.0-orange.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
 
 [🇺🇸 English](#-english-version) | [🇪🇸 Español](#-versión-en-español)
 
@@ -15,41 +15,50 @@
 ## 🇺🇸 English Version
 
 **The safest, most advanced tool to manage your Instagram community.**
-Unlike other tools that steal your password, this script runs locally in your browser using **Shadow DOM** for maximum safety.
+Unlike other tools that steal your password or use cloud servers, this tool runs **100% locally in your browser** using **Shadow DOM** for maximum safety and privacy.
 
-> **🚀 v5.0.0 "The Ultimate Update":** Now featuring **Chrome Extension Support**, **Ghost/Bot Detection**, **Light & Dark Themes**, **Multi-Account Support**, and **Soft Blocking**.
+> **🚀 v6.0.0 "The Freemium Era":** Now featuring **Smart Background Reminders**, **Mozilla Firefox Support**, a powerful **Cryptographic License Engine**, and the highly anticipated **PRO Tier** for power users.
 
-### ✨ New in v5.0
+### ✨ What's New in v6.0
 
-- **🧩 Chrome Extension Support:** Install directly in your browser. No more pasting code in the console! A discrete floating button will appear on Instagram.
-- **👻 Ghost & Bot Detection:** Smart heuristic algorithm to detect inactive accounts, bots, and users with suspicious names or no profile pictures.
-- **🌗 Light & Dark Themes:** Switch between the immersive classic dark mode and a new clean, modern light mode.
-- **🚫 Soft Block (Remove Follower):** Remove followers from your account directly from the "Mutuals" tab without having to permanently block them.
-- **👥 Multi-Account Support:** Safely manage multiple Instagram accounts on the same browser. Your history and whitelists are now strictly isolated per account.
-- **💾 JSON Backup & Restore:** Easily export and import your whitelist and custom timing settings to keep your data safe.
-- **🕰️ Time Machine (History):** The app automatically detects _new_ unfollowers since your last scan and logs them in a chronological timeline.
-- **📊 Analytics Dashboard:** See how many traitors you've caught and how many users you've cleaned over time.
-- **🤝 Mutuals Tab:** Easily filter people who **follow you back** (Friends) vs. those who don't (Traitors).
+- **🧠 Smart Background Scans:** The extension now silently reminds you to check your account after 7 days of inactivity via native Push Notifications _(Extension only)_.
+- **🦊 Mozilla Firefox Support:** Fully compatible with Firefox Add-ons and its strict privacy settings.
+- **🛡️ Anti-Ban Emergency Stop:** Intelligent detection of Instagram's Rate Limits (Error 429) to automatically pause actions and protect your account.
+- **👑 Premium Edition (PRO Tier):** We introduced a PRO license for power users (Agencies, Influencers, Brands) that unlocks automation and deep analytics.
 
-### 💎 Why choose this?
+### ⚖️ Free vs. PRO Tier
 
-- **🛡️ 100% Safe & Private:** Runs locally. **No password required.** Your data (including history) stays on your machine.
-- **🤖 Anti-Ban System:** "Human-like" delays and cooling periods to prevent Instagram blocks.
-- **📱 Mobile App Experience:** Features a responsive design with swipeable tabs and touch-optimized controls for iOS/Android.
-- **⚡ Modern Tech:** Built with Preact, TypeScript, Webpack, and local Storage.
+| Feature                       |  Free Tier   |  PRO Tier 👑  |
+| :---------------------------- | :----------: | :-----------: |
+| **Unlimited Scans**           |      ✅      |      ✅       |
+| **Whitelist (Safe list)**     |      ✅      |      ✅       |
+| **Manual Unfollow (1-by-1)**  |      ✅      |      ✅       |
+| **Basic CSV Export**          |      ✅      |      ✅       |
+| **History Time Machine**      | Last 30 Days | **Unlimited** |
+| **Mass Auto-Unfollow**        |      🔒      |      ✅       |
+| **Exact Ghost Score (0-100)** |      🔒      |      ✅       |
+| **PDF Health Reports**        |      🔒      |      ✅       |
+
+_(PRO License can be acquired directly inside the Tool's Settings Menu)._
 
 ### 🚀 How to Use (Desktop)
 
-**Option A: Chrome Extension (Recommended & Safest)**
+**Option A: Chrome / Edge / Brave Extension (Recommended & Safest)**
 
-1. Clone or download this repository.
-2. Run `npm install` and `npm run webpack-build` to generate the `dist` folder.
+1. Download the latest `dist.zip` from the [Releases tab](https://github.com/edvincodes/InstagramUnfollowers/releases).
+2. Unzip the folder.
 3. Open your browser and go to `chrome://extensions/` (or `edge://extensions/`).
 4. Enable **Developer Mode** (top right corner).
-5. Click **Load unpacked** and select the `dist` folder.
-6. Go to [instagram.com](https://www.instagram.com) and click the new floating blue logo in the bottom right corner!
+5. Click **Load unpacked** and select the unzipped `dist` folder.
+6. Go to [instagram.com](https://www.instagram.com) and click the new floating blue logo!
 
-**Option B: Console Script**
+**Option B: Mozilla Firefox Extension**
+
+1. Download the latest `dist.zip` from the Releases tab and unzip it.
+2. Open Firefox and type `about:debugging#/runtime/this-firefox` in the address bar.
+3. Click **Load Temporary Add-on** and select the `manifest.json` file inside the unzipped folder.
+
+**Option C: Console Script (No Installation)**
 
 1. Go to the [Official Tool Page](https://edvincodes.github.io/InstagramUnfollowers/).
 2. Click "Copy Script".
@@ -71,47 +80,63 @@ Unlike other tools that steal your password, this script runs locally in your br
 ## 🇪🇸 Versión en Español
 
 **La herramienta más avanzada y segura para gestionar tu comunidad en Instagram.**
-A diferencia de apps que roban tu contraseña, este script se ejecuta localmente en tu navegador usando **Shadow DOM**.
+A diferencia de apps que roban tu contraseña o usan servidores en la nube, esta herramienta se ejecuta **100% localmente en tu navegador** usando **Shadow DOM** para máxima seguridad y privacidad.
 
-> **🚀 Actualización v5.0.0 "The Ultimate Update":** Ahora con soporte para **Extensión de Chrome**, **Detección de Fantasmas/Bots**, **Temas Claro/Oscuro**, **Soporte Multi-Cuenta** y **Soft Block**.
+> **🚀 v6.0.0 "La Era Freemium":** Ahora con **Recordatorios Inteligentes en Segundo Plano**, **Soporte para Mozilla Firefox**, un potente **Motor Criptográfico de Licencias** y el esperado **Modo PRO** para usuarios avanzados.
 
-### ✨ Novedades de la v5.0
+### ✨ Novedades de la v6.0
 
-- **🧩 Extensión de Chrome:** ¡Instálalo directamente en tu navegador sin tocar la consola! Aparecerá un discreto botón flotante al entrar en Instagram.
-- **👻 Detección de Fantasmas y Bots:** Algoritmo heurístico inteligente para detectar cuentas inactivas, bots y usuarios sin foto de perfil.
-- **🌗 Temas Claro y Oscuro:** Alterna entre el inmersivo modo oscuro y un nuevo diseño claro y minimalista.
-- **🚫 Soft Block (Eliminar Seguidor):** Elimina seguidores directamente desde la pestaña de "Mutuals" sin tener que bloquearlos definitivamente.
-- **👥 Soporte Multi-Cuenta:** Gestiona varias cuentas de Instagram en el mismo navegador de forma segura. El historial y las listas blancas ahora se aíslan por cuenta.
-- **💾 Backup y Restauración JSON:** Exporta e importa tus ajustes y lista blanca fácilmente para no perder nunca tus datos.
-- **🕰️ Máquina del Tiempo (Historial):** La app detecta automáticamente a los _nuevos_ seguidores que te han dejado de seguir desde tu último escaneo y los guarda.
-- **📊 Panel de Estadísticas:** Visualiza cuántos "traidores" has detectado y a cuántos has dejado de seguir a lo largo del tiempo.
-- **🤝 Pestaña de Mutuals:** Filtra fácilmente a la gente que **sí te sigue** (Amigos) de la que no (Traidores).
+- **🧠 Escaneos Inteligentes en Segundo Plano:** La extensión te recordará de forma silenciosa que revises tu cuenta tras 7 días de inactividad mediante Notificaciones Push nativas _(Solo versión Extensión)_.
+- **🦊 Soporte para Mozilla Firefox:** Totalmente compatible con los Add-ons de Firefox y sus estrictas políticas de privacidad.
+- **🛡️ Parada de Emergencia Anti-Ban:** Detección inteligente de los límites de Instagram (Error 429) para pausar automáticamente las acciones y proteger tu cuenta.
+- **👑 Edición Premium (Nivel PRO):** Hemos introducido una licencia PRO para usuarios intensivos (Agencias, Influencers, Marcas) que desbloquea la automatización total y analíticas profundas.
 
-### 💎 ¿Por qué elegir esto?
+### ⚖️ Comparativa: Gratis vs. PRO
 
-- **🛡️ 100% Seguro y Privado:** Se ejecuta en tu navegador. **No pide contraseña.** Tus datos nunca salen de tu PC.
-- **🤖 Sistema Anti-Ban:** Tiempos de espera "humanos" y periodos de enfriamiento para evitar bloqueos.
-- **📱 Experiencia Móvil:** Diseño adaptativo con pestañas deslizables y controles táctiles optimizados para Android/iPhone.
-- **⚡ Tecnología Moderna:** Construido con Preact, TypeScript, Webpack y almacenamiento local aislado.
+| Función                              | Versión Gratis  | Versión PRO 👑 |
+| :----------------------------------- | :-------------: | :------------: |
+| **Escaneos Ilimitados**              |       ✅        |       ✅       |
+| **Lista Blanca (Excepciones)**       |       ✅        |       ✅       |
+| **Unfollow Manual (1 a 1)**          |       ✅        |       ✅       |
+| **Exportación CSV Básica**           |       ✅        |       ✅       |
+| **Historial (Máquina del Tiempo)**   | Últimos 30 Días | **Ilimitado**  |
+| **Auto-Unfollow Masivo**             |       🔒        |       ✅       |
+| **Nota Exacta de Fantasmas (0-100)** |       🔒        |       ✅       |
+| **Reportes de Salud en PDF**         |       🔒        |       ✅       |
 
-### 🚀 Cómo usar (PC)
+_(La Licencia PRO se puede adquirir directamente desde el menú de Ajustes de la Herramienta)._
 
-**Opción A: Extensión de Chrome (Recomendado y más seguro)**
+### 🚀 Cómo Instalar (PC)
 
-1. Clona o descarga este repositorio.
-2. Ejecuta `npm install` y `npm run webpack-build` para generar la carpeta `dist`.
+**Opción A: Extensión de Chrome / Edge / Brave (Recomendado)**
+
+1. Descarga el último `dist.zip` desde la [pestaña Releases](https://github.com/edvincodes/InstagramUnfollowers/releases).
+2. Descomprime la carpeta en tu ordenador.
 3. Abre tu navegador y ve a `chrome://extensions/` (o `edge://extensions/`).
 4. Activa el **Modo de desarrollador** (arriba a la derecha).
 5. Haz clic en **Cargar descomprimida** y selecciona la carpeta `dist`.
-6. Ve a [instagram.com](https://www.instagram.com) y haz clic en el nuevo botón flotante azul abajo a la derecha.
+6. Ve a [instagram.com](https://www.instagram.com) y haz clic en el nuevo botón flotante azul.
 
-**Opción B: Script por Consola**
+**Opción B: Extensión de Mozilla Firefox**
+
+1. Descarga el último `dist.zip` de la pestaña Releases y descomprímelo.
+2. Abre Firefox y escribe `about:debugging#/runtime/this-firefox` en la barra de direcciones.
+3. Haz clic en **Cargar complemento temporal** (Load Temporary Add-on) y selecciona el archivo `manifest.json` dentro de la carpeta.
+
+**Opción C: Script por Consola (Sin Instalación)**
 
 1. Ve a la [Página Oficial](https://edvincodes.github.io/InstagramUnfollowers/).
 2. Haz clic en "Copiar Script".
 3. Abre [instagram.com](https://www.instagram.com) e inicia sesión.
 4. Presiona `F12` (Windows) o `Cmd+Opt+J` (Mac) para abrir la Consola.
 5. Pega el código, pulsa Enter y haz clic en el botón flotante.
+
+### 📱 Cómo usar (Móvil - iOS/Android)
+
+1. Copia el código de la [Página Oficial](https://edvincodes.github.io/InstagramUnfollowers/).
+2. Crea un nuevo Marcador en tu navegador llamado "IG Scan".
+3. Edita el marcador y pega el código en el campo de la URL.
+4. Abre Instagram, escribe "IG Scan" en la barra de direcciones y selecciona el marcador.
 
 ---
 
@@ -148,27 +173,14 @@ _Fully responsive interface with drawer menu._
 
 ## ⚙️ Configuration & Safety / Seguridad
 
-To prevent Instagram from flagging your account ("Action Blocked"), we include a **Safe Mode**.
+To prevent Instagram from flagging your account ("Action Blocked" / "Error 429"), we include a **Safe Mode**.
 
 - **Scan Interval:** Speed of checking followers.
 - **Unfollow Interval:** Delay between actions (Crucial for safety).
 - **Cooldowns:** Auto-pause after 5-10 unfollows.
-- **Data Persistence:** History is stored securely in your browser's LocalStorage, strictly isolated per Instagram account.
+- **Emergency Stop:** Automatically halts operations if Instagram detects too many requests.
 
-> **⚠️ WARNING:** Using aggressive settings may lead to temporary restrictions. Use the default "Safe Mode".
-
----
-
-## 🛠️ Local Development
-
-Want to contribute?
-
-```bash
-git clone https://github.com/edvincodes/InstagramUnfollowers.git
-cd InstagramUnfollowers
-npm install
-npm run build
-```
+> **⚠️ WARNING:** Using aggressive settings may lead to temporary restrictions. Use the default "Safe Mode" timings.
 
 ---
 
@@ -192,4 +204,4 @@ Esta herramienta es un proyecto independiente y no está afiliada, asociada, aut
 
 Developed with ❤️ by **Edvin**.
 
-Licensed under the [MIT License](https://www.google.com/search?q=https://github.com/edvincodes/InstagramUnfollowers/blob/main/LICENSE).
+Licensed under the [MIT License](LICENSE).
