@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import Chart from 'chart.js/auto';
 import { UserNode } from '../model/user';
 import { calculateGhostScore } from './ghostScore';
 
@@ -20,7 +21,6 @@ export const generateHealthReportPDF = async (
   const analyzedUsers = nonFollowers.map(user => {
     const analysis = calculateGhostScore(user);
 
-    // CORRECCIÓN: Añadidas las llaves {} para satisfacer a ESLint (regla curly)
     if (analysis.level === 'bot') {
       bots++;
     } else if (analysis.level === 'ghost') {
@@ -34,10 +34,50 @@ export const generateHealthReportPDF = async (
     return { user, analysis };
   });
 
-  // Ordenar de peor a mejor score para mostrar en la tabla
   analyzedUsers.sort((a, b) => b.analysis.score - a.analysis.score);
 
-  // --- DISEÑO DEL PDF ---
+  // --- 3. GENERAR GRÁFICA DONUT CON CHART.JS EN MEMORIA ---
+
+  // Creamos un canvas virtual
+  const canvas = document.createElement('canvas');
+  canvas.width = 400;
+  canvas.height = 400;
+  canvas.style.display = 'none'; // Lo ocultamos de la vista
+  document.body.appendChild(canvas);
+
+  // Instanciamos Chart.js
+  const chart = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: ['Safe', 'Suspicious', 'Ghosts', 'Bots'],
+      datasets: [
+        {
+          data: [safe, suspicious, ghosts, bots],
+          backgroundColor: ['#4ade80', '#fbbf24', '#f87171', '#ef4444'], // Colores del semáforo
+          borderWidth: 0,
+        },
+      ],
+    },
+    options: {
+      animation: false, // ¡Crucial! Desactiva la animación para capturarlo instantáneamente
+      responsive: false,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { font: { size: 14 } },
+        },
+      },
+    },
+  });
+
+  // Extraemos la imagen de la gráfica en Base64
+  const chartImageBase64 = chart.toBase64Image();
+
+  // Limpiamos la memoria destruyendo la gráfica y el canvas
+  chart.destroy();
+  document.body.removeChild(canvas);
+
+  // --- 4. DISEÑO DEL PDF ---
 
   // Título Principal
   doc.setFontSize(22);
@@ -57,8 +97,6 @@ export const generateHealthReportPDF = async (
   doc.setFontSize(11);
   doc.text(`Total Non-Followers Analyzed: ${nonFollowers.length}`, 14, 55);
   doc.text(`Protected Users (Whitelist): ${whitelisted.length}`, 14, 62);
-
-  // CORRECCIÓN: Usamos las variables en el reporte para dar más valor y quitar el error de "unused-vars"
   doc.text(
     `Account Breakdown: ${safe} Safe | ${suspicious} Suspicious | ${ghosts} Ghosts | ${bots} Bots`,
     14,
@@ -83,6 +121,10 @@ export const generateHealthReportPDF = async (
     doc.text(`✅ Your account is relatively healthy (${riskyPercentage}% ghost accounts).`, 14, 79);
   }
 
+  // --- INSERTAR GRÁFICA EN EL DOCUMENTO ---
+  // Formato: addImage(imageData, format, x, y, width, height)
+  doc.addImage(chartImageBase64, 'PNG', 110, 35, 80, 80);
+
   // --- TABLA DE AUDITORÍA (Los peores primero) ---
   const tableData = analyzedUsers
     .slice(0, 100)
@@ -94,7 +136,7 @@ export const generateHealthReportPDF = async (
     ]);
 
   autoTable(doc, {
-    startY: 88, // Ajustado para dar espacio al nuevo texto
+    startY: 120, // Bajamos la tabla para que no pise la gráfica de arriba
     head: [['Username', 'Risk Score', 'Classification', 'Detected Flags']],
     body: tableData,
     headStyles: { fillColor: [6, 182, 212] },
@@ -102,7 +144,7 @@ export const generateHealthReportPDF = async (
     margin: { top: 10 },
   });
 
-  // 4. Guardar el archivo localmente
+  // 5. Guardar el archivo localmente
   const filename = `IG_Health_Report_${new Date().toISOString().split('T')[0]}.pdf`;
   doc.save(filename);
 };
