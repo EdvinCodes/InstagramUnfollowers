@@ -271,7 +271,7 @@ export const Toolbar = ({
 
               {/* NUEVO BOTÓN PREMIUM PDF */}
               <button
-                className='copy-list'
+                className='copy-list premium-report-btn'
                 onClick={handlePdfClick}
                 style={{
                   backgroundColor: '#ef4444',
@@ -279,10 +279,12 @@ export const Toolbar = ({
                   padding: '0.5rem 1rem',
                   display: 'flex',
                   alignItems: 'center',
+                  gap: '4px',
                 }}
                 title='Download Premium Health Report'
               >
-                <PdfIcon /> Report
+                <PdfIcon />
+                <span className='btn-text'>Report</span>
               </button>
             </>
           )}

@@ -2,6 +2,7 @@ import React, { ChangeEvent, FormEvent, useState, useRef } from 'react';
 import { Timings } from '../model/timings';
 import { getDynamicStorageKey } from '../utils/utils';
 import { WHITELISTED_RESULTS_STORAGE_KEY } from '../constants/constants';
+import { useLicense } from '../hooks/useLicense';
 
 interface SettingMenuProps {
   setSettingState: (state: boolean) => void;
@@ -44,6 +45,21 @@ export const SettingMenu = ({
   theme,
   toggleTheme,
 }: SettingMenuProps) => {
+  // Inicializamos el gestor de licencias
+  const { isPro, isLoading, activatePro, deactivatePro } = useLicense();
+  const [licenseInput, setLicenseInput] = useState('');
+  const [licenseError, setLicenseError] = useState(false);
+
+  const handleActivate = async () => {
+    const success = await activatePro(licenseInput);
+    if (!success) {
+      setLicenseError(true);
+      setTimeout(() => setLicenseError(false), 3000);
+    } else {
+      setLicenseInput('');
+    }
+  };
+
   const [timeBetweenSearchCycles, setTimeBetweenSearchCycles] = useState(
     currentTimings.timeBetweenSearchCycles,
   );
@@ -204,14 +220,7 @@ export const SettingMenu = ({
           />
 
           {/* <-- SECCIÓN DE TEMA AÑADIDA --> */}
-          <div
-            className='row'
-            style={{
-              marginTop: '1.5rem',
-              borderTop: '1px solid rgba(255,255,255,0.05)',
-              paddingTop: '1.5rem',
-            }}
-          >
+          <div className='row'>
             <label>App Visual Theme</label>
             <button
               type='button'
@@ -227,7 +236,108 @@ export const SettingMenu = ({
             </button>
           </div>
 
-          {/* SECCIÓN DE BACKUP Y RESTAURACIÓN */}
+          {/* --- SECCIÓN PREMIUM --- */}
+          <div
+            style={{
+              padding: '15px',
+              borderRadius: '8px',
+              background: isPro ? 'rgba(74, 222, 128, 0.1)' : 'rgba(239, 68, 68, 0.05)',
+              border: `1px solid ${isPro ? '#4ade80' : '#ef4444'}`,
+              marginTop: '1.5rem',
+            }}
+          >
+            <h3
+              style={{
+                margin: '0 0 10px 0',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              {isPro ? '👑 PRO Version Activated' : '🔒 Upgrade to PRO'}
+            </h3>
+
+            {isLoading ? (
+              <p style={{ fontSize: '12px', color: '#888' }}>Checking license...</p>
+            ) : isPro ? (
+              <div>
+                <p style={{ fontSize: '12px', color: '#4ade80', marginBottom: '10px' }}>
+                  All premium features unlocked. Thank you for your support!
+                </p>
+                <button
+                  type='button'
+                  onClick={deactivatePro}
+                  style={{
+                    background: 'transparent',
+                    color: '#ef4444',
+                    border: '1px solid #ef4444',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Deactivate License
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <p style={{ fontSize: '12px', color: '#888', margin: 0 }}>
+                  Unlock the Health Report PDF, Ghost Score 0-100, and advanced exports.
+                </p>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <input
+                    type='text'
+                    placeholder='Paste License Key (IGPRO-...)'
+                    value={licenseInput}
+                    onChange={e => setLicenseInput((e.target as HTMLInputElement).value)}
+                    style={{
+                      flex: 1,
+                      padding: '6px',
+                      borderRadius: '4px',
+                      border: '1px solid #555',
+                      background: '#222',
+                      color: '#fff',
+                    }}
+                  />
+                  <button
+                    type='button'
+                    onClick={handleActivate}
+                    style={{
+                      background: '#ef4444',
+                      color: 'white',
+                      border: 'none',
+                      padding: '0 12px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    Activate
+                  </button>
+                </div>
+                {licenseError && (
+                  <span style={{ color: '#ef4444', fontSize: '11px' }}>Invalid License Key.</span>
+                )}
+                <a
+                  href='https://igunfollowerspro.lemonsqueezy.com/checkout/buy/32e77393-d119-4d87-92c9-a32b022c80dc'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  style={{
+                    color: '#ef4444',
+                    fontSize: '12px',
+                    textDecoration: 'underline',
+                    marginTop: '4px',
+                  }}
+                >
+                  Get a License Key (€9.99)
+                </a>
+              </div>
+            )}
+          </div>
+
+          {/* SECCIÓN DE BACKUP */}
           <div
             style={{
               marginTop: '1.5rem',
@@ -236,7 +346,7 @@ export const SettingMenu = ({
             }}
           >
             <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '1rem' }}>
-              Data Management (Export your Whitelist & Settings)
+              Data Management (Export Whitelist & Settings)
             </p>
             <div style={{ display: 'flex', gap: '1rem' }}>
               <button
@@ -252,7 +362,6 @@ export const SettingMenu = ({
               >
                 📥 Export Backup
               </button>
-
               <input
                 type='file'
                 accept='.json'
@@ -273,8 +382,7 @@ export const SettingMenu = ({
 
           <div className='warning-container'>
             <h3 className='warning'>
-              <b>WARNING:</b> Modifying these settings significantly increases the risk of your
-              account being banned.
+              <b>WARNING:</b> Modifying these settings increases ban risk.
             </h3>
             <h3 className='warning'>USE AT YOUR OWN RISK.</h3>
           </div>

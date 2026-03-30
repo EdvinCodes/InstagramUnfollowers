@@ -1,87 +1,101 @@
 import { UserNode } from '../model/user';
 
+export type GhostLevel = 'safe' | 'suspicious' | 'ghost' | 'bot';
+
 export interface GhostAnalysis {
+  level: GhostLevel;
   score: number;
-  level: 'safe' | 'suspicious' | 'ghost' | 'bot';
   reasons: string[];
 }
 
-const BOT_NAME_PATTERNS = [/\d{4,}/, /^[a-z]+\d{5,}$/, /[._]{2,}/, /^user\d+/i];
-
-export function calculateGhostScore(user: UserNode): GhostAnalysis {
+export const calculateGhostScore = (user: UserNode): GhostAnalysis => {
   let score = 0;
   const reasons: string[] = [];
+  const usernameL = user.username.toLowerCase();
 
-  // 1. Sin foto de perfil (+30 puntos)
+  // Sin foto de perfil
   if (!user.profile_pic_url || user.profile_pic_url.includes('default')) {
-    score += 30;
-    reasons.push('Sin foto de perfil');
+    score += 15;
+    reasons.push('No profile picture');
   }
 
-  // 2. Username con patrón de bot (+20 puntos)
-  if (BOT_NAME_PATTERNS.some(pattern => pattern.test(user.username))) {
+  // Secuencia numérica larga
+  if (/\d{6,}/.test(user.username)) {
     score += 20;
-    reasons.push('Username con patrón de bot');
+    reasons.push('Long numeric sequence in username');
   }
 
-  // 3. Sin nombre completo (+10 puntos)
+  // Patrón letras+números tipo bot
+  if (/^[a-z]{2,6}\d{4,}$/.test(usernameL)) {
+    score += 25;
+    reasons.push('Bot-like username pattern');
+  }
+
+  // Keyboard mashing — filas del teclado QWERTY
+  const keyboardRows = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
+  let keyboardHit = false;
+  for (const row of keyboardRows) {
+    for (let i = 0; i <= row.length - 4; i++) {
+      if (usernameL.includes(row.slice(i, i + 4))) {
+        keyboardHit = true;
+        break;
+      }
+    }
+    if (keyboardHit) {
+      break;
+    }
+  }
+  if (keyboardHit) {
+    score += 25;
+    reasons.push('Keyboard mashing pattern');
+  }
+
+  // Sin nombre real
   if (!user.full_name || user.full_name.trim() === '') {
     score += 10;
-    reasons.push('Sin nombre completo');
+    reasons.push('No display name');
   }
 
-  // 4. Cuenta privada (+15 puntos)
-  if (user.is_private) {
-    score += 15;
-    reasons.push('Cuenta privada');
-  }
-
-  // 5. Username muy largo o muy corto (+10 puntos)
-  if (user.username.length > 20 || user.username.length < 3) {
+  // Nombre igual al username
+  if (user.full_name && user.full_name.trim().toLowerCase() === usernameL) {
     score += 10;
-    reasons.push('Longitud de username inusual');
+    reasons.push('Display name same as username');
   }
 
-  // 6. Verificado = descuento (-20 puntos)
-  if (user.is_verified) {
-    score = Math.max(0, score - 20);
-    reasons.push('Cuenta verificada ✓');
-  }
-
-  // Clamp 0-100
-  score = Math.min(100, Math.max(0, score));
-
-  // Nivel según score
-  let level: GhostAnalysis['level'];
-  if (score >= 70) {
+  let level: GhostLevel = 'safe';
+  if (score >= 65) {
     level = 'bot';
   } else if (score >= 45) {
     level = 'ghost';
-  } else if (score >= 20) {
+  } else if (score >= 25) {
     level = 'suspicious';
-  } else {
-    level = 'safe';
   }
 
-  return { score, level, reasons };
-}
+  return { level, score, reasons };
+};
 
-export function getGhostLabel(level: GhostAnalysis['level']): string {
-  const labels: Record<GhostAnalysis['level'], string> = {
-    safe: '✅ Real',
-    suspicious: '⚠️ Sospechoso',
-    ghost: '👻 Fantasma',
-    bot: '🤖 Bot',
-  };
-  return labels[level];
-}
+export const getGhostLabel = (level: GhostLevel): string => {
+  switch (level) {
+    case 'bot':
+      return 'BOT';
+    case 'ghost':
+      return 'INACT';
+    case 'suspicious':
+      return 'RISK';
+    default:
+      return '';
+  }
+};
 
-export function getGhostColor(level: GhostAnalysis['level']): string {
-  const colors: Record<GhostAnalysis['level'], string> = {
-    safe: '#4ade80',
-    suspicious: '#fbbf24',
-    ghost: '#f87171',
-    bot: '#ef4444',
-  };
-  return colors[level];
-}
+export const getGhostColor = (level: GhostLevel): string => {
+  switch (level) {
+    case 'bot':
+      return '#ef4444';
+    case 'ghost':
+      return '#f87171';
+    case 'suspicious':
+      return '#f59e0b';
+    default:
+      return '#6b7280';
+  }
+};

@@ -63,7 +63,7 @@ const FiltersSidebar = ({
       { name: 'showVerified', label: 'Verified' },
       { name: 'showPrivate', label: 'Private' },
       { name: 'showWithOutProfilePicture', label: 'No Profile Pic' },
-      { name: 'showGhostsOnly', label: '👻 Ghosts / Bots Only' },
+      { name: 'showGhostsOnly', label: 'Ghosts / Bots Only' },
     ].map(filter => (
       <label key={filter.name} className='badge m-small' style={{ cursor: 'pointer' }}>
         <input
@@ -155,7 +155,6 @@ export const Searching = ({
         assertUnreachable(state.currentTab);
     }
 
-    // <-- GUARDAR WHITELIST CON CLAVE DINÁMICA
     const dynamicWhitelistKey = getDynamicStorageKey(WHITELISTED_RESULTS_STORAGE_KEY);
     localStorage.setItem(dynamicWhitelistKey, JSON.stringify(newWhitelisted));
 
@@ -209,8 +208,7 @@ export const Searching = ({
           <p>Total: {state.results.length}</p>
         </div>
 
-        {/* AQUÍ ESTÁ EL ARREGLO: Solo mostramos el botón si NO ha terminado */}
-        {state.percentage < 100 && (
+        {Math.round(state.percentage) < 100 && (
           <div className='controls'>
             <button
               className={`button-control ${scanningPaused ? 'btn-resume' : 'btn-pause'}`}
@@ -247,7 +245,6 @@ export const Searching = ({
           </div>
         </div>
 
-        {/* Mostrar botón de REMOVE FOLLOWER solo en la pestaña Mutuals */}
         {state.currentTab === 'mutuals' && (
           <button
             className='unfollow'
@@ -310,8 +307,19 @@ export const Searching = ({
             <React.Fragment key={user.id}>
               {isNewLetter && renderLetterHeader(firstLetter)}
               <label className='result-item'>
-                <div className='flex grow align-center'>
-                  <div className='avatar-container' onClick={e => handleWhitelistToggle(e, user)}>
+                <div
+                  className='flex grow align-center'
+                  style={{
+                    minWidth: 0,
+                    flex: 1,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    className='avatar-container'
+                    onClick={e => handleWhitelistToggle(e, user)}
+                    style={{ flexShrink: 0 }}
+                  >
                     <img
                       className='avatar'
                       alt={user.username}
@@ -327,27 +335,47 @@ export const Searching = ({
                     </span>
                   </div>
 
-                  <div className='flex column m-medium user-info'>
+                  <div
+                    className='flex column m-medium user-info'
+                    style={{
+                      minWidth: 0,
+                      flex: 1,
+                      overflow: 'hidden',
+                    }}
+                  >
                     <div
                       style={{
                         display: 'flex',
                         flexDirection: 'row',
                         alignItems: 'center',
                         gap: '6px',
-                        width: 'fit-content',
+                        minWidth: 0,
+                        overflow: 'hidden',
+                        width: '100%',
+                        flexWrap: 'nowrap',
                       }}
                     >
+                      {/* USERNAME — flex:1 para que tome el espacio restante */}
                       <a
                         className='fs-xlarge user-link'
                         target='_blank'
                         href={`https://www.instagram.com/${user.username}`}
                         rel='noreferrer'
                         title={user.username}
-                        style={{ lineHeight: '1' }}
+                        style={{
+                          lineHeight: '1',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          minWidth: 0,
+                          flex: 1,
+                          display: 'block',
+                        }}
                       >
                         {user.username}
                       </a>
 
+                      {/* Badge NEW */}
                       {user.is_new_unfollower && (
                         <span
                           style={{
@@ -363,13 +391,14 @@ export const Searching = ({
                             height: 'fit-content',
                             whiteSpace: 'nowrap',
                             lineHeight: '1.2',
+                            flexShrink: 0,
                           }}
                         >
                           NEW
                         </span>
                       )}
 
-                      {/* <-- ETIQUETA GHOST AÑADIDA --> */}
+                      {/* Badge Ghost/Bot/Suspicious — maxWidth para no aplastar el username */}
                       {(() => {
                         const ghost = calculateGhostScore(user);
                         if (ghost.level === 'safe') {
@@ -383,7 +412,7 @@ export const Searching = ({
                               border: `1px solid ${getGhostColor(ghost.level)}40`,
                               fontSize: '9px',
                               fontWeight: 'bold',
-                              padding: '2px 6px',
+                              padding: '2px 5px',
                               borderRadius: '10px',
                               textTransform: 'uppercase',
                               letterSpacing: '0.5px',
@@ -391,6 +420,10 @@ export const Searching = ({
                               whiteSpace: 'nowrap',
                               lineHeight: '1.2',
                               cursor: 'default',
+                              flexShrink: 0,
+                              maxWidth: '72px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
                             }}
                             title={ghost.reasons.join(' · ')}
                           >
@@ -400,7 +433,17 @@ export const Searching = ({
                       })()}
                     </div>
 
-                    <span className='fs-medium text-muted' title={user.full_name}>
+                    <span
+                      className='fs-medium text-muted'
+                      title={user.full_name}
+                      style={{
+                        minWidth: 0,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        display: 'block',
+                      }}
+                    >
                       {user.full_name}
                     </span>
                   </div>
@@ -408,7 +451,11 @@ export const Searching = ({
                   {user.is_verified && (
                     <div
                       className='verified-badge'
-                      style={{ display: 'flex', alignItems: 'center' }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        flexShrink: 0,
+                      }}
                     >
                       <svg
                         width='18'
@@ -431,13 +478,20 @@ export const Searching = ({
                       </svg>
                     </div>
                   )}
-                  {user.is_private && <div className='private-indicator'>Private</div>}
+
+                  {user.is_private && (
+                    <div className='private-indicator' style={{ flexShrink: 0 }}>
+                      Private
+                    </div>
+                  )}
                 </div>
+
                 <input
                   className='account-checkbox'
                   type='checkbox'
                   checked={state.selectedResults.some(r => r.id === user.id)}
                   onChange={e => toggleUser(e.currentTarget.checked, user)}
+                  style={{ flexShrink: 0 }}
                 />
               </label>
             </React.Fragment>

@@ -756,6 +756,17 @@ input[type='checkbox'] {
           content: none;
         }
       }
+
+      .btn-text {
+        display: none;
+      }
+
+      .premium-report-btn {
+        padding: 0.5rem !important;
+        gap: 0 !important;
+        min-width: 38px;
+        justify-content: center;
+      }
     }
   }
 
