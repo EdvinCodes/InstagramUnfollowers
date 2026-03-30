@@ -14,6 +14,9 @@ import {
 import { CopyIcon } from './icons/CopyIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
 
+import { generateHealthReportPDF } from '../utils/pdfGenerator';
+import { PdfIcon } from './icons/PdfIcon';
+
 import { HistoryView } from './HistoryView';
 import { HistoryIcon } from './icons/HistoryIcon';
 
@@ -107,6 +110,22 @@ export const Toolbar = ({
     if (state.status === 'scanning') {
       exportToCSV(state.results, state.whitelistedResults);
       onShowToast(`Exported ${state.results.length} users to CSV!`);
+    }
+  };
+
+  const handlePdfClick = async () => {
+    if (state.status === 'scanning') {
+      // Filtramos solo a los "traidores" (los que no te siguen) para el reporte
+      const nonFollowers = state.results.filter(u => !u.follows_viewer);
+
+      onShowToast('Generating Health Report...');
+      try {
+        await generateHealthReportPDF(nonFollowers, state.whitelistedResults);
+        onShowToast('Health Report PDF downloaded!');
+      } catch (error) {
+        console.error('PDF generation failed:', error);
+        onShowToast('Error generating PDF.');
+      }
     }
   };
 
@@ -248,6 +267,22 @@ export const Toolbar = ({
                 title='Export CSV'
               >
                 <DownloadIcon />
+              </button>
+
+              {/* NUEVO BOTÓN PREMIUM PDF */}
+              <button
+                className='copy-list'
+                onClick={handlePdfClick}
+                style={{
+                  backgroundColor: '#ef4444',
+                  color: 'white',
+                  padding: '0.5rem 1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                title='Download Premium Health Report'
+              >
+                <PdfIcon /> Report
               </button>
             </>
           )}

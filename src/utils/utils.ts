@@ -4,7 +4,7 @@ import { ScanningTab } from '../model/scanning-tab';
 import { ScanningFilter } from '../model/scanning-filter';
 import { UnfollowLogEntry } from '../model/unfollow-log-entry';
 import { UnfollowFilter } from '../model/unfollow-filter';
-import { calculateGhostScore } from './ghostScore';
+import { calculateGhostScore, getGhostLabel } from './ghostScore';
 
 /**
  * Copies the list of usernames to the clipboard.
@@ -206,6 +206,8 @@ export const exportToCSV = (
     'Is Whitelisted',
     'Is Verified',
     'Is Private',
+    'Ghost Score',
+    'Account Health',
     'ID',
   ];
 
@@ -216,7 +218,9 @@ export const exportToCSV = (
     const status = user.is_new_unfollower ? 'NEW' : 'Old';
     const profileUrl = `https://www.instagram.com/${user.username}`;
 
-    // Escapar comillas dobles para evitar romper el CSV
+    // Evaluamos al usuario
+    const ghostAnalysis = calculateGhostScore(user);
+
     const escape = (text: string) => `"${text.replace(/"/g, '""')}"`;
 
     return [
@@ -228,6 +232,8 @@ export const exportToCSV = (
       isWhitelisted ? 'Yes' : 'No',
       user.is_verified ? 'Yes' : 'No',
       user.is_private ? 'Yes' : 'No',
+      ghostAnalysis.score.toString(),
+      escape(getGhostLabel(ghostAnalysis.level)),
       escape(user.id),
     ].join(',');
   });
