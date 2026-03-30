@@ -23,6 +23,7 @@ export interface SearchingProps {
   UserCheckIcon: React.FC;
   UserUncheckIcon: React.FC;
   onStartUnfollowing: (actionType: 'unfollow' | 'remove_follower') => void;
+  isPro: boolean;
 }
 
 const FilterIcon = () => (
@@ -91,6 +92,7 @@ export const Searching = ({
   UserCheckIcon,
   UserUncheckIcon,
   onStartUnfollowing,
+  isPro,
 }: SearchingProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isTogglingPause, setIsTogglingPause] = useState(false);
@@ -163,13 +165,19 @@ export const Searching = ({
 
   const handleUnfollowStart = (actionType: 'unfollow' | 'remove_follower') => {
     const actionName = actionType === 'unfollow' ? 'unfollow' : 'remove';
+
+    // EL PAYWALL
+    if (!isPro && state.selectedResults.length > 1) {
+      alert(
+        '🔒 PRO Feature: Upgrade to process multiple users automatically. Free version only allows 1 by 1.',
+      );
+      return;
+    }
+
     if (!confirm(`Are you sure you want to ${actionName} ${state.selectedResults.length} users?`)) {
       return;
     }
-    if (state.selectedResults.length === 0) {
-      alert(`Select at least one user to ${actionName}.`);
-      return;
-    }
+
     setIsMobileMenuOpen(false);
     onStartUnfollowing(actionType);
   };
@@ -425,9 +433,13 @@ export const Searching = ({
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                             }}
-                            title={ghost.reasons.join(' · ')}
+                            title={
+                              isPro
+                                ? ghost.reasons.join(' · ')
+                                : 'Upgrade to PRO to see detailed reasons'
+                            }
                           >
-                            {getGhostLabel(ghost.level)} {ghost.score}
+                            {getGhostLabel(ghost.level)} {isPro ? ghost.score : '🔒'}
                           </span>
                         );
                       })()}

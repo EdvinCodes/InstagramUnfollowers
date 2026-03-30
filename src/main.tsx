@@ -33,6 +33,7 @@ import { Timings } from './model/timings';
 
 import { useScanner } from './hooks/useScanner';
 import { useUnfollowerQueue } from './hooks/useUnfollowerQueue';
+import { useLicense } from './hooks/useLicense';
 
 import { HistoryService } from './services/historyService';
 import { Logo } from './components/icons/Logo';
@@ -50,6 +51,8 @@ function App() {
 
   // Estado para minimizar
   const [isMinimized, setIsMinimized] = useState(true);
+
+  const { isPro, isLoading, activatePro, deactivatePro } = useLicense();
 
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
@@ -380,6 +383,7 @@ function App() {
           UserCheckIcon={UserCheckIcon}
           UserUncheckIcon={UserUncheckIcon}
           onStartUnfollowing={onStartUnfollowing}
+          isPro={isPro}
         />
       );
       break;
@@ -475,6 +479,10 @@ function App() {
             onMinimize={() => setIsMinimized(true)}
             theme={theme}
             toggleTheme={toggleTheme}
+            isPro={isPro}
+            activatePro={activatePro}
+            deactivatePro={deactivatePro}
+            isLicenseLoading={isLoading}
           />
 
           {markup}

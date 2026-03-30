@@ -2,7 +2,6 @@ import React, { ChangeEvent, FormEvent, useState, useRef } from 'react';
 import { Timings } from '../model/timings';
 import { getDynamicStorageKey } from '../utils/utils';
 import { WHITELISTED_RESULTS_STORAGE_KEY } from '../constants/constants';
-import { useLicense } from '../hooks/useLicense';
 
 interface SettingMenuProps {
   setSettingState: (state: boolean) => void;
@@ -10,6 +9,10 @@ interface SettingMenuProps {
   setTimings: (timings: Timings) => void;
   theme: 'dark' | 'light';
   toggleTheme: () => void;
+  isPro: boolean;
+  activatePro: (key: string) => Promise<boolean>;
+  deactivatePro: () => void;
+  isLicenseLoading: boolean;
 }
 
 interface SettingInputProps {
@@ -44,9 +47,12 @@ export const SettingMenu = ({
   setTimings,
   theme,
   toggleTheme,
+  isPro,
+  activatePro,
+  deactivatePro,
+  isLicenseLoading: isLoading,
 }: SettingMenuProps) => {
   // Inicializamos el gestor de licencias
-  const { isPro, isLoading, activatePro, deactivatePro } = useLicense();
   const [licenseInput, setLicenseInput] = useState('');
   const [licenseError, setLicenseError] = useState(false);
 

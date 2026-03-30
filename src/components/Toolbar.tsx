@@ -53,6 +53,10 @@ interface ToolBarProps {
   onMinimize: () => void;
   theme: 'dark' | 'light';
   toggleTheme: () => void;
+  isPro: boolean;
+  activatePro: (key: string) => Promise<boolean>;
+  deactivatePro: () => void;
+  isLicenseLoading: boolean;
 }
 
 export const Toolbar = ({
@@ -70,6 +74,10 @@ export const Toolbar = ({
   onMinimize,
   theme,
   toggleTheme,
+  isPro,
+  activatePro,
+  deactivatePro,
+  isLicenseLoading,
 }: ToolBarProps) => {
   const [settingMenu, setSettingMenu] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -108,14 +116,19 @@ export const Toolbar = ({
 
   const handleExportClick = () => {
     if (state.status === 'scanning') {
-      exportToCSV(state.results, state.whitelistedResults);
+      exportToCSV(state.results, state.whitelistedResults, isPro); // Pasa isPro aquí
       onShowToast(`Exported ${state.results.length} users to CSV!`);
     }
   };
 
   const handlePdfClick = async () => {
+    // EL PAYWALL ACTIVO PARA EL PDF
+    if (!isPro) {
+      onShowToast('🔒 PRO Feature: Upgrade to unlock the Health Report PDF.');
+      return;
+    }
+
     if (state.status === 'scanning') {
-      // Filtramos solo a los "traidores" (los que no te siguen) para el reporte
       const nonFollowers = state.results.filter(u => !u.follows_viewer);
 
       onShowToast('Generating Health Report...');
@@ -269,7 +282,7 @@ export const Toolbar = ({
                 <DownloadIcon />
               </button>
 
-              {/* NUEVO BOTÓN PREMIUM PDF */}
+              {/* BOTÓN PREMIUM PDF PROTEGIDO */}
               <button
                 className='copy-list premium-report-btn'
                 onClick={handlePdfClick}
@@ -284,7 +297,7 @@ export const Toolbar = ({
                 title='Download Premium Health Report'
               >
                 <PdfIcon />
-                <span className='btn-text'>Report</span>
+                <span className='btn-text'>{isPro ? 'Report' : '🔒 Report'}</span>
               </button>
             </>
           )}
@@ -321,10 +334,14 @@ export const Toolbar = ({
           setTimings={setTimings}
           theme={theme}
           toggleTheme={toggleTheme}
+          isPro={isPro}
+          activatePro={activatePro}
+          deactivatePro={deactivatePro}
+          isLicenseLoading={isLicenseLoading}
         />
       )}
 
-      {historyOpen && <HistoryView onClose={() => setHistoryOpen(false)} />}
+      {historyOpen && <HistoryView onClose={() => setHistoryOpen(false)} isPro={isPro} />}
     </header>
   );
 };

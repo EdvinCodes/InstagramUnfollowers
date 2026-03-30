@@ -5,9 +5,10 @@ import { StatsChart } from './StatsChart';
 
 interface HistoryViewProps {
   onClose: () => void;
+  isPro: boolean;
 }
 
-export const HistoryView = ({ onClose }: HistoryViewProps) => {
+export const HistoryView = ({ onClose, isPro }: HistoryViewProps) => {
   const [events, setEvents] = useState<HistoryEvent[]>([]);
   const [stats, setStats] = useState({
     totalUnfollowedByYou: 0,
@@ -30,7 +31,13 @@ export const HistoryView = ({ onClose }: HistoryViewProps) => {
   );
 
   useEffect(() => {
-    const history = HistoryService.getHistory();
+    let history = HistoryService.getHistory();
+
+    if (!isPro) {
+      const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+      history = history.filter(h => h.timestamp >= thirtyDaysAgo);
+    }
+
     setEvents(history);
 
     setStats({
@@ -39,7 +46,7 @@ export const HistoryView = ({ onClose }: HistoryViewProps) => {
       totalWhitelisted: history.filter(h => h.type === 'WHITELISTED').length,
       lastScanDate: history.find(h => h.type === 'DETECTED_UNFOLLOWER')?.timestamp || null,
     });
-  }, []);
+  }, [isPro]);
 
   const handleClear = () => {
     if (confirm('Are you sure you want to delete all history? This cannot be undone.')) {
