@@ -24,7 +24,6 @@ export function saveScanSnapshot(results: readonly UserNode[]): void {
     );
   } catch (e) {
     console.error('Storage full!', e);
-    throw new Error('STORAGE_FULL');
   }
 }
 
