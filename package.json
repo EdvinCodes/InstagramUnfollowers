@@ -1,6 +1,6 @@
 {
   "name": "instagram-unfollowers-pro",
-  "version": "6.0.0",
+  "version": "6.0.1",
   "description": "Safe, local tool to manage your Instagram community. Runs in your browser.",
   "scripts": {
     "webpack-build": "webpack --mode production",
@@ -33,6 +33,7 @@
     "ts-loader": "^9.5.2",
     "typescript": "^5.7.3",
     "webpack": "^5.97.1",
+    "webpack-bundle-analyzer": "^5.3.0",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.2.0"
   },

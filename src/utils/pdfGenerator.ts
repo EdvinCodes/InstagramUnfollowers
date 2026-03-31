@@ -1,6 +1,3 @@
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import Chart from 'chart.js/auto';
 import { UserNode } from '../model/user';
 import { calculateGhostScore } from './ghostScore';
 
@@ -8,6 +5,12 @@ export const generateHealthReportPDF = async (
   nonFollowers: readonly UserNode[],
   whitelisted: readonly UserNode[],
 ): Promise<void> => {
+  const [{ jsPDF }, { default: autoTable }, { default: Chart }] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+    import('chart.js/auto'),
+  ]);
+
   const doc = new jsPDF();
   const dateStr = new Date().toLocaleDateString();
 
@@ -27,7 +30,6 @@ export const generateHealthReportPDF = async (
     } else {
       safe++;
     }
-
     return { user, analysis };
   });
 
@@ -37,7 +39,8 @@ export const generateHealthReportPDF = async (
   const canvas = document.createElement('canvas');
   canvas.width = 400;
   canvas.height = 400;
-  canvas.style.display = 'none';
+  canvas.style.position = 'absolute';
+  canvas.style.left = '-9999px';
   document.body.appendChild(canvas);
 
   let chartImageBase64 = '';
@@ -70,10 +73,7 @@ export const generateHealthReportPDF = async (
     chartImageBase64 = chart.toBase64Image();
     chart.destroy();
   } finally {
-    // Siempre se ejecuta, haya error o no
-    if (canvas.parentNode) {
-      canvas.parentNode.removeChild(canvas);
-    }
+    canvas.parentNode?.removeChild(canvas);
   }
 
   // --- Cálculos de salud ---
@@ -106,7 +106,7 @@ export const generateHealthReportPDF = async (
   doc.text(`Generated: ${dateStr}`, 14, 27);
   doc.text('Instagram Unfollowers PRO', 14, 32);
 
-  // --- RESUMEN (columna izquierda) ---
+  // --- RESUMEN ---
   doc.setFontSize(13);
   doc.setTextColor(0, 0, 0);
   doc.text('Account Overview', 14, 44);
@@ -121,11 +121,9 @@ export const generateHealthReportPDF = async (
     64,
   );
 
-  // --- DONUT (columna derecha, Y=18) ---
-  // La imagen incluye la leyenda a la derecha, así que la ponemos centrada
+  // --- DONUT ---
   doc.addImage(chartImageBase64, 'PNG', 110, 16, 85, 85);
 
-  // --- PORCENTAJE GRANDE encima del donut (centro del hueco) ---
   doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...healthColor);
@@ -136,7 +134,6 @@ export const generateHealthReportPDF = async (
   doc.setTextColor(100, 100, 100);
   doc.text('HEALTH', 137, 68, { align: 'center' });
 
-  // --- MENSAJE DE SALUD debajo del donut ---
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...healthColor);
@@ -144,14 +141,12 @@ export const generateHealthReportPDF = async (
   doc.text(wrappedMsg, 152, 106, { align: 'center' });
 
   // --- TABLA ---
-  const tableData = analyzedUsers
-    .slice(0, 100)
-    .map(item => [
-      `@${item.user.username}`,
-      item.analysis.score.toString(),
-      item.analysis.level.toUpperCase(),
-      item.analysis.reasons.join(', '),
-    ]);
+  const tableData = analyzedUsers.map(item => [
+    `@${item.user.username}`,
+    item.analysis.score.toString(),
+    item.analysis.level.toUpperCase(),
+    item.analysis.reasons.join(', '),
+  ]);
 
   autoTable(doc, {
     startY: 118,

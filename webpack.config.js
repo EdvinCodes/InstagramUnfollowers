@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const Dotenv = require('dotenv-webpack');
+// const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 
 // Plugin personalizado simple para copiar el manifest y el background script a /dist
 class CopyManifestPlugin {
@@ -39,15 +40,25 @@ module.exports = {
       },
       {
         test: /\.s[ac]ss$/i,
-        use: ['to-string-loader', 'css-loader', 'sass-loader'],
+        use: [
+          'to-string-loader',
+          'css-loader',
+          {
+            loader: 'sass-loader',
+            options: {
+              api: 'modern',
+            },
+          },
+        ],
       },
     ],
   },
   resolve: {
     extensions: ['.tsx', '.ts', '.js', '.jsx'],
     alias: {
-      react: 'preact/compat',
+      'react': 'preact/compat',
       'react-dom': 'preact/compat',
+      'react/jsx-runtime': 'preact/jsx-runtime',
     },
   },
   output: {
@@ -58,5 +69,9 @@ module.exports = {
   plugins: [
     new Dotenv(),
     new CopyManifestPlugin(), // Añadimos nuestro plugin copiador
+    // new BundleAnalyzerPlugin(), // ← abre el browser automáticamente al compilar
   ],
+  performance: {
+    hints: false, // ← desactiva warnings de tamaño para extensiones
+  },
 };

@@ -44,7 +44,7 @@ interface ToolBarProps {
   setState: (state: State) => void;
   scanningPaused: boolean;
   toggleAllUsers: (e: ChangeEvent<HTMLInputElement>) => void;
-  toggleCurrentePageUsers: (e: ChangeEvent<HTMLInputElement>) => void;
+  toggleCurrentPageUsers: (e: ChangeEvent<HTMLInputElement>) => void;
   currentTimings: Timings;
   setTimings: (timings: Timings) => void;
   onShowToast: (message: string) => void;
@@ -65,7 +65,7 @@ export const Toolbar = ({
   setState,
   scanningPaused,
   toggleAllUsers,
-  toggleCurrentePageUsers,
+  toggleCurrentPageUsers,
   currentTimings,
   setTimings,
   onShowToast,
@@ -242,7 +242,7 @@ export const Toolbar = ({
                 type='checkbox'
                 disabled={state.percentage < 100 && !scanningPaused}
                 className='toggle-all-checkbox'
-                onClick={toggleCurrentePageUsers}
+                onClick={toggleCurrentPageUsers}
                 checked={isPageSelected}
               />
               <span className='checkbox-text'>Page</span>
@@ -276,7 +276,7 @@ export const Toolbar = ({
               <button
                 className='copy-list'
                 onClick={handleExportClick}
-                style={{ backgroundColor: '#2d3748', padding: '0.5rem' }}
+                style={{ padding: '0.5rem' }}
                 title='Export CSV'
               >
                 <DownloadIcon />

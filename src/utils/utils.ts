@@ -48,7 +48,7 @@ export function getUsersForDisplay(
   return results.filter(user => {
     const isWhitelisted = whitelistedResults.some(w => w.id === user.id);
 
-    // 1. LÓGICA DE PESTAÑAS (Usando Switch para evitar quejas del Linter)
+    // 1. LÓGICA DE PESTAÑAS
     switch (currentTab) {
       case 'whitelisted': {
         if (!isWhitelisted) {
@@ -77,26 +77,34 @@ export function getUsersForDisplay(
         break;
       }
       default: {
-        // Esto satisface el chequeo de exhaustividad de TypeScript
         return false;
       }
     }
 
-    // 2. FILTROS DE ATRIBUTOS (Con llaves {} para satisfacer eslintcurly)
-    if (!filter.showPrivate && user.is_private) {
-      return false;
-    }
-    if (!filter.showVerified && user.is_verified) {
+    // 2. FILTROS REALES (Si marcas la casilla, SÓLO ves a los que cumplen eso)
+
+    // Si busco privados y el usuario NO es privado, lo descarto
+    if (filter.showPrivate && !user.is_private) {
       return false;
     }
 
-    if (
-      !filter.showWithOutProfilePicture &&
-      WITHOUT_PROFILE_PICTURE_URL_IDS.some(id => user.profile_pic_url.includes(id))
-    ) {
+    // Si busco verificados y el usuario NO está verificado, lo descarto
+    if (filter.showVerified && !user.is_verified) {
       return false;
     }
 
+    // Si busco a los que NO tienen foto de perfil, y este SÍ tiene, lo descarto
+    if (filter.showWithOutProfilePicture) {
+      const isMissingPic =
+        user.has_anonymous_profile_picture === true ||
+        WITHOUT_PROFILE_PICTURE_URL_IDS.some(id => user.profile_pic_url.includes(id));
+
+      if (!isMissingPic) {
+        return false;
+      }
+    }
+
+    // Si busco fantasmas y este usuario es "safe" (seguro), lo descarto
     if (filter.showGhostsOnly && calculateGhostScore(user).level === 'safe') {
       return false;
     }
@@ -120,7 +128,7 @@ export function getUnfollowLogForDisplay(
   log: readonly UnfollowLogEntry[],
   searchTerm: string,
   filter: UnfollowFilter,
-) {
+): UnfollowLogEntry[] {
   const lowerSearchTerm = searchTerm.toLowerCase();
 
   return log.filter(entry => {
@@ -164,21 +172,23 @@ export function getCookie(name: string): string | null {
 
 export function urlGenerator(nextCode?: string): string {
   const ds_user_id = getCookie('ds_user_id');
+  if (!ds_user_id) {
+    throw new Error('No active Instagram session found');
+  }
 
   // NOTE: This query_hash is specific to Instagram's API version.
   // If IG updates their API, this hash might need to be updated.
   const QUERY_HASH = '3dec7e2c57367ef3da3d987d89f9dbc8';
 
-  // We construct the JSON string manually to ensure 'after' is only added if it exists,
-  // matching the original logic string strictness.
-  let variablesString = `{"id":"${ds_user_id}","include_reel":"true","fetch_mutual":"false","first":"24"`;
+  const variables: Record<string, string> = {
+    id: ds_user_id,
+    include_reel: 'true',
+    fetch_mutual: 'false',
+    first: '24',
+    ...(nextCode ? { after: nextCode } : {}),
+  };
 
-  if (nextCode) {
-    variablesString += `,"after":"${nextCode}"`;
-  }
-  variablesString += '}';
-
-  return `https://www.instagram.com/graphql/query/?query_hash=${QUERY_HASH}&variables=${variablesString}`;
+  return `https://www.instagram.com/graphql/query/?query_hash=${QUERY_HASH}&variables=${encodeURIComponent(JSON.stringify(variables))}`;
 }
 
 export function unfollowUserUrlGenerator(idToUnfollow: string): string {
@@ -219,30 +229,33 @@ export const exportToCSV = (
     const profileUrl = `https://www.instagram.com/${user.username}`;
 
     const ghostAnalysis = calculateGhostScore(user);
-    const escape = (text: string) => `"${text.replace(/"/g, '""')}"`;
+    const csvEscape = (text: string) => `"${text.replace(/"/g, '""')}"`;
 
     // 4. LÓGICA DE PAYWALL PARA LOS DATOS
     let premiumColumns: string[];
     if (isPro) {
       // Si ha pagado, le damos los datos exactos
-      premiumColumns = [ghostAnalysis.score.toString(), escape(getGhostLabel(ghostAnalysis.level))];
+      premiumColumns = [
+        ghostAnalysis.score.toString(),
+        csvEscape(getGhostLabel(ghostAnalysis.level)),
+      ];
     } else {
       // Si es gratis, censuramos el dato y le invitamos a pagar
       const basicGhost = ghostAnalysis.level === 'safe' ? 'No' : 'Yes';
-      premiumColumns = [escape(`${basicGhost} (Upgrade to PRO for exact score)`)];
+      premiumColumns = [csvEscape(`${basicGhost} (Upgrade to PRO for exact score)`)];
     }
 
     return [
-      escape(user.username),
-      escape(user.full_name),
-      escape(profileUrl),
-      escape(relation),
-      escape(status),
+      csvEscape(user.username),
+      csvEscape(user.full_name),
+      csvEscape(profileUrl),
+      csvEscape(relation),
+      csvEscape(status),
       isWhitelisted ? 'Yes' : 'No',
       user.is_verified ? 'Yes' : 'No',
       user.is_private ? 'Yes' : 'No',
       ...premiumColumns, // <-- Inyectamos la información protegida
-      escape(user.id),
+      csvEscape(user.id),
     ].join(',');
   });
 
@@ -256,6 +269,7 @@ export const exportToCSV = (
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 };
 
 /**
@@ -264,6 +278,9 @@ export const exportToCSV = (
  */
 export function getDynamicStorageKey(baseKey: string): string {
   const userId = getCookie('ds_user_id') || 'unknown_user';
+  if (!userId) {
+    throw new Error('No active Instagram session found');
+  }
   return `${baseKey}_${userId}`;
 }
 

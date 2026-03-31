@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Built with](https://img.shields.io/badge/Built%20with-Preact%20%26%20TypeScript-blueviolet)](https://preactjs.com/)
 [![Works with](https://img.shields.io/badge/Instagram-Compatible-E1306C.svg)](https://www.instagram.com/)
-[![Version](https://img.shields.io/badge/version-6.0.0-orange.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
+[![Version](https://img.shields.io/badge/version-6.0.1-orange.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
 
 [🇺🇸 English](#-english-version) | [🇪🇸 Español](#-versión-en-español)
 
@@ -17,7 +17,7 @@
 **The safest, most advanced tool to manage your Instagram community.**
 Unlike other tools that steal your password or use cloud servers, this tool runs **100% locally in your browser** using **Shadow DOM** for maximum safety and privacy.
 
-> **🚀 v6.0.0 "The Freemium Era":** Now featuring **Smart Background Reminders**, **Mozilla Firefox Support**, a powerful **Cryptographic License Engine**, and the highly anticipated **PRO Tier** for power users.
+> **🚀 v6.0.1 "The Freemium Era":** Now featuring **Smart Background Reminders**, **Mozilla Firefox Support**, a powerful **Cryptographic License Engine**, and the highly anticipated **PRO Tier** for power users.
 
 ### ✨ What's New in v6.0
 
@@ -82,7 +82,7 @@ _(PRO License can be acquired directly inside the Tool's Settings Menu)._
 **La herramienta más avanzada y segura para gestionar tu comunidad en Instagram.**
 A diferencia de apps que roban tu contraseña o usan servidores en la nube, esta herramienta se ejecuta **100% localmente en tu navegador** usando **Shadow DOM** para máxima seguridad y privacidad.
 
-> **🚀 v6.0.0 "La Era Freemium":** Ahora con **Recordatorios Inteligentes en Segundo Plano**, **Soporte para Mozilla Firefox**, un potente **Motor Criptográfico de Licencias** y el esperado **Modo PRO** para usuarios avanzados.
+> **🚀 v6.0.1 "La Era Freemium":** Ahora con **Recordatorios Inteligentes en Segundo Plano**, **Soporte para Mozilla Firefox**, un potente **Motor Criptográfico de Licencias** y el esperado **Modo PRO** para usuarios avanzados.
 
 ### ✨ Novedades de la v6.0
 

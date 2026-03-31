@@ -111,20 +111,29 @@ function App() {
     localStorage.setItem('ig_unfollowers_theme', newTheme);
   };
 
+  // 1. Extraemos el porcentaje fuera del useEffect para ESLint y TypeScript
+  const currentPercentage = state.status === 'scanning' ? state.percentage : 0;
+
   // Sincronización del Escáner
   useEffect(() => {
     if (state.status === 'scanning') {
-      let processedResults = [...scannerState.results];
-
+      // 1. Detectamos si terminó
       const isFinished =
         !scannerState.isScanning &&
-        (scannerState.progress >= 99 || scannerState.statusMessage === 'Completed');
+        (scannerState.progress >= 99 ||
+          scannerState.statusMessage === 'Completed' ||
+          scannerState.statusMessage.includes('Stopped'));
 
-      if (isFinished) {
+      // 2. Usamos nuestra variable limpia 'currentPercentage'
+      const isJustFinished = isFinished && currentPercentage !== 100;
+      let processedResults = [...scannerState.results];
+
+      if (isJustFinished) {
         processedResults = identifyNewUnfollowers(scannerState.results);
         const newTraitors = processedResults.filter(u => u.is_new_unfollower);
 
         saveScanSnapshot(processedResults);
+
         if (newTraitors.length > 0) {
           newTraitors.forEach(traitor => HistoryService.addEvent('DETECTED_UNFOLLOWER', traitor));
         }
@@ -132,18 +141,35 @@ function App() {
         const totalNew = newTraitors.length;
         if (totalNew > 0) {
           setToast({ show: true, text: `Scan finished! Found ${totalNew} new unfollowers.` });
+        } else if (scannerState.statusMessage.includes('Stopped')) {
+          setToast({
+            show: true,
+            text: 'Scan stopped by Anti-Ban (Error 429). Showing partial results.',
+          });
         } else {
           setToast({ show: true, text: 'Scanning completed!' });
         }
       }
 
-      setState(prev => ({
-        ...prev,
-        results: processedResults,
-        percentage: isFinished ? 100 : scannerState.progress,
-      }));
+      // 3. Actualizamos el estado
+      setState(prev => {
+        if (prev.status !== 'scanning') {
+          return prev;
+        }
+
+        if (isFinished && prev.percentage === 100) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          results: isJustFinished ? processedResults : scannerState.results,
+          // Forzamos el 100 exacto
+          percentage: isFinished ? 100 : scannerState.progress,
+        };
+      });
     }
-  }, [scannerState, state.status]);
+  }, [scannerState, state.status, currentPercentage]); // 2. Array de dependencias 100% limpio
 
   // Sincronización del Unfollower
   useEffect(() => {
@@ -193,11 +219,11 @@ function App() {
       selectedResults: [],
       whitelistedResults,
       filter: {
-        showNonFollowers: true,
-        showFollowers: false,
-        showVerified: true,
-        showPrivate: true,
-        showWithOutProfilePicture: true,
+        // showNonFollowers: true,
+        // showFollowers: false,
+        showVerified: false,
+        showPrivate: false,
+        showWithOutProfilePicture: false,
         showGhostsOnly: false,
       },
     });
@@ -277,7 +303,7 @@ function App() {
     }
   };
 
-  const toggleCurrentePageUsers = (e: ChangeEvent<HTMLInputElement>) => {
+  const toggleCurrentPageUsers = (e: ChangeEvent<HTMLInputElement>) => {
     if (state.status !== 'scanning') {
       return;
     }
@@ -469,7 +495,7 @@ function App() {
             scanningPaused={state.status === 'scanning' ? isScanPaused : isUnfollowPaused}
             isActiveProcess={isActiveProcess}
             toggleAllUsers={toggleAllUsers}
-            toggleCurrentePageUsers={toggleCurrentePageUsers}
+            toggleCurrentPageUsers={toggleCurrentPageUsers}
             setTimings={setTimings}
             currentTimings={timings}
             onShowToast={text => {

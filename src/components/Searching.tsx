@@ -59,8 +59,8 @@ const FiltersSidebar = ({
   <menu className='flex column m-clear p-clear'>
     <p style={{ fontWeight: 'bold' }}>Filters</p>
     {[
-      { name: 'showNonFollowers', label: 'Non-Followers' },
-      { name: 'showFollowers', label: 'Followers' },
+      // { name: 'showNonFollowers', label: 'Non-Followers' },
+      // { name: 'showFollowers', label: 'Followers' },
       { name: 'showVerified', label: 'Verified' },
       { name: 'showPrivate', label: 'Private' },
       { name: 'showWithOutProfilePicture', label: 'No Profile Pic' },
@@ -158,7 +158,11 @@ export const Searching = ({
     }
 
     const dynamicWhitelistKey = getDynamicStorageKey(WHITELISTED_RESULTS_STORAGE_KEY);
-    localStorage.setItem(dynamicWhitelistKey, JSON.stringify(newWhitelisted));
+    try {
+      localStorage.setItem(dynamicWhitelistKey, JSON.stringify(newWhitelisted));
+    } catch (err) {
+      console.error('Error writing whitelist', err);
+    }
 
     setState({ ...state, whitelistedResults: newWhitelisted });
   };
@@ -213,8 +217,8 @@ export const Searching = ({
           <p>Displayed: {usersForDisplay.length}</p>
           <p>Total: {state.results.length}</p>
         </div>
-        {/* Solo mostramos los controles si realmente hay un escaneo en curso y no ha llegado al final */}
-        {state.percentage > 0 && state.percentage < 98 && (
+        {/* Solo mostramos los controles si el escaneo está en curso */}
+        {state.percentage > 0 && state.percentage < 100 && (
           <div className='controls'>
             <button
               className={`button-control ${scanningPaused ? 'btn-resume' : 'btn-pause'}`}

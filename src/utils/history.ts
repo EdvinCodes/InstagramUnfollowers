@@ -16,7 +16,16 @@ export function saveScanSnapshot(results: readonly UserNode[]): void {
     timestamp: Date.now(),
     ids: results.map(u => u.id),
   };
-  localStorage.setItem(getDynamicStorageKey(HISTORY_RESULTS_STORAGE_KEY), JSON.stringify(snapshot));
+
+  try {
+    localStorage.setItem(
+      getDynamicStorageKey(HISTORY_RESULTS_STORAGE_KEY),
+      JSON.stringify(snapshot),
+    );
+  } catch (e) {
+    console.error('Storage full!', e);
+    throw new Error('STORAGE_FULL');
+  }
 }
 
 /**
@@ -29,6 +38,9 @@ export function loadPreviousSnapshotIds(): Set<string> | null {
   }
   try {
     const snapshot: HistorySnapshot = JSON.parse(stored);
+    if (!Array.isArray(snapshot.ids)) {
+      return null;
+    }
     return new Set(snapshot.ids);
   } catch (e) {
     console.error('Error loading history snapshot', e);
@@ -41,7 +53,6 @@ export function loadPreviousSnapshotIds(): Set<string> | null {
  * Devuelve la lista de usuarios con la propiedad 'is_new_unfollower' marcada.
  */
 export function identifyNewUnfollowers(currentResults: readonly UserNode[]): UserNode[] {
-  // <--- CAMBIO AQUÍ: Quita el 'readonly' de esta línea
   const previousIds = loadPreviousSnapshotIds();
 
   if (!previousIds) {

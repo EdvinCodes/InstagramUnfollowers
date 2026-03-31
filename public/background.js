@@ -25,7 +25,7 @@ async function checkIfScanNeeded() {
     const now = Date.now();
 
     // 7 días = 7 * 24 * 60 * 60 * 1000 = 604,800,000 ms
-    // PARA PRUEBAS: Lo ponemos en 60.000 ms (1 minuto) para que lo veas funcionar ya.
+    // Lo ponemos en 60.000 ms (1 minuto) para que lo veas funcionar ya.
     const TIME_LIMIT = 604800000;
 
     // Si nunca ha escaneado, o si ha pasado el tiempo límite...
@@ -54,6 +54,14 @@ async function checkIfScanNeeded() {
       if (chrome.action) {
         chrome.action.setBadgeText({ text: '' });
       }
+    }
+  });
+
+  // Abrir Instagram cuando el usuario hace clic en la notificación push
+  chrome.notifications.onClicked.addListener(notificationId => {
+    if (notificationId === 'ig_reminder') {
+      chrome.tabs.create({ url: 'https://www.instagram.com/' });
+      chrome.notifications.clear(notificationId);
     }
   });
 }

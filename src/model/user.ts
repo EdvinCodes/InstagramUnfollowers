@@ -18,6 +18,7 @@ export interface UserNode {
   readonly followed_by_viewer: boolean;
   readonly follows_viewer: boolean;
   readonly requested_by_viewer: boolean;
+  has_anonymous_profile_picture?: boolean;
   is_new_unfollower?: boolean;
   readonly reel: Reel;
 }

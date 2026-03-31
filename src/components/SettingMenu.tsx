@@ -142,7 +142,11 @@ export const SettingMenu = ({
         // Restaurar Whitelist
         if (data.whitelist && Array.isArray(data.whitelist)) {
           const dynamicWhitelistKey = getDynamicStorageKey(WHITELISTED_RESULTS_STORAGE_KEY);
-          localStorage.setItem(dynamicWhitelistKey, JSON.stringify(data.whitelist));
+          try {
+            localStorage.setItem(dynamicWhitelistKey, JSON.stringify(data.whitelist));
+          } catch (err) {
+            console.error('Error writing whitelist', err);
+          }
         }
 
         alert(

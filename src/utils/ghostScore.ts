@@ -1,6 +1,11 @@
 import { UserNode } from '../model/user';
+import { assertUnreachable } from './utils';
 
 export type GhostLevel = 'safe' | 'suspicious' | 'ghost' | 'bot';
+
+const SCORE_BOT = 65;
+const SCORE_GHOST = 45;
+const SCORE_SUSPICIOUS = 25;
 
 export interface GhostAnalysis {
   level: GhostLevel;
@@ -14,7 +19,11 @@ export const calculateGhostScore = (user: UserNode): GhostAnalysis => {
   const usernameL = user.username.toLowerCase();
 
   // Sin foto de perfil
-  if (!user.profile_pic_url || user.profile_pic_url.includes('default')) {
+  if (
+    user.has_anonymous_profile_picture ||
+    !user.profile_pic_url ||
+    user.profile_pic_url.includes('default')
+  ) {
     score += 15;
     reasons.push('No profile picture');
   }
@@ -33,19 +42,12 @@ export const calculateGhostScore = (user: UserNode): GhostAnalysis => {
 
   // Keyboard mashing — filas del teclado QWERTY
   const keyboardRows = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
-  let keyboardHit = false;
-  for (const row of keyboardRows) {
-    for (let i = 0; i <= row.length - 4; i++) {
-      if (usernameL.includes(row.slice(i, i + 4))) {
-        keyboardHit = true;
-        break;
-      }
-    }
-    if (keyboardHit) {
-      break;
-    }
-  }
-  if (keyboardHit) {
+  const hasKeyboardMash = keyboardRows.some(row =>
+    Array.from({ length: row.length - 3 }, (_, i) => row.slice(i, i + 4)).some(seq =>
+      usernameL.includes(seq),
+    ),
+  );
+  if (hasKeyboardMash) {
     score += 25;
     reasons.push('Keyboard mashing pattern');
   }
@@ -63,11 +65,11 @@ export const calculateGhostScore = (user: UserNode): GhostAnalysis => {
   }
 
   let level: GhostLevel = 'safe';
-  if (score >= 65) {
+  if (score >= SCORE_BOT) {
     level = 'bot';
-  } else if (score >= 45) {
+  } else if (score >= SCORE_GHOST) {
     level = 'ghost';
-  } else if (score >= 25) {
+  } else if (score >= SCORE_SUSPICIOUS) {
     level = 'suspicious';
   }
 
@@ -82,8 +84,10 @@ export const getGhostLabel = (level: GhostLevel): string => {
       return 'INACT';
     case 'suspicious':
       return 'RISK';
-    default:
+    case 'safe':
       return '';
+    default:
+      return assertUnreachable(level);
   }
 };
 
@@ -92,10 +96,12 @@ export const getGhostColor = (level: GhostLevel): string => {
     case 'bot':
       return '#ef4444';
     case 'ghost':
-      return '#f87171';
+      return '#f97316';
     case 'suspicious':
       return '#f59e0b';
-    default:
+    case 'safe':
       return '#6b7280';
+    default:
+      return assertUnreachable(level);
   }
 };

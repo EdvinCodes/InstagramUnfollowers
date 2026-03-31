@@ -51,7 +51,11 @@ export const HistoryService = {
     }
 
     // Usamos la key dinámica
-    localStorage.setItem(getStorageKey(), JSON.stringify(updatedHistory));
+    try {
+      localStorage.setItem(getStorageKey(), JSON.stringify(updatedHistory));
+    } catch (e) {
+      console.error('Error writing history', e);
+    }
   },
 
   clearHistory: () => {
