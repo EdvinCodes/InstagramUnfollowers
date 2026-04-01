@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Built with](https://img.shields.io/badge/Built%20with-Preact%20%26%20TypeScript-blueviolet)](https://preactjs.com/)
 [![Works with](https://img.shields.io/badge/Instagram-Compatible-E1306C.svg)](https://www.instagram.com/)
-[![Version](https://img.shields.io/badge/version-6.0.1-orange.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
+[![Version](https://img.shields.io/badge/version-7.0.0-orange.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
 
 [🇺🇸 English](#-english-version) | [🇪🇸 Español](#-versión-en-español)
 
@@ -17,24 +17,30 @@
 **The safest, most advanced tool to manage your Instagram community.**
 Unlike other tools that steal your password or use cloud servers, this tool runs **100% locally in your browser** using **Shadow DOM** for maximum safety and privacy.
 
-> **🚀 v6.0.1 "The Freemium Era":** Now featuring **Smart Background Reminders**, **Mozilla Firefox Support**, a powerful **Cryptographic License Engine**, and the highly anticipated **PRO Tier** for power users.
+> **🚀 v7.0.0 "The Freemium Era":** Now featuring **Smart Background Reminders**, **Multi-Account Support**, a powerful **Cryptographic License Engine**, and the highly anticipated **PRO Tier** for power users.
 
-### ✨ What's New in v6.0
+### ✨ What's New in v7.0.0
 
 - **🧠 Smart Background Scans:** The extension now silently reminds you to check your account after 7 days of inactivity via native Push Notifications _(Extension only)_.
+- **👥 Multi-Account Support:** Safely manage multiple Instagram profiles. The database is now segmented by User ID to prevent history mixing.
+- **🛡️ "Soft Block" (Remove Follower):** Clean your followers list without blocking them completely using the new dedicated action.
+- **👻 Quality Filters (Ghost Detector):** Easily spot inactive accounts, bots, or users with 0 posts and no profile picture.
+- **💾 Backup & Restore:** Export and import your Whitelist and custom settings as a JSON file to never lose your configuration.
+- **🎨 Dark/Light Mode:** Customize your visual experience with the new UI theme switcher.
 - **🦊 Mozilla Firefox Support:** Fully compatible with Firefox Add-ons and its strict privacy settings.
-- **🛡️ Anti-Ban Emergency Stop:** Intelligent detection of Instagram's Rate Limits (Error 429) to automatically pause actions and protect your account.
-- **👑 Premium Edition (PRO Tier):** We introduced a PRO license for power users (Agencies, Influencers, Brands) that unlocks automation and deep analytics.
+- **🛑 Anti-Ban Emergency Stop:** Intelligent detection of Instagram's Rate Limits (Error 429) to automatically pause actions and protect your account.
 
 ### ⚖️ Free vs. PRO Tier
 
 | Feature                       |  Free Tier   |  PRO Tier 👑  |
 | :---------------------------- | :----------: | :-----------: |
 | **Unlimited Scans**           |      ✅      |      ✅       |
-| **Whitelist (Safe list)**     |      ✅      |      ✅       |
-| **Manual Unfollow (1-by-1)**  |      ✅      |      ✅       |
-| **Basic CSV Export**          |      ✅      |      ✅       |
+| **Whitelist & Backup JSON**   |      ✅      |      ✅       |
+| **Multi-Account Support**     |      ✅      |      ✅       |
+| **Themes (Dark/Light)**       |      ✅      |      ✅       |
+| **Soft Block (Remove)**       |      ✅      |      ✅       |
 | **History Time Machine**      | Last 30 Days | **Unlimited** |
+| **Ghost Quality Filters**     |      🔒      |      ✅       |
 | **Mass Auto-Unfollow**        |      🔒      |      ✅       |
 | **Exact Ghost Score (0-100)** |      🔒      |      ✅       |
 | **PDF Health Reports**        |      🔒      |      ✅       |
@@ -82,24 +88,30 @@ _(PRO License can be acquired directly inside the Tool's Settings Menu)._
 **La herramienta más avanzada y segura para gestionar tu comunidad en Instagram.**
 A diferencia de apps que roban tu contraseña o usan servidores en la nube, esta herramienta se ejecuta **100% localmente en tu navegador** usando **Shadow DOM** para máxima seguridad y privacidad.
 
-> **🚀 v6.0.1 "La Era Freemium":** Ahora con **Recordatorios Inteligentes en Segundo Plano**, **Soporte para Mozilla Firefox**, un potente **Motor Criptográfico de Licencias** y el esperado **Modo PRO** para usuarios avanzados.
+> **🚀 v7.0.0 "La Era Freemium":** Ahora con **Recordatorios Inteligentes**, **Soporte Multi-Cuenta**, un potente **Motor Criptográfico de Licencias** y el esperado **Modo PRO** para usuarios avanzados.
 
-### ✨ Novedades de la v6.0
+### ✨ Novedades de la v7.0.0
 
-- **🧠 Escaneos Inteligentes en Segundo Plano:** La extensión te recordará de forma silenciosa que revises tu cuenta tras 7 días de inactividad mediante Notificaciones Push nativas _(Solo versión Extensión)_.
-- **🦊 Soporte para Mozilla Firefox:** Totalmente compatible con los Add-ons de Firefox y sus estrictas políticas de privacidad.
-- **🛡️ Parada de Emergencia Anti-Ban:** Detección inteligente de los límites de Instagram (Error 429) para pausar automáticamente las acciones y proteger tu cuenta.
-- **👑 Edición Premium (Nivel PRO):** Hemos introducido una licencia PRO para usuarios intensivos (Agencias, Influencers, Marcas) que desbloquea la automatización total y analíticas profundas.
+- **🧠 Escaneos en Segundo Plano:** La extensión te recordará de forma silenciosa que revises tu cuenta tras 7 días de inactividad mediante Notificaciones Push.
+- **👥 Soporte Multi-Cuenta:** Gestiona varios perfiles de forma segura. La base de datos ahora se segmenta por ID de usuario para no mezclar historiales.
+- **🛡️ "Soft Block" (Eliminar Seguidor):** Limpia tu lista de seguidores sin bloquearlos por completo con esta nueva acción dedicada.
+- **👻 Filtros de Calidad (Fantasmas):** Detecta fácilmente cuentas inactivas, bots o usuarios con 0 publicaciones y sin foto de perfil.
+- **💾 Backup y Restauración:** Exporta e importa tu Lista Blanca y configuración en un archivo JSON para no perder nada jamás.
+- **🎨 Modo Claro/Oscuro:** Personaliza tu experiencia visual con el nuevo selector de temas.
+- **🦊 Soporte para Mozilla Firefox:** Totalmente compatible con los Add-ons de Firefox.
+- **🛑 Parada Anti-Ban:** Detección inteligente de los límites de Instagram (Error 429) para pausar automáticamente las acciones.
 
 ### ⚖️ Comparativa: Gratis vs. PRO
 
 | Función                              | Versión Gratis  | Versión PRO 👑 |
 | :----------------------------------- | :-------------: | :------------: |
 | **Escaneos Ilimitados**              |       ✅        |       ✅       |
-| **Lista Blanca (Excepciones)**       |       ✅        |       ✅       |
-| **Unfollow Manual (1 a 1)**          |       ✅        |       ✅       |
-| **Exportación CSV Básica**           |       ✅        |       ✅       |
+| **Lista Blanca & Backup JSON**       |       ✅        |       ✅       |
+| **Soporte Multi-Cuenta**             |       ✅        |       ✅       |
+| **Temas (Claro/Oscuro)**             |       ✅        |       ✅       |
+| **Soft Block (Eliminar)**            |       ✅        |       ✅       |
 | **Historial (Máquina del Tiempo)**   | Últimos 30 Días | **Ilimitado**  |
+| **Filtros Anti-Fantasmas**           |       🔒        |       ✅       |
 | **Auto-Unfollow Masivo**             |       🔒        |       ✅       |
 | **Nota Exacta de Fantasmas (0-100)** |       🔒        |       ✅       |
 | **Reportes de Salud en PDF**         |       🔒        |       ✅       |
@@ -121,7 +133,7 @@ _(La Licencia PRO se puede adquirir directamente desde el menú de Ajustes de la
 
 1. Descarga el último `dist.zip` de la pestaña Releases y descomprímelo.
 2. Abre Firefox y escribe `about:debugging#/runtime/this-firefox` en la barra de direcciones.
-3. Haz clic en **Cargar complemento temporal** (Load Temporary Add-on) y selecciona el archivo `manifest.json` dentro de la carpeta.
+3. Haz clic en **Cargar complemento temporal** y selecciona el archivo `manifest.json` dentro de la carpeta.
 
 **Opción C: Script por Consola (Sin Instalación)**
 
