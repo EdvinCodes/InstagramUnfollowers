@@ -232,14 +232,6 @@ export const SettingMenu = ({
             onChange={setTimeToWaitAfterFiveUnfollows}
           />
 
-          <SettingRow
-            label='Default time to wait after five unfollows'
-            name='timeAfterFiveUnfollows'
-            min={70000}
-            value={timeToWaitAfterFiveUnfollows}
-            onChange={setTimeToWaitAfterFiveUnfollows}
-          />
-
           {/* <-- SECCIÓN DE TEMA AÑADIDA --> */}
           <div className='row'>
             <label>App Visual Theme</label>
