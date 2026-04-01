@@ -19,10 +19,13 @@ export const useScanner = (timings: Timings) => {
   });
 
   const isPausedRef = useRef<boolean>(false);
+  const [isPausedUI, setIsPausedUI] = useState(false);
+
   const shouldStopRef = useRef<boolean>(false);
 
   const togglePause = useCallback(() => {
     isPausedRef.current = !isPausedRef.current;
+    setIsPausedUI(isPausedRef.current); // 🔄 Esto fuerza el re-render del botón
   }, []);
 
   const stopScan = useCallback(() => {
@@ -134,6 +137,6 @@ export const useScanner = (timings: Timings) => {
     startScan,
     stopScan,
     togglePause,
-    isPaused: isPausedRef.current,
+    isPaused: isPausedUI,
   };
 };

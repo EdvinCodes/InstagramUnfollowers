@@ -59,8 +59,6 @@ const FiltersSidebar = ({
   <menu className='flex column m-clear p-clear'>
     <p style={{ fontWeight: 'bold' }}>Filters</p>
     {[
-      // { name: 'showNonFollowers', label: 'Non-Followers' },
-      // { name: 'showFollowers', label: 'Followers' },
       { name: 'showVerified', label: 'Verified' },
       { name: 'showPrivate', label: 'Private' },
       { name: 'showWithOutProfilePicture', label: 'No Profile Pic' },

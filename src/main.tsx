@@ -219,8 +219,6 @@ function App() {
       selectedResults: [],
       whitelistedResults,
       filter: {
-        // showNonFollowers: true,
-        // showFollowers: false,
         showVerified: false,
         showPrivate: false,
         showWithOutProfilePicture: false,

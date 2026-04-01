@@ -28,10 +28,12 @@ export const useUnfollowerQueue = (timings: Timings) => {
   });
 
   const isPausedRef = useRef<boolean>(false);
+  const [isPausedUI, setIsPausedUI] = useState(false);
   const shouldStopRef = useRef<boolean>(false);
 
   const togglePause = useCallback(() => {
     isPausedRef.current = !isPausedRef.current;
+    setIsPausedUI(isPausedRef.current); // 🔄 Re-render inmediato
   }, []);
 
   const stopUnfollowing = useCallback(() => {
@@ -169,6 +171,6 @@ export const useUnfollowerQueue = (timings: Timings) => {
     startUnfollowing,
     stopUnfollowing,
     togglePause,
-    isPaused: isPausedRef.current,
+    isPaused: isPausedUI,
   };
 };

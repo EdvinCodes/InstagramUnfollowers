@@ -240,7 +240,7 @@ export const Toolbar = ({
             <label className='checkbox-label' title='Select Page'>
               <input
                 type='checkbox'
-                disabled={state.percentage < 100 && !scanningPaused}
+                disabled={state.percentage > 0 && state.percentage < 100 && !scanningPaused}
                 className='toggle-all-checkbox'
                 onClick={toggleCurrentPageUsers}
                 checked={isPageSelected}
@@ -250,7 +250,7 @@ export const Toolbar = ({
             <label className='checkbox-label' title='Select All'>
               <input
                 type='checkbox'
-                disabled={state.percentage < 100 && !scanningPaused}
+                disabled={state.percentage > 0 && state.percentage < 100 && !scanningPaused}
                 checked={isAllSelected}
                 className='toggle-all-checkbox'
                 onClick={toggleAllUsers}
