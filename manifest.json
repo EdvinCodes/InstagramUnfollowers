@@ -14,7 +14,9 @@
   },
   "host_permissions": ["https://*.instagram.com/*"],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "scripts": ["background.js"],
+    "type": "module"
   },
   "content_scripts": [
     {
