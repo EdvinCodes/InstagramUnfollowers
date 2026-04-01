@@ -19,10 +19,16 @@ class CopyManifestPlugin {
         path.resolve(__dirname, 'dist', 'background.js'),
       );
 
-      // (Opcional) Si tienes tu icono en public para que salga en la notificación:
+      // 3. Copiamos el favicon SVG (opcional)
       fs.copyFileSync(
         path.resolve(__dirname, 'public', 'favicon.svg'),
         path.resolve(__dirname, 'dist', 'favicon.svg'),
+      );
+
+      // 4. Copiamos el ICONO PNG PARA LAS NOTIFICACIONES (¡NUEVO!)
+      fs.copyFileSync(
+        path.resolve(__dirname, 'public', 'icon.png'),
+        path.resolve(__dirname, 'dist', 'icon.png'),
       );
     });
   }
@@ -62,16 +68,16 @@ module.exports = {
     },
   },
   output: {
-    filename: 'content.js', // Cambiado de dist.js a content.js
+    filename: 'content.js',
     path: path.resolve(__dirname, 'dist'),
     clean: true,
   },
   plugins: [
     new Dotenv(),
-    new CopyManifestPlugin(), // Añadimos nuestro plugin copiador
-    // new BundleAnalyzerPlugin(), // ← abre el browser automáticamente al compilar
+    new CopyManifestPlugin(),
+    // new BundleAnalyzerPlugin(),
   ],
   performance: {
-    hints: false, // ← desactiva warnings de tamaño para extensiones
+    hints: false,
   },
 };

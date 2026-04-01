@@ -4,6 +4,14 @@
   "version": "6.0.1",
   "description": "Safe, local tool to manage your Instagram community. Runs in your browser.",
   "permissions": ["storage", "alarms", "notifications"],
+  "action": {
+    "default_title": "IG Unfollowers PRO",
+    "default_icon": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    }
+  },
   "host_permissions": ["https://*.instagram.com/*"],
   "background": {
     "service_worker": "background.js"

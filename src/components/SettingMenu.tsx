@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FormEvent, useState, useRef } from 'react';
+import React, { ChangeEvent, FormEvent, useState, useRef, useEffect } from 'react';
 import { Timings } from '../model/timings';
 import { getDynamicStorageKey } from '../utils/utils';
 import { WHITELISTED_RESULTS_STORAGE_KEY } from '../constants/constants';
@@ -55,6 +55,17 @@ export const SettingMenu = ({
   // Inicializamos el gestor de licencias
   const [licenseInput, setLicenseInput] = useState('');
   const [licenseError, setLicenseError] = useState(false);
+
+  const [scanFrequency, setScanFrequency] = useState<number>(7);
+
+  // Leer la configuración actual de Chrome Storage (ESLint & TS Happy)
+  useEffect(() => {
+    chrome.storage.local.get(['ig_scan_frequency'], result => {
+      if (result.ig_scan_frequency) {
+        setScanFrequency(Number(result.ig_scan_frequency)); // Forzamos a Number
+      }
+    });
+  }, []);
 
   const handleActivate = async () => {
     const success = await activatePro(licenseInput);
@@ -244,6 +255,84 @@ export const SettingMenu = ({
             >
               {theme === 'dark' ? '🌙 Dark Mode' : '☀️ Light Mode'}
             </button>
+          </div>
+
+          <div className='row'>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ fontWeight: 'bold', color: theme === 'dark' ? '#f8fafc' : '#0f172a' }}>
+                Scheduled Alerts
+              </span>
+              <span
+                style={{ fontSize: '0.75rem', color: theme === 'dark' ? '#94a3b8' : '#64748b' }}
+              >
+                Get a push notification to scan your profile.
+              </span>
+            </label>
+            <div style={{ position: 'relative' }}>
+              <select
+                value={scanFrequency}
+                onChange={e => {
+                  if (!isPro) {
+                    alert('🔒 PRO Feature: Upgrade to configure auto-alerts.');
+                    return;
+                  }
+                  const val = Number(e.currentTarget.value);
+                  setScanFrequency(val);
+                  chrome.storage.local.set({ ig_scan_frequency: val });
+                }}
+                style={{
+                  // 1. Ocultamos la flecha nativa del navegador
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+
+                  // 2. Color de fondo (usamos backgroundColor en lugar de background para no pisar la imagen)
+                  backgroundColor: theme === 'dark' ? '#1e293b' : '#fff',
+
+                  // 3. Dibujamos nuestra propia flecha SVG dinámica según el tema
+                  backgroundImage:
+                    theme === 'dark'
+                      ? "url(\"data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f8fafc'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E\")"
+                      : "url(\"data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%230f172a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E\")",
+                  backgroundPosition: 'calc(100% - 12px) center', // Separada 12px del borde derecho
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: '16px',
+
+                  // Resto de estilos adaptados
+                  color: theme === 'dark' ? '#f8fafc' : '#0f172a',
+                  border: `1px solid ${
+                    isPro
+                      ? theme === 'dark'
+                        ? '#4ade80'
+                        : '#16a34a'
+                      : theme === 'dark'
+                        ? 'rgba(255,255,255,0.15)'
+                        : '#cbd5e1'
+                  }`,
+                  padding: '0.5rem 2.5rem 0.5rem 1rem', // 2.5rem a la derecha para que el texto no pise la nueva flecha
+                  borderRadius: '50px',
+                  cursor: isPro ? 'pointer' : 'not-allowed',
+                  outline: 'none',
+                  fontFamily: 'inherit',
+                  fontSize: '0.9rem',
+                  minWidth: '160px',
+                }}
+              >
+                <option value={7}>Every 7 days (Free)</option>
+                <option value={3} disabled={!isPro}>
+                  Every 3 days (PRO)
+                </option>
+                <option value={1} disabled={!isPro}>
+                  Every 24 hours (PRO)
+                </option>
+              </select>
+              {!isPro && (
+                <span
+                  style={{ position: 'absolute', right: '-25px', top: '8px', fontSize: '14px' }}
+                >
+                  🔒
+                </span>
+              )}
+            </div>
           </div>
 
           {/* --- SECCIÓN PREMIUM --- */}
