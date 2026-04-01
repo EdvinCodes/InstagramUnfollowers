@@ -1,4 +1,5 @@
 import React, { ChangeEvent, useState } from 'react';
+import { t } from '../i18n/i18n';
 import { State } from '../model/state';
 import { SettingMenu } from './SettingMenu';
 import { SettingIcon } from './icons/SettingIcon';
@@ -22,7 +23,7 @@ import { HistoryIcon } from './icons/HistoryIcon';
 
 // Icono simple de Minimizar
 const MinimizeIcon = ({ onClick }: { onClick: () => void }) => (
-  <div className='icon-button minimize-btn' onClick={onClick} title='Minimize overlay'>
+  <div className='icon-button minimize-btn' onClick={onClick} title={t('minimize')}>
     <svg
       width='24'
       height='24'
@@ -88,7 +89,7 @@ export const Toolbar = ({
     }
     switch (state.status) {
       case 'initial':
-        if (confirm('Go back to Instagram?')) {
+        if (confirm(t('confirmGoBack'))) {
           location.reload();
         }
         break;
@@ -107,37 +108,37 @@ export const Toolbar = ({
         state.currentTab,
         state.searchTerm,
         state.filter,
+        t,
       );
 
       await copyListToClipboard(usersToCopy);
-      onShowToast(`Copied ${usersToCopy.length} users to clipboard!`);
+      onShowToast(t('copiedToClipboard')(usersToCopy.length));
     }
   };
 
   const handleExportClick = () => {
     if (state.status === 'scanning') {
-      exportToCSV(state.results, state.whitelistedResults, isPro); // Pasa isPro aquí
-      onShowToast(`Exported ${state.results.length} users to CSV!`);
+      exportToCSV(state.results, state.whitelistedResults, isPro, t); // Pasa isPro aquí
+      onShowToast(t('exportedToCSV')(state.results.length));
     }
   };
 
   const handlePdfClick = async () => {
     // EL PAYWALL ACTIVO PARA EL PDF
     if (!isPro) {
-      onShowToast('🔒 PRO Feature: Upgrade to unlock the Health Report PDF.');
+      onShowToast(`${t('proFeaturePDF')}`);
       return;
     }
 
     if (state.status === 'scanning') {
       const nonFollowers = state.results.filter(u => !u.follows_viewer);
 
-      onShowToast('Generating Health Report...');
+      onShowToast(`${t('generatingPDF')}`);
       try {
-        await generateHealthReportPDF(nonFollowers, state.whitelistedResults);
-        onShowToast('Health Report PDF downloaded!');
+        await generateHealthReportPDF(nonFollowers, state.whitelistedResults, t);
+        onShowToast(`${t('healthReportDownloaded')}`);
       } catch (error) {
-        console.error('PDF generation failed:', error);
-        onShowToast('Error generating PDF.');
+        onShowToast(`${t('pdfError')}`);
       }
     }
   };
@@ -226,7 +227,7 @@ export const Toolbar = ({
           <input
             type='text'
             className='search-bar'
-            placeholder='Search...'
+            placeholder={t('searchPlaceholder')}
             value={state.searchTerm}
             onKeyDown={e => e.stopPropagation()}
             onChange={handleSearchChange}
@@ -237,7 +238,7 @@ export const Toolbar = ({
         {/* CHECKBOXES */}
         {state.status === 'scanning' && (
           <div style={{ display: 'flex', gap: '8px', marginRight: '0.5rem', alignItems: 'center' }}>
-            <label className='checkbox-label' title='Select Page'>
+            <label className='checkbox-label' title={t('selectPage')}>
               <input
                 type='checkbox'
                 disabled={state.percentage > 0 && state.percentage < 100 && !scanningPaused}
@@ -245,9 +246,9 @@ export const Toolbar = ({
                 onClick={toggleCurrentPageUsers}
                 checked={isPageSelected}
               />
-              <span className='checkbox-text'>Page</span>
+              <span className='checkbox-text'>{t('page')}</span>
             </label>
-            <label className='checkbox-label' title='Select All'>
+            <label className='checkbox-label' title={t('selectAll')}>
               <input
                 type='checkbox'
                 disabled={state.percentage > 0 && state.percentage < 100 && !scanningPaused}
@@ -255,7 +256,7 @@ export const Toolbar = ({
                 className='toggle-all-checkbox'
                 onClick={toggleAllUsers}
               />
-              <span className='checkbox-text'>All</span>
+              <span className='checkbox-text'>{t('all')}</span>
             </label>
           </div>
         )}
@@ -268,7 +269,7 @@ export const Toolbar = ({
               <button
                 className='copy-list'
                 onClick={handleCopyClick}
-                title='Copy visible list'
+                title={t('copyList')}
                 style={{ padding: '0.5rem' }}
               >
                 <CopyIcon />
@@ -277,7 +278,7 @@ export const Toolbar = ({
                 className='copy-list'
                 onClick={handleExportClick}
                 style={{ padding: '0.5rem' }}
-                title='Export CSV'
+                title={t('exportCsv')}
               >
                 <DownloadIcon />
               </button>
@@ -294,10 +295,10 @@ export const Toolbar = ({
                   alignItems: 'center',
                   gap: '4px',
                 }}
-                title='Download Premium Health Report'
+                title={t('downloadHealthReport')}
               >
                 <PdfIcon />
-                <span className='btn-text'>{isPro ? 'Report' : '🔒 Report'}</span>
+                <span className='btn-text'>{isPro ? t('reportBtn') : '🔒 ' + t('reportBtn')}</span>
               </button>
             </>
           )}
@@ -305,9 +306,13 @@ export const Toolbar = ({
           {/* Initial Actions */}
           {state.status === 'initial' && (
             <>
-              <KofiButton />
-              <HistoryIcon onClick={() => setHistoryOpen(true)} />
-              <SettingIcon onClickLogo={() => setSettingMenu(true)} />
+              <KofiButton
+                title={t('kofiTitle')}
+                ariaLabel={t('kofiAriaLabel')}
+                text={t('support')}
+              />
+              <HistoryIcon title={t('history')} onClick={() => setHistoryOpen(true)} />
+              <SettingIcon title={t('settingsTooltip')} onClickLogo={() => setSettingMenu(true)} />
             </>
           )}
 

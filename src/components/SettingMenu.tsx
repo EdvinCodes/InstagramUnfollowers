@@ -1,5 +1,10 @@
 import React, { ChangeEvent, FormEvent, useState, useRef, useEffect } from 'react';
 import { Timings } from '../model/timings';
+import { t, getLocale, setLocale } from '../i18n/i18n';
+import type { Locale } from '../i18n/translations';
+import { isMonitorEnabled, setMonitorEnabled } from '../services/realtimeMonitor';
+// import { CloudSync, type SyncState } from '../services/cloudSync';
+// import { HistoryService } from '../services/historyService';
 import { getDynamicStorageKey } from '../utils/utils';
 import { WHITELISTED_RESULTS_STORAGE_KEY } from '../constants/constants';
 
@@ -49,9 +54,13 @@ export const SettingMenu = ({
   toggleTheme,
   isPro,
   activatePro,
-  deactivatePro,
+  // deactivatePro,
   isLicenseLoading: isLoading,
 }: SettingMenuProps) => {
+  const [monitorEnabled, setMonitorEnabledState] = useState(isMonitorEnabled);
+  // const [syncState, setSyncState] = useState<SyncState>('idle');
+  // const [lastSync, setLastSync] = useState<number | null>(CloudSync.getLastSyncTs);
+  const [locale, setLocaleState] = useState<Locale>(getLocale);
   // Inicializamos el gestor de licencias
   const [licenseInput, setLicenseInput] = useState('');
   const [licenseError, setLicenseError] = useState(false);
@@ -160,11 +169,9 @@ export const SettingMenu = ({
           }
         }
 
-        alert(
-          'Backup imported successfully! Save settings to apply timings. Whitelist is already restored.',
-        );
+        alert(t('backupImportSuccess'));
       } catch (err) {
-        alert('Error importing backup. Invalid JSON file.');
+        alert(t('backupImportError'));
       }
     };
     reader.readAsText(file);
@@ -182,7 +189,7 @@ export const SettingMenu = ({
               marginBottom: '1.5rem',
             }}
           >
-            <h3 style={{ margin: 0 }}>Settings & Backup</h3>
+            <h3 style={{ margin: 0 }}>{t('settingsBackup')}</h3>
             <button
               type='button'
               className='close-btn'
@@ -234,7 +241,7 @@ export const SettingMenu = ({
 
           {/* <-- SECCIÓN DE TEMA AÑADIDA --> */}
           <div className='row'>
-            <label>App Visual Theme</label>
+            <label>{t('appVisualTheme')}</label>
             <button
               type='button'
               className='btn'
@@ -245,19 +252,19 @@ export const SettingMenu = ({
                 color: theme === 'dark' ? 'white' : '#0f172a',
               }}
             >
-              {theme === 'dark' ? '🌙 Dark Mode' : '☀️ Light Mode'}
+              {theme === 'dark' ? t('darkMode') : t('lightMode')}
             </button>
           </div>
 
           <div className='row'>
             <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <span style={{ fontWeight: 'bold', color: theme === 'dark' ? '#f8fafc' : '#0f172a' }}>
-                Scheduled Alerts
+                {t('scheduledAlerts')}
               </span>
               <span
                 style={{ fontSize: '0.75rem', color: theme === 'dark' ? '#94a3b8' : '#64748b' }}
               >
-                Get a push notification to scan your profile.
+                {t('scheduledAlertsDesc')}
               </span>
             </label>
             <div style={{ position: 'relative' }}>
@@ -265,7 +272,7 @@ export const SettingMenu = ({
                 value={scanFrequency}
                 onChange={e => {
                   if (!isPro) {
-                    alert('🔒 PRO Feature: Upgrade to configure auto-alerts.');
+                    alert(t('proFeatureUpgrade'));
                     return;
                   }
                   const val = Number(e.currentTarget.value);
@@ -309,12 +316,12 @@ export const SettingMenu = ({
                   minWidth: '160px',
                 }}
               >
-                <option value={7}>Every 7 days (Free)</option>
+                <option value={7}>{t('every7days')}</option>
                 <option value={3} disabled={!isPro}>
-                  Every 3 days (PRO)
+                  {t('every3days')}
                 </option>
                 <option value={1} disabled={!isPro}>
-                  Every 24 hours (PRO)
+                  {t('every24hours')}
                 </option>
               </select>
               {!isPro && (
@@ -334,7 +341,6 @@ export const SettingMenu = ({
               borderRadius: '8px',
               background: isPro ? 'rgba(74, 222, 128, 0.1)' : 'rgba(239, 68, 68, 0.05)',
               border: `1px solid ${isPro ? '#4ade80' : '#ef4444'}`,
-              marginTop: '1.5rem',
             }}
           >
             <h3
@@ -346,17 +352,17 @@ export const SettingMenu = ({
                 gap: '6px',
               }}
             >
-              {isPro ? '👑 PRO Version Activated' : '🔒 Upgrade to PRO'}
+              {isPro ? t('proVersionActivated') : t('upgradeToPro')}
             </h3>
 
             {isLoading ? (
-              <p style={{ fontSize: '12px', color: '#888' }}>Checking license...</p>
+              <p style={{ fontSize: '12px', color: '#888' }}>{t('checkingLicense')}</p>
             ) : isPro ? (
               <div>
                 <p style={{ fontSize: '12px', color: '#4ade80', marginBottom: '10px' }}>
-                  All premium features unlocked. Thank you for your support!
+                  {t('allFeaturesUnlocked')}
                 </p>
-                <button
+                {/* <button
                   type='button'
                   onClick={deactivatePro}
                   style={{
@@ -369,18 +375,18 @@ export const SettingMenu = ({
                     cursor: 'pointer',
                   }}
                 >
-                  Deactivate License
-                </button>
+                  {t('deactivateLicense')}
+                </button> */}
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <p style={{ fontSize: '12px', color: '#888', margin: 0 }}>
-                  Unlock the Health Report PDF, Ghost Score 0-100, and advanced exports.
+                  {t('proVersionActivatedDesc')}
                 </p>
                 <div style={{ display: 'flex', gap: '6px' }}>
                   <input
                     type='text'
-                    placeholder='Paste License Key (IGPRO-...)'
+                    placeholder={t('pasteLicenseKey')}
                     value={licenseInput}
                     onChange={e => setLicenseInput((e.target as HTMLInputElement).value)}
                     style={{
@@ -405,11 +411,13 @@ export const SettingMenu = ({
                       fontWeight: 'bold',
                     }}
                   >
-                    Activate
+                    {t('activate')}
                   </button>
                 </div>
                 {licenseError && (
-                  <span style={{ color: '#ef4444', fontSize: '11px' }}>Invalid License Key.</span>
+                  <span style={{ color: '#ef4444', fontSize: '11px' }}>
+                    {t('invalidLicenseKey')}
+                  </span>
                 )}
                 <a
                   href='https://igunfollowerspro.lemonsqueezy.com/checkout/buy/32e77393-d119-4d87-92c9-a32b022c80dc'
@@ -422,7 +430,7 @@ export const SettingMenu = ({
                     marginTop: '4px',
                   }}
                 >
-                  Get a License Key (€9.99)
+                  {t('getLicenseKey')}
                 </a>
               </div>
             )}
@@ -432,12 +440,11 @@ export const SettingMenu = ({
           <div
             style={{
               marginTop: '1.5rem',
-              paddingTop: '1.5rem',
               borderTop: '1px solid rgba(255,255,255,0.05)',
             }}
           >
             <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '1rem' }}>
-              Data Management (Export Whitelist & Settings)
+              {t('dataManagement')}
             </p>
             <div style={{ display: 'flex', gap: '1rem' }}>
               <button
@@ -451,7 +458,7 @@ export const SettingMenu = ({
                 }}
                 onClick={handleExportBackup}
               >
-                📥 Export Backup
+                📥 {t('exportBackup')}
               </button>
               <input
                 type='file'
@@ -466,24 +473,172 @@ export const SettingMenu = ({
                 style={{ flex: 1 }}
                 onClick={() => fileInputRef.current?.click()}
               >
-                📤 Import Backup
+                📤 {t('importBackup')}
               </button>
             </div>
           </div>
 
+          {/* LANGUAGE */}
+          <div
+            style={{
+              marginTop: '1.5rem',
+              paddingTop: '1.5rem',
+              borderTop: '1px solid rgba(255,255,255,0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <span style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>{t('language')}</span>
+            <select
+              value={locale}
+              onChange={e => {
+                const newLocale = e.currentTarget.value as Locale;
+                setLocale(newLocale);
+                setLocaleState(newLocale);
+              }}
+              style={{
+                appearance: 'none',
+                WebkitAppearance: 'none',
+                backgroundColor: theme === 'dark' ? '#1e293b' : '#fff',
+                color: theme === 'dark' ? '#f8fafc' : '#0f172a',
+                border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.15)' : '#cbd5e1'}`,
+                padding: '0.5rem 2.5rem 0.5rem 1rem',
+                borderRadius: '50px',
+                cursor: 'pointer',
+                outline: 'none',
+                fontFamily: 'inherit',
+                fontSize: '0.9rem',
+                minWidth: '160px',
+              }}
+            >
+              <option value='en'>🇬🇧 English</option>
+              <option value='es'>🇪🇸 Español</option>
+              <option value='pt-BR'>🇧🇷 Português (BR)</option>
+              <option value='fr'>🇫🇷 Français</option>
+              <option value='it'>🇮🇹 Italiano</option>
+              <option value='de'>🇩🇪 Deutsch</option>
+            </select>
+          </div>
+
+          {/* REAL-TIME ALERTS (3C) */}
+          <div
+            style={{
+              marginTop: '1.5rem',
+              borderTop: '1px solid rgba(255,255,255,0.05)',
+            }}
+          >
+            <p style={{ fontSize: '0.95rem', fontWeight: 'bold', marginBottom: '0.4rem' }}>
+              {t('realtimeAlerts')}
+            </p>
+            <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.8rem' }}>
+              {t('realtimeAlertsDesc')}
+            </p>
+            <label
+              style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}
+            >
+              <input
+                type='checkbox'
+                checked={monitorEnabled}
+                onChange={e => {
+                  const val = e.currentTarget.checked;
+                  setMonitorEnabled(val);
+                  setMonitorEnabledState(val);
+                }}
+                style={{ width: 16, height: 16, cursor: 'pointer' }}
+              />
+              <span style={{ fontSize: '0.9rem' }}>{t('realtimeEnabled')}</span>
+            </label>
+          </div>
+
+          {/* BYPASS TEMPORAL: CloudSync oculto temporalmente hasta configurar Supabase */}
+          {/* <div
+            style={{
+              marginTop: '1.5rem',
+              borderTop: '1px solid rgba(255,255,255,0.05)',
+            }}
+          >
+            <p style={{ fontSize: '0.95rem', fontWeight: 'bold', marginBottom: '0.4rem' }}>
+              {t('cloudSync')} {!isPro && <span style={{ fontSize: 14 }}>🔒</span>}
+            </p>
+            <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.8rem' }}>
+              {t('cloudSyncDesc')}
+            </p>
+            {lastSync && (
+              <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.6rem' }}>
+                {t('lastSynced')}:{' '}
+                {new Intl.DateTimeFormat('default', {
+                  dateStyle: 'short',
+                  timeStyle: 'short',
+                }).format(new Date(lastSync))}
+              </p>
+            )}
+            <button
+              type='button'
+              disabled={!isPro || !CloudSync.isConfigured() || syncState === 'syncing'}
+              onClick={async () => {
+                if (!isPro) {
+                  alert(t('proFeatureUpgrade'));
+                  return;
+                }
+                setSyncState('syncing');
+                try {
+                  const history = HistoryService.getHistory();
+                  const wlKey = getDynamicStorageKey(WHITELISTED_RESULTS_STORAGE_KEY);
+                  const wlRaw = localStorage.getItem(wlKey);
+                  const whitelist = wlRaw ? JSON.parse(wlRaw) : [];
+                  const ok = await CloudSync.sync(history, whitelist);
+                  setSyncState(ok ? 'synced' : 'error');
+                  if (ok) {
+                    setLastSync(CloudSync.getLastSyncTs());
+                  }
+                  setTimeout(() => setSyncState('idle'), 3000);
+                } catch {
+                  setSyncState('error');
+                  setTimeout(() => setSyncState('idle'), 3000);
+                }
+              }}
+              style={{
+                background: isPro ? 'rgba(6,182,212,0.15)' : 'rgba(255,255,255,0.05)',
+                color: isPro ? '#06b6d4' : '#94a3b8',
+                border: `1px solid ${isPro ? 'rgba(6,182,212,0.3)' : 'rgba(255,255,255,0.1)'}`,
+                padding: '0.5rem 1.2rem',
+                borderRadius: '50px',
+                cursor: isPro && CloudSync.isConfigured() ? 'pointer' : 'not-allowed',
+                fontFamily: 'inherit',
+                fontSize: '0.9rem',
+              }}
+            >
+              {syncState === 'syncing'
+                ? t('syncing')
+                : syncState === 'synced'
+                  ? t('synced')
+                  : syncState === 'error'
+                    ? t('syncError')
+                    : t('syncNow')}
+            </button>
+            {!CloudSync.isConfigured() && isPro && (
+              <p style={{ fontSize: '0.7rem', color: '#f59e0b', marginTop: '0.4rem' }}>
+                Add REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON to your .env file to enable
+                cloud sync.
+              </p>
+            )}
+          </div>
+          */}
+
           <div className='warning-container'>
             <h3 className='warning'>
-              <b>WARNING:</b> Modifying these settings increases ban risk.
+              <b>{t('warningMsg')}</b>
             </h3>
-            <h3 className='warning'>USE AT YOUR OWN RISK.</h3>
+            <h3 className='warning'>{t('useAtOwnRisk')}</h3>
           </div>
 
           <div className='btn-container'>
             <button className='btn' type='button' onClick={() => setSettingState(false)}>
-              Cancel
+              {t('cancel')}
             </button>
             <button className='btn btn-primary' type='submit'>
-              Save
+              {t('save')}
             </button>
           </div>
         </div>

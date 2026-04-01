@@ -1,4 +1,5 @@
 import React from 'react';
+import { t } from '../i18n/i18n';
 
 interface StatsChartProps {
   detected: number; // Traitors (Rojo)
@@ -26,7 +27,7 @@ export const StatsChart = ({ detected, cleaned, whitelisted }: StatsChartProps) 
           <circle cx='80' cy='80' r='70' fill='none' stroke='#334155' strokeWidth='20' />
         </svg>
         <div style={{ position: 'absolute', textAlign: 'center', color: '#94a3b8' }}>
-          <span style={{ fontSize: '0.8rem', display: 'block' }}>No Data</span>
+          <span style={{ fontSize: '0.8rem', display: 'block' }}>{t('noData')}</span>
         </div>
       </div>
     );
@@ -113,7 +114,7 @@ export const StatsChart = ({ detected, cleaned, whitelisted }: StatsChartProps) 
           {total}
         </span>
         <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase' }}>
-          Events
+          {t('events')}
         </span>
       </div>
     </div>

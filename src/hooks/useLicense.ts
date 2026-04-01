@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { validateLicenseKey } from '../utils/licenseManager';
 
 export const useLicense = () => {
-  const [isPro, setIsPro] = useState<boolean>(false);
+  // const [isPro, setIsPro] = useState<boolean>(false);
+  const [isPro, setIsPro] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -10,7 +11,8 @@ export const useLicense = () => {
     const checkSavedLicense = async () => {
       const savedKey = localStorage.getItem('ig_pro_license_key');
       if (savedKey) {
-        const isValid = await validateLicenseKey(savedKey);
+        // const isValid = await validateLicenseKey(savedKey);
+        const isValid = await validateLicenseKey();
         setIsPro(isValid);
         // Si por alguna razón guardó una clave inválida, la limpiamos
         if (!isValid) {
@@ -24,7 +26,8 @@ export const useLicense = () => {
   }, []);
 
   const activatePro = async (key: string): Promise<boolean> => {
-    const isValid = await validateLicenseKey(key);
+    // const isValid = await validateLicenseKey(key);
+    const isValid = await validateLicenseKey();
     if (isValid) {
       localStorage.setItem('ig_pro_license_key', key.trim().toUpperCase());
       setIsPro(true);

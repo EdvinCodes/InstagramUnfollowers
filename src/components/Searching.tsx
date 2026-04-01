@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { t } from '../i18n/i18n';
 import {
   assertUnreachable,
   getCurrentPageUnfollowers,
@@ -57,12 +58,12 @@ const FiltersSidebar = ({
   handleScanFilter: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) => (
   <menu className='flex column m-clear p-clear'>
-    <p style={{ fontWeight: 'bold' }}>Filters</p>
+    <p style={{ fontWeight: 'bold' }}>{t('filterResults')}</p>
     {[
-      { name: 'showVerified', label: 'Verified' },
-      { name: 'showPrivate', label: 'Private' },
-      { name: 'showWithOutProfilePicture', label: 'No Profile Pic' },
-      { name: 'showGhostsOnly', label: 'Ghosts / Bots Only' },
+      { name: 'showVerified', label: t('verified') },
+      { name: 'showPrivate', label: t('private') },
+      { name: 'showWithOutProfilePicture', label: t('noProfilePic') },
+      { name: 'showGhostsOnly', label: t('ghostsBotsOnly') },
     ].map(filter => (
       <label key={filter.name} className='badge m-small' style={{ cursor: 'pointer' }}>
         <input
@@ -109,7 +110,7 @@ export const Searching = ({
     if (!filter) {
       return EMPTY_LIST;
     }
-    return getUsersForDisplay(scanResults, whitelistedResults, currentTab, searchTerm, filter);
+    return getUsersForDisplay(scanResults, whitelistedResults, currentTab, searchTerm, filter, t);
   }, [scanResults, whitelistedResults, currentTab, searchTerm, filter]);
 
   if (state.status !== 'scanning') {
@@ -166,17 +167,19 @@ export const Searching = ({
   };
 
   const handleUnfollowStart = (actionType: 'unfollow' | 'remove_follower') => {
-    const actionName = actionType === 'unfollow' ? 'unfollow' : 'remove';
-
     // EL PAYWALL
     if (!isPro && state.selectedResults.length > 1) {
-      alert(
-        '🔒 PRO Feature: Upgrade to process multiple users automatically. Free version only allows 1 by 1.',
-      );
+      alert(t('proFeatureMultiUnfollow'));
       return;
     }
 
-    if (!confirm(`Are you sure you want to ${actionName} ${state.selectedResults.length} users?`)) {
+    if (
+      !confirm(
+        actionType === 'unfollow'
+          ? t('confirmUnfollowAction')(state.selectedResults.length)
+          : t('confirmRemoveAction')(state.selectedResults.length),
+      )
+    ) {
       return;
     }
 
@@ -199,21 +202,27 @@ export const Searching = ({
         onClick={() => setIsMobileMenuOpen(true)}
       >
         <FilterIcon />
-        <span>Actions ({state.selectedResults.length})</span>
+        <span>
+          {t('actions')} ({state.selectedResults.length})
+        </span>
       </button>
 
       {/* Sidebar */}
       <aside className={`app-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
         <div className='mobile-sidebar-header'>
-          <h3>Filters & Actions</h3>
+          <h3>{t('filtersActions')}</h3>
           <button className='close-btn' onClick={() => setIsMobileMenuOpen(false)}>
             ✕
           </button>
         </div>
         <FiltersSidebar state={state} handleScanFilter={handleScanFilter} />
         <div className='grow stats-box'>
-          <p>Displayed: {usersForDisplay.length}</p>
-          <p>Total: {state.results.length}</p>
+          <p>
+            {t('displayed')}: {usersForDisplay.length}
+          </p>
+          <p>
+            {t('total')}: {state.results.length}
+          </p>
         </div>
         {/* Solo mostramos los controles si el escaneo está en curso */}
         {state.percentage > 0 && state.percentage < 100 && (
@@ -229,16 +238,16 @@ export const Searching = ({
             >
               {isTogglingPause
                 ? scanningPaused
-                  ? 'Resuming...'
-                  : 'Pausing...'
+                  ? t('resuming')
+                  : t('pausing')
                 : scanningPaused
-                  ? 'Resume Scan'
-                  : 'Pause Scan'}
+                  ? t('resumeScan')
+                  : t('pauseScan')}
             </button>
           </div>
         )}
         <div className='grow t-center pagination-controls'>
-          <p>Pages</p>
+          <p>{t('pages')}</p>
           <div className='flex justify-center align-center'>
             <button className='btn-icon' onClick={() => handlePageChange('prev')}>
               ❮
@@ -263,7 +272,7 @@ export const Searching = ({
             onClick={() => handleUnfollowStart('remove_follower')}
             disabled={state.selectedResults.length === 0}
           >
-            REMOVE FOLLOWER ({state.selectedResults.length})
+            {t('removeFollower')} ({state.selectedResults.length})
           </button>
         )}
         <button
@@ -271,7 +280,7 @@ export const Searching = ({
           onClick={() => handleUnfollowStart('unfollow')}
           disabled={state.selectedResults.length === 0}
         >
-          UNFOLLOW ({state.selectedResults.length})
+          {t('unfollow')} ({state.selectedResults.length})
         </button>
       </aside>
 
@@ -284,7 +293,7 @@ export const Searching = ({
               setState({ ...state, currentTab: 'non_whitelisted', selectedResults: [], page: 1 })
             }
           >
-            Non-Followers
+            {t('nonFollowers')}
           </div>
           <div
             className={`tab ${state.currentTab === 'mutuals' ? 'tab-active' : ''}`}
@@ -292,7 +301,7 @@ export const Searching = ({
               setState({ ...state, currentTab: 'mutuals', selectedResults: [], page: 1 })
             }
           >
-            Mutuals
+            {t('mutuals')}
           </div>
           <div
             className={`tab ${state.currentTab === 'whitelisted' ? 'tab-active' : ''}`}
@@ -300,7 +309,7 @@ export const Searching = ({
               setState({ ...state, currentTab: 'whitelisted', selectedResults: [], page: 1 })
             }
           >
-            Whitelisted
+            {t('whitelisted')}
           </div>
         </nav>
 
@@ -399,13 +408,13 @@ export const Searching = ({
                             flexShrink: 0,
                           }}
                         >
-                          NEW
+                          {t('newBadge')}
                         </span>
                       )}
 
                       {/* Badge Ghost/Bot/Suspicious — maxWidth para no aplastar el username */}
                       {(() => {
-                        const ghost = calculateGhostScore(user);
+                        const ghost = calculateGhostScore(user, t);
                         if (ghost.level === 'safe') {
                           return null;
                         }
@@ -430,13 +439,9 @@ export const Searching = ({
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                             }}
-                            title={
-                              isPro
-                                ? ghost.reasons.join(' · ')
-                                : 'Upgrade to PRO to see detailed reasons'
-                            }
+                            title={isPro ? ghost.reasons.join(' · ') : t('proFeatureGhostDetails')}
                           >
-                            {getGhostLabel(ghost.level)} {isPro ? ghost.score : '🔒'}
+                            {getGhostLabel(ghost.level, t)} {isPro ? ghost.score : '🔒'}
                           </span>
                         );
                       })()}
@@ -490,7 +495,7 @@ export const Searching = ({
 
                   {user.is_private && (
                     <div className='private-indicator' style={{ flexShrink: 0 }}>
-                      Private
+                      {t('private')}
                     </div>
                   )}
                 </div>

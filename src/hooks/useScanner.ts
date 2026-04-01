@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'preact/hooks';
 import { UserNode, User } from '../model/user';
 import { urlGenerator, sleep } from '../utils/utils';
 import { Timings } from '../model/timings';
+import { t } from '../i18n/i18n';
 
 interface ScannerState {
   isScanning: boolean;
@@ -56,7 +57,7 @@ export const useScanner = (timings: Timings) => {
         // 1. Pause Logic
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         while (isPausedRef.current) {
-          setScannerState(prev => ({ ...prev, statusMessage: 'Paused...' }));
+          setScannerState(prev => ({ ...prev, statusMessage: t('statusPaused') }));
           await sleep(1000);
 
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -71,7 +72,7 @@ export const useScanner = (timings: Timings) => {
         }
 
         // 2. Fetch Data
-        setScannerState(prev => ({ ...prev, statusMessage: 'Fetching data...' }));
+        setScannerState(prev => ({ ...prev, statusMessage: t('statusFetching') }));
 
         const response = await fetch(url);
         // <-- FIX QUERY HASH: Interceptamos si IG nos corta el grifo
@@ -100,7 +101,7 @@ export const useScanner = (timings: Timings) => {
           isScanning: true,
           results: [...results],
           progress: Math.floor((currentCount / totalFollowed) * 100),
-          statusMessage: `Analyzed ${currentCount} / ${totalFollowed} users...`,
+          statusMessage: t('statusAnalyzed')(currentCount, totalFollowed),
         });
 
         // 5. Anti-Ban Sleep Logic
@@ -115,19 +116,19 @@ export const useScanner = (timings: Timings) => {
           scrollCycle = 0;
           setScannerState(prev => ({
             ...prev,
-            statusMessage: 'Cooling down to prevent block...',
+            statusMessage: t('statusCoolingDown'),
           }));
           await sleep(timings.timeToWaitAfterFiveSearchCycles);
         }
       }
     } catch (error) {
       console.error('Scan error:', error);
-      setScannerState(prev => ({ ...prev, statusMessage: 'Error during scan!' }));
+      setScannerState(prev => ({ ...prev, statusMessage: t('statusScanError') }));
     } finally {
       setScannerState(prev => ({
         ...prev,
         isScanning: false,
-        statusMessage: 'Completed',
+        statusMessage: t('statusCompleted'),
       }));
     }
   }, [timings]);

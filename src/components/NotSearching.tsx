@@ -1,4 +1,5 @@
 import React from 'react';
+import { t } from '../i18n/i18n';
 
 interface NotSearchingProps {
   onScan?: () => void;
@@ -41,15 +42,13 @@ export const NotSearching = ({ onScan }: NotSearchingProps) => {
         <ScanIcon />
       </div>
 
-      <h2 className='empty-state-title'>Ready to Analyze?</h2>
+      <h2 className='empty-state-title'>{t('readyToAnalyze')}</h2>
 
-      <p className='empty-state-description'>
-        Start scanning your profile to detect users who are not following you back.
-      </p>
+      <p className='empty-state-description'>{t('startScanning')}</p>
 
       {/* 2. Conectamos el botón a nuestra nueva función */}
       <button className='run-scan-btn' onClick={handleStartScan}>
-        START SCANNING
+        {t('startScanning')}
       </button>
     </section>
   );

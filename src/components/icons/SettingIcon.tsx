@@ -1,14 +1,16 @@
-import React from 'react';
+import React from 'preact/compat';
 
-interface SettingIconProps {
-  onClickLogo: () => void;
+interface Props {
+  onClickLogo?: () => void;
+  title?: string;
 }
 
-export const SettingIcon = ({ onClickLogo }: SettingIconProps) => (
+// eslint-disable-next-line react/prop-types
+export const SettingIcon = ({ onClickLogo, title }: Props) => (
   <div
     className='icon-button setting-icon'
     onClick={onClickLogo}
-    title='Settings'
+    title={title}
     style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
   >
     <svg

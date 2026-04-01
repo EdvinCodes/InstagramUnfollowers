@@ -13,7 +13,7 @@ export interface GhostAnalysis {
   reasons: string[];
 }
 
-export const calculateGhostScore = (user: UserNode): GhostAnalysis => {
+export const calculateGhostScore = (user: UserNode, t: any): GhostAnalysis => {
   let score = 0;
   const reasons: string[] = [];
   const usernameL = user.username.toLowerCase();
@@ -25,19 +25,19 @@ export const calculateGhostScore = (user: UserNode): GhostAnalysis => {
     user.profile_pic_url.includes('default')
   ) {
     score += 15;
-    reasons.push('No profile picture');
+    reasons.push(t.reasonNoPic);
   }
 
   // Secuencia numérica larga
   if (/\d{6,}/.test(user.username)) {
     score += 20;
-    reasons.push('Long numeric sequence in username');
+    reasons.push(t.reasonLongNums);
   }
 
   // Patrón letras+números tipo bot
   if (/^[a-z]{2,6}\d{4,}$/.test(usernameL)) {
     score += 25;
-    reasons.push('Bot-like username pattern');
+    reasons.push(t.reasonBotPattern);
   }
 
   // Keyboard mashing — filas del teclado QWERTY
@@ -49,19 +49,19 @@ export const calculateGhostScore = (user: UserNode): GhostAnalysis => {
   );
   if (hasKeyboardMash) {
     score += 25;
-    reasons.push('Keyboard mashing pattern');
+    reasons.push(t.reasonKeyboard);
   }
 
   // Sin nombre real
   if (!user.full_name || user.full_name.trim() === '') {
     score += 10;
-    reasons.push('No display name');
+    reasons.push(t.reasonNoName);
   }
 
   // Nombre igual al username
   if (user.full_name && user.full_name.trim().toLowerCase() === usernameL) {
     score += 10;
-    reasons.push('Display name same as username');
+    reasons.push(t.reasonSameName);
   }
 
   let level: GhostLevel = 'safe';
@@ -76,14 +76,14 @@ export const calculateGhostScore = (user: UserNode): GhostAnalysis => {
   return { level, score, reasons };
 };
 
-export const getGhostLabel = (level: GhostLevel): string => {
+export const getGhostLabel = (level: GhostLevel, t: any): string => {
   switch (level) {
     case 'bot':
-      return 'BOT';
+      return t.lblBot;
     case 'ghost':
-      return 'INACT';
+      return t.lblInact;
     case 'suspicious':
-      return 'RISK';
+      return t.lblRisk;
     case 'safe':
       return '';
     default:

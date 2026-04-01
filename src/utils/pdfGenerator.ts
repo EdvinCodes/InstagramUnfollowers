@@ -4,6 +4,7 @@ import { calculateGhostScore } from './ghostScore';
 export const generateHealthReportPDF = async (
   nonFollowers: readonly UserNode[],
   whitelisted: readonly UserNode[],
+  t: any,
 ): Promise<void> => {
   const [{ jsPDF }, { default: autoTable }, { default: Chart }] = await Promise.all([
     import('jspdf'),
@@ -20,7 +21,7 @@ export const generateHealthReportPDF = async (
   let safe = 0;
 
   const analyzedUsers = nonFollowers.map(user => {
-    const analysis = calculateGhostScore(user);
+    const analysis = calculateGhostScore(user, t);
     if (analysis.level === 'bot') {
       bots++;
     } else if (analysis.level === 'ghost') {
@@ -49,7 +50,12 @@ export const generateHealthReportPDF = async (
     const chart = new Chart(canvas, {
       type: 'doughnut',
       data: {
-        labels: ['Safe', 'Suspicious', 'Ghosts', 'Bots'],
+        labels: [
+          (t.healthSafe || 'Safe').replace(':', ''),
+          (t.healthSuspicious || 'Suspicious').replace(':', ''),
+          (t.healthGhosts || 'Ghosts').replace(':', ''),
+          (t.healthBots || 'Bots').replace(':', ''),
+        ],
         datasets: [
           {
             data: [safe, suspicious, ghosts, bots],
@@ -83,40 +89,46 @@ export const generateHealthReportPDF = async (
   const healthScore = 100 - riskyPercentage;
 
   let healthMessage: string;
-  let healthColor: [number, number, number];
+  let healthColor: [number, number, number] = [34, 197, 94];
 
   if (nonFollowers.length === 0) {
-    healthMessage = 'No non-followers detected. No risk data available.';
-    healthColor = [59, 130, 246];
+    healthMessage = t.pdfMsgNoData || 'No data available.';
+    healthColor = [59, 130, 246]; // Azul
   } else if (riskyPercentage > 30) {
-    healthMessage = `Warning: ${riskyPercentage}% of your non-followers show bot or ghost activity.`;
-    healthColor = [239, 68, 68];
+    healthMessage =
+      typeof t.pdfMsgWarning === 'function'
+        ? t.pdfMsgWarning(riskyPercentage)
+        : `Warning: ${riskyPercentage}% of users show bot/ghost activity.`;
+    healthColor = [239, 68, 68]; // Rojo
   } else {
-    healthMessage = `Your account is relatively healthy (${riskyPercentage}% ghost accounts).`;
-    healthColor = [34, 197, 94];
+    healthMessage =
+      typeof t.pdfMsgHealthy === 'function'
+        ? t.pdfMsgHealthy(riskyPercentage)
+        : `Your account is healthy (${riskyPercentage}% ghost accounts).`;
+    healthColor = [34, 197, 94]; // Verde
   }
 
   // --- CABECERA ---
   doc.setFontSize(20);
   doc.setTextColor(6, 182, 212);
-  doc.text('Instagram Community Health Report', 14, 20);
+  doc.text(t.pdfTitle || 'Instagram Community Health Report', 14, 20);
 
   doc.setFontSize(9);
   doc.setTextColor(100, 100, 100);
-  doc.text(`Generated: ${dateStr}`, 14, 27);
+  doc.text(`${t.generated || 'Generated:'} ${dateStr}`, 14, 27);
   doc.text('Instagram Unfollowers PRO', 14, 32);
 
   // --- RESUMEN ---
   doc.setFontSize(13);
   doc.setTextColor(0, 0, 0);
-  doc.text('Account Overview', 14, 44);
+  doc.text(t.accountOverview || 'Account Overview', 14, 44);
 
   doc.setFontSize(10);
   doc.setTextColor(40, 40, 40);
-  doc.text(`Non-Followers Analyzed: ${nonFollowers.length}`, 14, 52);
-  doc.text(`Protected (Whitelist): ${whitelisted.length}`, 14, 58);
+  doc.text(`${t.nonFollowersAnalyzed || 'Analyzed:'} ${nonFollowers.length}`, 14, 52);
+  doc.text(`${t.protectedWhitelist || 'Protected:'} ${whitelisted.length}`, 14, 58);
   doc.text(
-    `Safe: ${safe}  |  Suspicious: ${suspicious}  |  Ghosts: ${ghosts}  |  Bots: ${bots}`,
+    `${t.healthSafe || 'Safe:'} ${safe}  |  ${t.healthSuspicious || 'Suspicious:'} ${suspicious}  |  ${t.healthGhosts || 'Ghosts:'} ${ghosts}  |  ${t.healthBots || 'Bots:'} ${bots}`,
     14,
     64,
   );
@@ -132,7 +144,7 @@ export const generateHealthReportPDF = async (
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 100, 100);
-  doc.text('HEALTH', 137, 68, { align: 'center' });
+  doc.text(t.healthWord || 'HEALTH', 137, 68, { align: 'center' });
 
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
@@ -145,12 +157,19 @@ export const generateHealthReportPDF = async (
     `@${item.user.username}`,
     item.analysis.score.toString(),
     item.analysis.level.toUpperCase(),
-    item.analysis.reasons.join(', '),
+    item.analysis.reasons.join(', ') || 'N/A', // Por si falla alguna razón
   ]);
 
   autoTable(doc, {
     startY: 118,
-    head: [['Username', 'Score', 'Level', 'Flags']],
+    head: [
+      [
+        t.pdfTableUsername || 'Username',
+        t.pdfTableScore || 'Score',
+        t.pdfTableLevel || 'Level',
+        t.pdfTableFlags || 'Flags',
+      ],
+    ],
     body: tableData,
     headStyles: { fillColor: [6, 182, 212], fontSize: 9 },
     alternateRowStyles: { fillColor: [241, 245, 249] },

@@ -8,6 +8,7 @@ import {
   unfollowUserUrlGenerator,
   removeFollowerUrlGenerator,
 } from '../utils/utils';
+import { t } from '../i18n/i18n';
 
 // 1. IMPORTAMOS EL SERVICIO DE HISTORIAL (V4.0)
 import { HistoryService } from '../services/historyService';
@@ -24,7 +25,7 @@ export const useUnfollowerQueue = (timings: Timings) => {
     isUnfollowing: false,
     progress: 0,
     unfollowLog: [],
-    statusMessage: 'Ready to unfollow',
+    statusMessage: t('statusReadyToUnfollow'),
   });
 
   const isPausedRef = useRef<boolean>(false);
@@ -56,7 +57,7 @@ export const useUnfollowerQueue = (timings: Timings) => {
         isUnfollowing: true,
         progress: 0,
         unfollowLog: [],
-        statusMessage: 'Starting unfollow queue...',
+        statusMessage: t('statusStartingQueue'),
       });
 
       const csrftoken = getCookie('csrftoken');
@@ -64,7 +65,7 @@ export const useUnfollowerQueue = (timings: Timings) => {
         setUnfollowerState(prev => ({
           ...prev,
           isUnfollowing: false,
-          statusMessage: 'Error: No CSRF Token',
+          statusMessage: t('statusNoCsrf'),
         }));
         return;
       }
@@ -80,7 +81,7 @@ export const useUnfollowerQueue = (timings: Timings) => {
 
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         while (isPausedRef.current) {
-          setUnfollowerState(prev => ({ ...prev, statusMessage: 'Unfollowing paused...' }));
+          setUnfollowerState(prev => ({ ...prev, statusMessage: t('statusUnfollowPaused') }));
           await sleep(1000);
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           if (shouldStopRef.current) {
@@ -94,10 +95,13 @@ export const useUnfollowerQueue = (timings: Timings) => {
         }
 
         // 2. Acción de Unfollow
-        const actionText = actionType === 'unfollow' ? 'Unfollowing' : 'Removing';
+        const actionText =
+          actionType === 'unfollow'
+            ? t('statusUnfollowing')(user.username)
+            : t('statusRemoving')(user.username);
         setUnfollowerState(prev => ({
           ...prev,
-          statusMessage: `${actionText} ${user.username}...`,
+          statusMessage: actionText,
         }));
 
         let success = false;
@@ -149,7 +153,7 @@ export const useUnfollowerQueue = (timings: Timings) => {
 
           // Pausa larga cada 5 unfollows
           if (counter % 5 === 0) {
-            setUnfollowerState(prev => ({ ...prev, statusMessage: 'Waiting for cool down...' }));
+            setUnfollowerState(prev => ({ ...prev, statusMessage: t('statusWaitingCooldown') }));
             await sleep(timings.timeToWaitAfterFiveUnfollows);
           } else {
             await sleep(waitTime);
@@ -160,7 +164,7 @@ export const useUnfollowerQueue = (timings: Timings) => {
       setUnfollowerState(prev => ({
         ...prev,
         isUnfollowing: false,
-        statusMessage: shouldStopRef.current ? 'Stopped' : 'Completed',
+        statusMessage: shouldStopRef.current ? t('statusStopped') : t('statusCompleted'),
       }));
     },
     [timings],

@@ -1,11 +1,17 @@
-import React from 'react';
+import React from 'preact/compat';
 
-export const HistoryIcon = ({ onClick }: { onClick?: () => void }) => (
+interface Props {
+  onClick?: () => void;
+  title?: string;
+}
+
+// eslint-disable-next-line react/prop-types
+export const HistoryIcon = ({ onClick, title }: Props) => (
   <div
     className='icon-button'
     onClick={onClick}
     style={{ cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center' }}
-    title='Open History Log'
+    title={title}
   >
     <svg
       width='24'

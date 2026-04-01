@@ -42,6 +42,7 @@ export function getUsersForDisplay(
   currentTab: ScanningTab,
   searchTerm: string,
   filter: ScanningFilter,
+  t: any,
 ): readonly UserNode[] {
   const lowerSearchTerm = searchTerm.toLowerCase();
 
@@ -105,7 +106,7 @@ export function getUsersForDisplay(
     }
 
     // Si busco fantasmas y este usuario es "safe" (seguro), lo descarto
-    if (filter.showGhostsOnly && calculateGhostScore(user).level === 'safe') {
+    if (filter.showGhostsOnly && calculateGhostScore(user, t).level === 'safe') {
       return false;
     }
 
@@ -201,48 +202,44 @@ export function unfollowUserUrlGenerator(idToUnfollow: string): string {
 export const exportToCSV = (
   results: readonly UserNode[],
   whitelistedResults: readonly UserNode[],
-  isPro: boolean, // <-- 1. Añadimos el parámetro de seguridad
+  isPro: boolean,
+  t: any, // Objeto de traducciones
 ) => {
   if (results.length === 0) {
     return;
   }
 
-  // 2. Definir Cabeceras Condicionales
   const headers = [
     'Username',
     'Full Name',
     'Profile URL',
-    'Relation',
-    'Status',
-    'Is Whitelisted',
-    'Is Verified',
-    'Is Private',
-    ...(isPro ? ['Ghost Score', 'Account Health'] : ['Ghost Analysis']), // <-- Paywall en cabecera
+    t.relation,
+    t.status,
+    t.isWhitelisted,
+    t.isVerified,
+    t.isPrivate,
+    ...(isPro ? [t.ghostScore, t.accountHealth] : [t.ghostAnalysis]),
     'ID',
   ];
 
-  // 3. Construir filas
   const csvRows = results.map(user => {
     const isWhitelisted = whitelistedResults.some(w => w.id === user.id);
-    const relation = user.follows_viewer ? 'Mutual (Friend)' : 'Non-Follower (Traitor)';
-    const status = user.is_new_unfollower ? 'NEW' : 'Old';
+    const relation = user.follows_viewer ? t.mutual : t.nonFollower;
+    const status = user.is_new_unfollower ? t.newBadge : t.old;
     const profileUrl = `https://www.instagram.com/${user.username}`;
 
-    const ghostAnalysis = calculateGhostScore(user);
-    const csvEscape = (text: string) => `"${text.replace(/"/g, '""')}"`;
+    const ghostAnalysis = calculateGhostScore(user, t);
+    const csvEscape = (text: any) => `"${String(text || '').replace(/"/g, '""')}"`;
 
-    // 4. LÓGICA DE PAYWALL PARA LOS DATOS
     let premiumColumns: string[];
     if (isPro) {
-      // Si ha pagado, le damos los datos exactos
       premiumColumns = [
         ghostAnalysis.score.toString(),
-        csvEscape(getGhostLabel(ghostAnalysis.level)),
+        csvEscape(getGhostLabel(ghostAnalysis.level, t)),
       ];
     } else {
-      // Si es gratis, censuramos el dato y le invitamos a pagar
-      const basicGhost = ghostAnalysis.level === 'safe' ? 'No' : 'Yes';
-      premiumColumns = [csvEscape(`${basicGhost} (Upgrade to PRO for exact score)`)];
+      const basicGhost = ghostAnalysis.level === 'safe' ? t.no : t.yes;
+      premiumColumns = [csvEscape(`${basicGhost} ${t.csvUpgradePromo}`)];
     }
 
     return [
@@ -251,10 +248,10 @@ export const exportToCSV = (
       csvEscape(profileUrl),
       csvEscape(relation),
       csvEscape(status),
-      isWhitelisted ? 'Yes' : 'No',
-      user.is_verified ? 'Yes' : 'No',
-      user.is_private ? 'Yes' : 'No',
-      ...premiumColumns, // <-- Inyectamos la información protegida
+      isWhitelisted ? t.yes : t.no,
+      user.is_verified ? t.yes : t.no,
+      user.is_private ? t.yes : t.no,
+      ...premiumColumns,
       csvEscape(user.id),
     ].join(',');
   });

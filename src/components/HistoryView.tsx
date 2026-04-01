@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { HistoryEvent, HistoryEventType } from '../model/history';
 import { HistoryService } from '../services/historyService';
 import { StatsChart } from './StatsChart';
+import { t } from '../i18n/i18n';
 
 interface HistoryViewProps {
   onClose: () => void;
@@ -49,7 +50,7 @@ export const HistoryView = ({ onClose, isPro }: HistoryViewProps) => {
   }, [isPro]);
 
   const handleClear = () => {
-    if (confirm('Are you sure you want to delete all history? This cannot be undone.')) {
+    if (confirm(t('confirmClearHistory'))) {
       HistoryService.clearHistory();
       setEvents([]);
       setStats({
@@ -62,7 +63,7 @@ export const HistoryView = ({ onClose, isPro }: HistoryViewProps) => {
   };
 
   const formatDate = (timestamp: number) =>
-    new Intl.DateTimeFormat('en-US', {
+    new Intl.DateTimeFormat('default', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -72,17 +73,17 @@ export const HistoryView = ({ onClose, isPro }: HistoryViewProps) => {
   const getEventStyle = (type: HistoryEventType) => {
     switch (type) {
       case 'DETECTED_UNFOLLOWER':
-        return { icon: '🕵️', color: '#f87171', label: 'Traitor Detected' };
+        return { icon: '🕵️', color: '#f87171', label: t('traitorDetected') };
       case 'YOU_UNFOLLOWED':
-        return { icon: '👋', color: '#34d399', label: 'You Unfollowed' };
+        return { icon: '👋', color: '#34d399', label: t('youUnfollowed') };
       case 'WHITELISTED':
-        return { icon: '🛡️', color: '#60a5fa', label: 'Whitelisted' };
+        return { icon: '🛡️', color: '#60a5fa', label: t('whitelisted') };
       case 'UNWHITELISTED':
-        return { icon: '🔓', color: '#94a3b8', label: 'Un-whitelisted' };
+        return { icon: '🔓', color: '#94a3b8', label: t('unWhitelisted') };
       case 'SOFT_BLOCKED': // <-- Añadido para el Soft Block
-        return { icon: '🚫', color: '#eab308', label: 'Removed Follower' };
+        return { icon: '🚫', color: '#eab308', label: t('removedFollower') };
       default: // <-- Seguridad para que TypeScript no se queje
-        return { icon: '📝', color: '#ffffff', label: 'Unknown Event' };
+        return { icon: '📝', color: '#ffffff', label: t('unknownEvent') };
     }
   };
   return (
@@ -114,7 +115,7 @@ export const HistoryView = ({ onClose, isPro }: HistoryViewProps) => {
             flexShrink: 0, // No encoger
           }}
         >
-          <h3 style={{ margin: 0, fontSize: '1.5rem' }}>Time Machine 🕰️</h3>
+          <h3 style={{ margin: 0, fontSize: '1.5rem' }}>{t('timeMachine')}</h3>
           <button
             className='close-btn'
             onClick={onClose}
@@ -182,7 +183,7 @@ export const HistoryView = ({ onClose, isPro }: HistoryViewProps) => {
                       background: '#f87171',
                     }}
                   />
-                  <span style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>Traitors</span>
+                  <span style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>{t('traitors')}</span>
                 </div>
                 <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#f87171' }}>
                   {stats.totalTraitorsDetected}
@@ -201,7 +202,7 @@ export const HistoryView = ({ onClose, isPro }: HistoryViewProps) => {
                       background: '#34d399',
                     }}
                   />
-                  <span style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>Cleaned</span>
+                  <span style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>{t('cleaned')}</span>
                 </div>
                 <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#34d399' }}>
                   {stats.totalUnfollowedByYou}
@@ -220,7 +221,7 @@ export const HistoryView = ({ onClose, isPro }: HistoryViewProps) => {
                       background: '#60a5fa',
                     }}
                   />
-                  <span style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>Protected</span>
+                  <span style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>{t('protected')}</span>
                 </div>
                 <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#60a5fa' }}>
                   {stats.totalWhitelisted}
@@ -242,7 +243,7 @@ export const HistoryView = ({ onClose, isPro }: HistoryViewProps) => {
           >
             {events.length === 0 ? (
               <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>
-                <p>No history yet. Start scanning to populate the timeline!</p>
+                <p>{t('noHistoryYet')}</p>
               </div>
             ) : (
               events.map(event => {
@@ -333,7 +334,7 @@ export const HistoryView = ({ onClose, isPro }: HistoryViewProps) => {
             title='Permanently delete all logs'
           >
             <TrashIcon />
-            Clear History
+            {t('clearHistory')}
           </button>
         </div>
       </div>

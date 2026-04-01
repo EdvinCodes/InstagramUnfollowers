@@ -2,6 +2,7 @@ import React from 'react';
 import { getUnfollowLogForDisplay } from '../utils/utils';
 import { State } from '../model/state';
 import { UnfollowLogEntry } from '../model/unfollow-log-entry';
+import { t } from '../i18n/i18n';
 
 interface UnfollowingProps {
   state: State;
@@ -23,7 +24,7 @@ const LogEntryItem = ({ entry, index, total }: LogEntryProps) => {
   if (entry.unfollowedSuccessfully) {
     return (
       <div className='p-medium'>
-        Unfollowed
+        {t('succeeded')}
         <a
           className='clr-inherit'
           target='_blank'
@@ -40,7 +41,7 @@ const LogEntryItem = ({ entry, index, total }: LogEntryProps) => {
 
   return (
     <div className='p-medium clr-red'>
-      Failed to unfollow {entry.user.username} {countLabel}
+      {t('failedToUnfollow')} {entry.user.username} {countLabel}
     </div>
   );
 };
@@ -65,7 +66,7 @@ export const Unfollowing = ({
       <aside className='app-sidebar'>
         <menu className='flex column grow m-clear p-clear'>
           <p className='p-small' style={{ fontWeight: 'bold' }}>
-            Filter Results
+            {t('filterResults2')}
           </p>
 
           <label className='badge m-small' style={{ cursor: 'pointer' }}>
@@ -75,7 +76,7 @@ export const Unfollowing = ({
               checked={state.filter.showSucceeded}
               onChange={handleUnfollowFilter}
             />
-            &nbsp;Succeeded
+            &nbsp;{t('succeeded')}
           </label>
 
           <label className='badge m-small' style={{ cursor: 'pointer' }}>
@@ -85,21 +86,21 @@ export const Unfollowing = ({
               checked={state.filter.showFailed}
               onChange={handleUnfollowFilter}
             />
-            &nbsp;Failed
+            &nbsp;{t('failed')}
           </label>
 
           {/* --- AÑADIDO: Controles de Pausa para el Unfollow --- */}
           {!isFinished && (
             <div style={{ marginTop: '20px', borderTop: '1px solid #333', paddingTop: '10px' }}>
               <p className='p-small' style={{ fontWeight: 'bold' }}>
-                Actions
+                {t('actions')}
               </p>
               <button
                 className={`button-control ${isPaused ? 'btn-resume' : 'btn-pause'}`}
                 style={{ width: '100%', padding: '8px' }}
                 onClick={togglePause}
               >
-                {isPaused ? 'Resume' : 'Pause'}
+                {isPaused ? t('resume') : t('pause')}
               </button>
             </div>
           )}
@@ -119,7 +120,7 @@ export const Unfollowing = ({
         {isFinished && (
           <div style={{ textAlign: 'center', margin: '20px 0' }}>
             <hr />
-            <div className='fs-large p-medium clr-green'>All DONE!</div>
+            <div className='fs-large p-medium clr-green'>{t('allDone')}</div>
             <hr />
           </div>
         )}

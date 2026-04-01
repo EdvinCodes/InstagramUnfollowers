@@ -38,6 +38,11 @@ import { useLicense } from './hooks/useLicense';
 import { HistoryService } from './services/historyService';
 import { Logo } from './components/icons/Logo';
 
+import { startRealtimeMonitor, isMonitorEnabled } from './services/realtimeMonitor';
+import { CloudSync } from './services/cloudSync';
+
+import { t } from './i18n/i18n';
+
 function App() {
   const [state, setState] = useState<State>({
     status: 'initial',
@@ -105,6 +110,12 @@ function App() {
     }
   }, []);
 
+  useEffect(() => {
+    if (isMonitorEnabled()) {
+      startRealtimeMonitor();
+    }
+  }, []);
+
   const toggleTheme = () => {
     const newTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
@@ -133,6 +144,14 @@ function App() {
         const newTraitors = processedResults.filter(u => u.is_new_unfollower);
 
         saveScanSnapshot(processedResults);
+
+        if (isPro && CloudSync.isConfigured()) {
+          const history = HistoryService.getHistory();
+          const wlKey = getDynamicStorageKey(WHITELISTED_RESULTS_STORAGE_KEY);
+          const wlRaw = localStorage.getItem(wlKey);
+          const whitelist = wlRaw ? (JSON.parse(wlRaw) as UserNode[]) : [];
+          void CloudSync.sync(history, whitelist);
+        }
 
         if (newTraitors.length > 0) {
           newTraitors.forEach(traitor => HistoryService.addEvent('DETECTED_UNFOLLOWER', traitor));
@@ -169,7 +188,7 @@ function App() {
         };
       });
     }
-  }, [scannerState, state.status, currentPercentage]); // 2. Array de dependencias 100% limpio
+  }, [scannerState, state.status, currentPercentage, isPro]);
 
   // Sincronización del Unfollower
   useEffect(() => {
@@ -294,6 +313,7 @@ function App() {
           state.currentTab,
           state.searchTerm,
           state.filter,
+          t,
         ),
       });
     } else {
@@ -316,6 +336,7 @@ function App() {
             state.currentTab,
             state.searchTerm,
             state.filter,
+            t,
           ),
           state.page,
         ),
@@ -381,6 +402,7 @@ function App() {
       state.currentTab,
       state.searchTerm,
       state.filter,
+      t,
     );
     const usersOnCurrentPage = getCurrentPageUnfollowers(usersDisplayed, state.page);
     isPageSelected =
