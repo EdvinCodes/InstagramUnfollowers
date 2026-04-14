@@ -1,0 +1,54 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main # CAMBIO IMPORTANTE: Los repos nuevos usan 'main', no 'master'
+  workflow_dispatch:
+
+# Permite que solo corra un deploy a la vez
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20 # Fijamos la versión 20 para evitar problemas con .nvmrc
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci # 'npm ci' es más rápido y seguro para entornos automáticos que 'npm install'
+
+      - name: Build Project
+        run: npm run build
+        # Esto ejecutará webpack, creará el dist.js, y el script update-index.js
+        # inyectará el código dentro de public/index.html en el servidor de GitHub.
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './public' # Correcto: Subimos la carpeta public que ya tiene el index.html inyectado
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
