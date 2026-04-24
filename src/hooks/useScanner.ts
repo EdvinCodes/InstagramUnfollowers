@@ -21,12 +21,11 @@ export const useScanner = (timings: Timings) => {
 
   const isPausedRef = useRef<boolean>(false);
   const [isPausedUI, setIsPausedUI] = useState(false);
-
   const shouldStopRef = useRef<boolean>(false);
 
   const togglePause = useCallback(() => {
     isPausedRef.current = !isPausedRef.current;
-    setIsPausedUI(isPausedRef.current); // 🔄 Esto fuerza el re-render del botón
+    setIsPausedUI(isPausedRef.current); // Esto fuerza el re-render del botón
   }, []);
 
   const stopScan = useCallback(() => {
@@ -45,6 +44,11 @@ export const useScanner = (timings: Timings) => {
     }));
 
     const results: UserNode[] = [];
+    // BUG FIX #2: Usamos un Set para detectar y descartar duplicados en tiempo real.
+    // La paginación por cursor de Instagram puede devolver el mismo usuario en dos páginas
+    // si hay movimientos en la red durante el escaneo.
+    const seenIds = new Set<string>();
+
     let url = urlGenerator();
     let hasNext = true;
     let totalFollowed = -1;
@@ -59,13 +63,11 @@ export const useScanner = (timings: Timings) => {
         while (isPausedRef.current) {
           setScannerState(prev => ({ ...prev, statusMessage: t('statusPaused') }));
           await sleep(1000);
-
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           if (shouldStopRef.current) {
             break;
           }
         }
-
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (shouldStopRef.current) {
           break;
@@ -73,15 +75,13 @@ export const useScanner = (timings: Timings) => {
 
         // 2. Fetch Data
         setScannerState(prev => ({ ...prev, statusMessage: t('statusFetching') }));
-
         const response = await fetch(url);
-        // <-- FIX QUERY HASH: Interceptamos si IG nos corta el grifo
+        // -- FIX QUERY HASH: Interceptamos si IG nos corta el grifo
         if (!response.ok) {
           throw new Error(
-            `API Error (${response.status}). The query hash might be outdated or Instagram is temporarily blocking your requests.`,
+            `API Error ${response.status}. The query hash might be outdated or Instagram is temporarily blocking your requests.`,
           );
         }
-
         const json = await response.json();
         const data: User = json.data.user.edge_follow;
 
@@ -89,12 +89,16 @@ export const useScanner = (timings: Timings) => {
           totalFollowed = data.count;
         }
 
-        // 3. Process Data
+        // 3. Process Data — BUG FIX #2: deduplicar por ID antes de añadir
         hasNext = data.page_info.has_next_page;
         url = urlGenerator(data.page_info.end_cursor);
-
-        data.edges.forEach(edge => results.push(edge.node));
-        currentCount += data.edges.length;
+        data.edges.forEach(edge => {
+          if (!seenIds.has(edge.node.id)) {
+            seenIds.add(edge.node.id);
+            results.push(edge.node);
+          }
+        });
+        currentCount = results.length; // Ahora currentCount refleja el total real único
 
         // 4. Update State
         setScannerState({
@@ -106,18 +110,14 @@ export const useScanner = (timings: Timings) => {
 
         // 5. Anti-Ban Sleep Logic
         const randomSleep =
-          Math.floor(Math.random() * (timings.timeBetweenSearchCycles * 0.3)) +
+          Math.floor(Math.random() * timings.timeBetweenSearchCycles * 0.3) +
           timings.timeBetweenSearchCycles;
-
         await sleep(randomSleep);
 
         scrollCycle++;
         if (scrollCycle >= 5) {
           scrollCycle = 0;
-          setScannerState(prev => ({
-            ...prev,
-            statusMessage: t('statusCoolingDown'),
-          }));
+          setScannerState(prev => ({ ...prev, statusMessage: t('statusCoolingDown') }));
           await sleep(timings.timeToWaitAfterFiveSearchCycles);
         }
       }

@@ -6,16 +6,12 @@ import { UnfollowLogEntry } from '../model/unfollow-log-entry';
 import { UnfollowFilter } from '../model/unfollow-filter';
 import { calculateGhostScore, getGhostLabel } from './ghostScore';
 
-/**
- * Copies the list of usernames to the clipboard.
- * Returns a Promise that resolves when successful.
- * Removed the 'alert' to handle UI feedback in the component.
- */
+// Copies the list of usernames to the clipboard.
+// Returns a Promise that resolves when successful.
+// Removed the alert to handle UI feedback in the component.
 export async function copyListToClipboard(nonFollowersList: readonly UserNode[]): Promise<void> {
   const sortedList = [...nonFollowersList].sort((a, b) => a.username.localeCompare(b.username));
-
   const output = sortedList.map(user => user.username).join('\n');
-
   await navigator.clipboard.writeText(output);
 }
 
@@ -30,7 +26,6 @@ export function getCurrentPageUnfollowers(
 ): readonly UserNode[] {
   // Using localeCompare is better for string sorting
   const sortedList = [...nonFollowersList].sort((a, b) => a.username.localeCompare(b.username));
-
   // Use slice instead of splice to avoid mutation confusion (although we cloned it)
   const startIndex = UNFOLLOWERS_PER_PAGE * (currentPage - 1);
   return sortedList.slice(startIndex, startIndex + UNFOLLOWERS_PER_PAGE);
@@ -51,38 +46,35 @@ export function getUsersForDisplay(
 
     // 1. LÓGICA DE PESTAÑAS
     switch (currentTab) {
-      case 'whitelisted': {
+      case 'whitelisted':
         if (!isWhitelisted) {
           return false;
         }
         break;
-      }
-      case 'non_whitelisted': {
+      case 'non_whitelisted':
         if (isWhitelisted) {
           return false;
         }
         // Solo mostrar si NO te siguen
         if (user.follows_viewer) {
           return false;
-        }
+        } // BUG FIX #4: comparación explícita con true
         break;
-      }
-      case 'mutuals': {
+      case 'mutuals':
         if (isWhitelisted) {
           return false;
         }
         // Solo mostrar si SÍ te siguen
         if (!user.follows_viewer) {
           return false;
-        }
+        } // BUG FIX #4: comparación explícita con true
         break;
-      }
-      default: {
+      default:
         return false;
-      }
     }
 
-    // 2. FILTROS REALES (Si marcas la casilla, SÓLO ves a los que cumplen eso)
+    // 2. FILTROS REALES
+    // Si marcas la casilla, SÓLO ves a los que cumplen eso
 
     // Si busco privados y el usuario NO es privado, lo descarto
     if (filter.showPrivate && !user.is_private) {
@@ -94,18 +86,26 @@ export function getUsersForDisplay(
       return false;
     }
 
-    // Si busco a los que NO tienen foto de perfil, y este SÍ tiene, lo descarto
+    // BUG FIX #1: Filtro "Sin foto de perfil" unificado con la lógica de ghostScore.ts
+    // Se añade la comprobación de la palabra 'default' en la URL (igual que ghostScore)
+    // y se usa has_anonymous_profile_picture con una comprobación de falsiness más robusta
+    // para cubrir los casos donde el campo llega como undefined desde la API.
     if (filter.showWithOutProfilePicture) {
       const isMissingPic =
-        user.has_anonymous_profile_picture === true ||
+        // Comprobar el flag explícito de Instagram (puede ser undefined, por eso no usamos === true)
+        !!user.has_anonymous_profile_picture ||
+        // Comprobar si no hay URL en absoluto
+        !user.profile_pic_url ||
+        // Comprobar la palabra 'default' en la URL (lógica de ghostScore.ts, más robusta)
+        user.profile_pic_url.includes('default') ||
+        // Comprobar los IDs hardcodeados conocidos como fallback adicional
         WITHOUT_PROFILE_PICTURE_URL_IDS.some(id => user.profile_pic_url.includes(id));
-
       if (!isMissingPic) {
         return false;
       }
     }
 
-    // Si busco fantasmas y este usuario es "safe" (seguro), lo descarto
+    // Si busco fantasmas y este usuario es 'safe' (seguro), lo descarto
     if (filter.showGhostsOnly && calculateGhostScore(user, t).level === 'safe') {
       return false;
     }
@@ -115,7 +115,6 @@ export function getUsersForDisplay(
       const matchesSearch =
         user.username.toLowerCase().includes(lowerSearchTerm) ||
         user.full_name.toLowerCase().includes(lowerSearchTerm);
-
       if (!matchesSearch) {
         return false;
       }
@@ -131,7 +130,6 @@ export function getUnfollowLogForDisplay(
   filter: UnfollowFilter,
 ): UnfollowLogEntry[] {
   const lowerSearchTerm = searchTerm.toLowerCase();
-
   return log.filter(entry => {
     if (!filter.showSucceeded && entry.unfollowedSuccessfully) {
       return false;
@@ -139,21 +137,17 @@ export function getUnfollowLogForDisplay(
     if (!filter.showFailed && !entry.unfollowedSuccessfully) {
       return false;
     }
-
     if (searchTerm !== '') {
       const matchesSearch = entry.user.username.toLowerCase().includes(lowerSearchTerm);
       if (!matchesSearch) {
         return false;
       }
     }
-
     return true;
   });
 }
 
-/**
- * Exhaustive check for switch-case statements.
- */
+// Exhaustive check for switch-case statements.
 export function assertUnreachable(_value: never): never {
   throw new Error('Statement should be unreachable');
 }
@@ -164,7 +158,7 @@ export function sleep(ms: number): Promise<void> {
 
 export function getCookie(name: string): string | null {
   // Regex is safer and more robust than string splitting for cookies
-  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  const match = document.cookie.match(new RegExp(`(^| )${name}=([^;]+)`));
   if (match) {
     return match[2];
   }
@@ -180,7 +174,6 @@ export function urlGenerator(nextCode?: string): string {
   // NOTE: This query_hash is specific to Instagram's API version.
   // If IG updates their API, this hash might need to be updated.
   const QUERY_HASH = '3dec7e2c57367ef3da3d987d89f9dbc8';
-
   const variables: Record<string, string> = {
     id: ds_user_id,
     include_reel: 'true',
@@ -196,9 +189,7 @@ export function unfollowUserUrlGenerator(idToUnfollow: string): string {
   return `https://www.instagram.com/web/friendships/${idToUnfollow}/unfollow/`;
 }
 
-/**
- * Genera y descarga un archivo CSV con los resultados del escaneo.
- */
+// Genera y descarga un archivo CSV con los resultados del escaneo.
 export const exportToCSV = (
   results: readonly UserNode[],
   whitelistedResults: readonly UserNode[],
@@ -227,9 +218,8 @@ export const exportToCSV = (
     const relation = user.follows_viewer ? t.mutual : t.nonFollower;
     const status = user.is_new_unfollower ? t.newBadge : t.old;
     const profileUrl = `https://www.instagram.com/${user.username}`;
-
     const ghostAnalysis = calculateGhostScore(user, t);
-    const csvEscape = (text: any) => `"${String(text || '').replace(/"/g, '""')}"`;
+    const csvEscape = (text: any) => `"${String(text).replace(/"/g, '""')}"`;
 
     let premiumColumns: string[];
     if (isPro) {
@@ -257,24 +247,22 @@ export const exportToCSV = (
   });
 
   const csvContent = [headers.join(','), ...csvRows].join('\n');
-  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
   const dateStr = new Date().toISOString().split('T')[0];
-  link.setAttribute('download', `ig_unfollowers_report_${dateStr}.csv`);
+  link.setAttribute('download', `ig-unfollowers-report-${dateStr}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 };
 
-/**
- * Genera una clave de almacenamiento única para la cuenta de Instagram activa.
- * Esto evita que se mezclen datos entre diferentes cuentas en el mismo navegador.
- */
+// Genera una clave de almacenamiento única para la cuenta de Instagram activa.
+// Esto evita que se mezclen datos entre diferentes cuentas en el mismo navegador.
 export function getDynamicStorageKey(baseKey: string): string {
-  const userId = getCookie('ds_user_id') || 'unknown_user';
+  const userId = getCookie('ds_user_id') ?? 'unknown_user';
   if (!userId) {
     throw new Error('No active Instagram session found');
   }

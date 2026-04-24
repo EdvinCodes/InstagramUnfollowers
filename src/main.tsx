@@ -255,10 +255,13 @@ function App() {
 
     if (state.selectedResults.length > 0) {
       if (!confirm('Changing filter options will clear selected users')) {
+        // BUG FIX #3: Revertimos el checkbox en el DOM para que coincida con el estado
+        e.currentTarget.checked = !e.currentTarget.checked;
         setState({ ...state });
         return;
       }
     }
+
     setState({
       ...state,
       page: 1,
