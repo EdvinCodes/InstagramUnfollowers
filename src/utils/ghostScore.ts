@@ -1,5 +1,5 @@
 import { UserNode } from '../model/user';
-import { assertUnreachable } from './utils';
+import { assertUnreachable, isProfilePicAnonymous } from './utils';
 
 export type GhostLevel = 'safe' | 'suspicious' | 'ghost' | 'bot';
 
@@ -19,11 +19,7 @@ export const calculateGhostScore = (user: UserNode, t: any): GhostAnalysis => {
   const usernameL = user.username.toLowerCase();
 
   // Sin foto de perfil
-  if (
-    user.has_anonymous_profile_picture ||
-    !user.profile_pic_url ||
-    user.profile_pic_url.includes('default')
-  ) {
+  if (user.has_anonymous_profile_picture || isProfilePicAnonymous(user.profile_pic_url)) {
     score += 15;
     reasons.push(t.reasonNoPic);
   }

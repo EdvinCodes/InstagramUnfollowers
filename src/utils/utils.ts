@@ -31,6 +31,22 @@ export function getCurrentPageUnfollowers(
   return sortedList.slice(startIndex, startIndex + UNFOLLOWERS_PER_PAGE);
 }
 
+// Esta cadena es la que viene en la cache_key de las URLs que pasaste
+const ANONYMOUS_MARKER = 'anonymous_profile_pic';
+
+export const isProfilePicAnonymous = (url: string | undefined): boolean => {
+  if (!url) {
+    return true;
+  }
+  const urlL = url.toLowerCase();
+  return (
+    urlL.includes('default') ||
+    urlL.includes(ANONYMOUS_MARKER) ||
+    // El ID numérico que pasaste también es constante en los placeholders
+    urlL.includes('573323465_1219825463302212')
+  );
+};
+
 export function getUsersForDisplay(
   results: readonly UserNode[],
   whitelistedResults: readonly UserNode[],
@@ -92,14 +108,10 @@ export function getUsersForDisplay(
     // para cubrir los casos donde el campo llega como undefined desde la API.
     if (filter.showWithOutProfilePicture) {
       const isMissingPic =
-        // Comprobar el flag explícito de Instagram (puede ser undefined, por eso no usamos === true)
         !!user.has_anonymous_profile_picture ||
-        // Comprobar si no hay URL en absoluto
-        !user.profile_pic_url ||
-        // Comprobar la palabra 'default' en la URL (lógica de ghostScore.ts, más robusta)
-        user.profile_pic_url.includes('default') ||
-        // Comprobar los IDs hardcodeados conocidos como fallback adicional
+        isProfilePicAnonymous(user.profile_pic_url) ||
         WITHOUT_PROFILE_PICTURE_URL_IDS.some(id => user.profile_pic_url.includes(id));
+
       if (!isMissingPic) {
         return false;
       }
