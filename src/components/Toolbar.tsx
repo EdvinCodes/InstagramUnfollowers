@@ -147,6 +147,7 @@ export const Toolbar = ({
     const value = e.currentTarget.value;
     switch (state.status) {
       case 'initial':
+      case 'growth': // ← AÑADE ESTO
         return;
       case 'scanning':
       case 'unfollowing':
@@ -198,7 +199,9 @@ export const Toolbar = ({
       {isActiveProcess && (
         <progress
           className='progressbar'
-          value={state.status !== 'initial' ? state.percentage : 0}
+          value={
+            state.status === 'scanning' || state.status === 'unfollowing' ? state.percentage : 0
+          }
           max='100'
         />
       )}
@@ -228,7 +231,9 @@ export const Toolbar = ({
             type='text'
             className='search-bar'
             placeholder={t('searchPlaceholder')}
-            value={state.searchTerm}
+            value={
+              state.status === 'scanning' || state.status === 'unfollowing' ? state.searchTerm : ''
+            }
             onKeyDown={e => e.stopPropagation()}
             onChange={handleSearchChange}
             style={{ margin: '0 1rem' }}

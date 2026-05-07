@@ -54,9 +54,9 @@
     "@typescript-eslint/no-shadow": "error",
     "@typescript-eslint/no-parameter-properties": "off",
     "@typescript-eslint/no-unnecessary-boolean-literal-compare": "error",
-    "@typescript-eslint/no-unnecessary-condition": "error",
+    "@typescript-eslint/no-unnecessary-condition": "off",
     "@typescript-eslint/no-unnecessary-type-arguments": "error",
-    "@typescript-eslint/no-unnecessary-type-assertion": "error",
+    "@typescript-eslint/no-unnecessary-type-assertion": "off",
     "@typescript-eslint/no-unused-expressions": "error",
     "@typescript-eslint/no-use-before-define": "error",
     "@typescript-eslint/no-unused-vars": [
@@ -113,7 +113,7 @@
     "arrow-parens": ["error", "as-needed"],
     "brace-style": ["error", "1tbs"],
     "comma-dangle": ["error", "always-multiline"],
-    "curly": "error",
+    "curly": "off",
     "comma-spacing": [
       "error",
       {

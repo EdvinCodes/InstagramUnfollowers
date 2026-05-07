@@ -15,7 +15,7 @@
     "baseUrl": "src/",
     "target": "es5",
     "outDir": "dist",
-    "lib": ["dom", "scripthost", "es2015"],
+    "lib": ["dom", "scripthost", "es2015", "es2016"],
     "paths": {
       "react": ["../node_modules/preact/compat"],
       "react-dom": ["../node_modules/preact/compat"]

@@ -41,6 +41,8 @@ import { Logo } from './components/icons/Logo';
 import { startRealtimeMonitor, isMonitorEnabled } from './services/realtimeMonitor';
 import { CloudSync } from './services/cloudSync';
 
+import { GrowthView } from './components/GrowthView';
+
 import { t } from './i18n/i18n';
 
 function App() {
@@ -68,7 +70,7 @@ function App() {
     timeToWaitAfterFiveUnfollows: DEFAULT_TIME_TO_WAIT_AFTER_FIVE_UNFOLLOWS,
   });
 
-  // Inicialización de Hooks
+  // InicializaciÃ³n de Hooks
   const {
     scannerState,
     startScan,
@@ -85,21 +87,20 @@ function App() {
 
   let isActiveProcess: boolean;
   switch (state.status) {
-    case 'initial': {
+    case 'initial':
       isActiveProcess = false;
       break;
-    }
-    case 'scanning': {
+    case 'scanning':
       isActiveProcess = scannerState.isScanning;
       break;
-    }
-    case 'unfollowing': {
+    case 'unfollowing':
       isActiveProcess = unfollowerState.isUnfollowing;
       break;
-    }
-    default: {
+    case 'growth': // ← AÑADE ESTO
+      isActiveProcess = false;
+      break;
+    default:
       assertUnreachable(state);
-    }
   }
 
   // Recuperar el tema al iniciar
@@ -125,10 +126,10 @@ function App() {
   // 1. Extraemos el porcentaje fuera del useEffect para ESLint y TypeScript
   const currentPercentage = state.status === 'scanning' ? state.percentage : 0;
 
-  // Sincronización del Escáner
+  // SincronizaciÃ³n del EscÃ¡ner
   useEffect(() => {
     if (state.status === 'scanning') {
-      // 1. Detectamos si terminó
+      // 1. Detectamos si terminÃ³
       const isFinished =
         !scannerState.isScanning &&
         (scannerState.progress >= 99 ||
@@ -190,7 +191,7 @@ function App() {
     }
   }, [scannerState, state.status, currentPercentage, isPro]);
 
-  // Sincronización del Unfollower
+  // SincronizaciÃ³n del Unfollower
   useEffect(() => {
     if (state.status === 'unfollowing') {
       setState(prev => {
@@ -215,7 +216,7 @@ function App() {
       return;
     }
 
-    // <-- LEER WHITELIST CON CLAVE DINÁMICA
+    // <-- LEER WHITELIST CON CLAVE DINÃMICA
     const dynamicWhitelistKey = getDynamicStorageKey(WHITELISTED_RESULTS_STORAGE_KEY);
     const whitelistedResultsFromStorage: string | null = localStorage.getItem(dynamicWhitelistKey);
 
@@ -391,7 +392,7 @@ function App() {
       };
     });
 
-    startUnfollowing(usersToProcess, actionType); // <-- Pasamos el actionType aquí
+    startUnfollowing(usersToProcess, actionType); // <-- Pasamos el actionType aquÃ­
   };
 
   // Checkboxes
@@ -418,7 +419,26 @@ function App() {
   let markup: React.JSX.Element;
   switch (state.status) {
     case 'initial': {
-      markup = <NotSearching onScan={onScan} />;
+      markup = (
+        <NotSearching
+          onScan={onScan}
+          onGrowth={() =>
+            setState({
+              status: 'growth',
+              phase: 'setup',
+              targetAccounts: [],
+              commenterQueue: [],
+              followedCount: 0,
+              skippedCount: 0,
+              totalToFollow: 0,
+              logs: [],
+              speed: 'tortoise',
+              isPaused: false,
+              disclaimerAccepted: false,
+            })
+          }
+        />
+      );
       break;
     }
     case 'scanning': {
@@ -449,6 +469,15 @@ function App() {
       );
       break;
     }
+    case 'growth':
+      markup = (
+        <GrowthView
+          state={state}
+          setState={setState}
+          onBack={() => setState({ status: 'initial' })}
+        />
+      );
+      break;
     default: {
       assertUnreachable(state);
     }
@@ -459,7 +488,7 @@ function App() {
       id='main'
       role='main'
       className={`iu theme-${theme}`}
-      // ARREGLO CLAVE: Si está minimizado, el fondo es transparente y los clics atraviesan
+      // ARREGLO CLAVE: Si estÃ¡ minimizado, el fondo es transparente y los clics atraviesan
       style={
         isMinimized
           ? {
@@ -472,7 +501,7 @@ function App() {
     >
       <style>{styles.toString()}</style>
 
-      {/* LÓGICA DE MINIMIZADO */}
+      {/* LÃ“GICA DE MINIMIZADO */}
       {isMinimized ? (
         <div
           onClick={() => setIsMinimized(false)}
@@ -492,7 +521,7 @@ function App() {
             justifyContent: 'center',
             cursor: 'pointer',
             zIndex: 999999,
-            pointerEvents: 'auto', // ARREGLO: Esto sí tiene que recibir clics
+            pointerEvents: 'auto', // ARREGLO: Esto sÃ­ tiene que recibir clics
             transition: 'transform 0.2s, box-shadow 0.2s',
             border: '2px solid rgba(255,255,255,0.1)',
           }}
