@@ -12,7 +12,8 @@ try {
     saved === 'es' ||
     saved === 'fr' ||
     saved === 'it' ||
-    saved === 'de'
+    saved === 'de' ||
+    saved === 'tr'
   ) {
     _locale = saved;
   }
