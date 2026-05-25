@@ -6,7 +6,7 @@
 [![Works with](https://img.shields.io/badge/Instagram-Compatible-E1306C.svg)](https://www.instagram.com/)
 [![Version](https://img.shields.io/badge/version-8.0.0-orange.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
 
-[🇺🇸 English](#-english-version) | [🇪🇸 Español](#-versión-en-español)
+[🇺🇸 English](#-english-version) | [🇪🇸 Español](#-versión-en-español) | [🇹🇷 Türkçe](#-türkçe-sürüm)
 
 ---
 
@@ -138,6 +138,74 @@ A diferencia de otras apps, esta herramienta se ejecuta **100% localmente en tu 
 2.  Crea un marcador llamado "IG Scan" en tu navegador móvil.
 3.  Edita el marcador y pega el código en el campo de URL.
 4.  Abre Instagram, escribe "IG Scan" en la barra de direcciones y selecciona el marcador.
+
+---
+<div id="turkish"></div>
+
+## 🇹🇷 Türkçe Sürüm
+
+Turkish Translation/Türkçe Çeviri: mmd2626
+
+**Instagram topluluğunu yönetmek için en güvenli ve gelişmiş araç.**
+Şifreni çalan veya bulut sunucuları kullanan diğer araçların aksine, bu araç maksimum güvenlik ve gizlilik için **Shadow DOM** kullanarak **%100 tarayıcında yerel olarak** çalışır.
+
+> **🚀 v8.0.0 "Stratejik Yol Haritasının Tamamlanması":** Bu sürüm, tam "TOP Ürün" vizyonunun teslimini işaret eder. **Gerçek Zamanlı İzleme**, **7 Dil Desteği** ve **Güçlendirilmiş Profesyonel Dışa Aktarımlar** içerir.
+
+### ✨ v8.0.0'daki Yenilikler
+
+- **🔔 Gerçek Zamanlı Takipten Çıkma Uyarıları:** Arka plan motoru, Instagram'ı gezerken takipten çıkanları anında tespit eder ve yerel Push bildirimleriyle seni uyarır.
+- **🌐 Yerel Çok Dilli Motor:** Tüm uygulama genelinde **İngilizce, İspanyolca, Portekizce, Fransızca, İtalyanca, Almanca ve Türkçe** için profesyonel çeviriler.
+- **🧠 Gelişmiş Hayalet Skoru (0-100):** Profil kalitesinin derinlemesine analizi (Fotoğrafsız, klavye ezme, bot kalıpları) yerelleştirilmiş açıklamalarla.
+- **📊 Güvenli Profesyonel Dışa Aktarımlar:** Eksik kullanıcı meta verilerindeki çökmeleri önlemek için yeniden tasarlanmış CSV ve PDF motorları.
+- **👥 Çoklu Hesap Desteği:** Birden fazla profili güvenle yönet. Veritabanı, geçmiş karışıklığını önlemek için Kullanıcı ID'sine göre ayrılır.
+- **🛡️ "Yumuşak Engel" (Takipçiyi Kaldır):** Yeni özel eylem ile takipçilerini tamamen engellemeden listenden temizle.
+- **🎨 Temalar & Arayüz:** Profesyonel bir görünümle tamamen özelleştirilebilir Karanlık/Aydınlık modlar.
+- **☁️ CloudSync Altyapısı:** Geçmiş ve beyaz listelerin bulut senkronizasyonu için hazırlanmış dahili mimari.
+
+### ⚖️ Ücretsiz vs. PRO (v8.0.0 Özel Durumu)
+
+| Özellik                        | Ücretsiz Sürüm | **PRO Sürüm (Şu an ÜCRETSİZ\!)** 👑 |
+| :----------------------------- | :------------: | :-----------------------------------: |
+| **Sınırsız Tarama**            |       ✅       |                  ✅                   |
+| **Gerçek Zamanlı İzleme**      |       🔒       |            **✅ AKTİF**               |
+| **Hayalet Kalite Filtreleri**  |       🔒       |            **✅ AKTİF**               |
+| **PDF Sağlık Raporları**       |       🔒       |            **✅ AKTİF**               |
+| **Kesin Hayalet Skoru (0-100)**|       🔒       |            **✅ AKTİF**               |
+| **Toplu Otomatik Takip Bırak** |       🔒       |            **✅ AKTİF**               |
+| **Geçmiş Zaman Makinesi**      |  Son 30 Gün   |            **Sınırsız**               |
+
+> **🎁 KAMPANYA:** Mevcut ödeme altyapısı güncellemeleri nedeniyle bu sürümde **tüm PRO özellikler ÜCRETSİZ\!**
+
+### 🚀 Nasıl Kullanılır (Masaüstü)
+
+**Seçenek A: Chrome / Edge / Brave Uzantısı (Önerilen & En Güvenli)**
+
+1. [Releases sekmesinden](https://github.com/edvincodes/InstagramUnfollowers/releases) en son `dist.zip`'i indir.
+2. Klasörü çıkart.
+3. Tarayıcında `chrome://extensions/` adresine git.
+4. **Geliştirici Modu**'nu etkinleştir (sağ üst köşe).
+5. **Paketlenmemiş öğe yükle**'ye tıkla ve çıkarttığın `dist` klasörünü seç.
+6. [instagram.com](https://www.instagram.com)'a git ve yeni mavi yüzen logoya tıkla!
+
+**Seçenek B: Mozilla Firefox Uzantısı**
+
+1. En son `dist.zip`'i indirip çıkart.
+2. Firefox'u aç ve adres çubuğuna `about:debugging#/runtime/this-firefox` yaz.
+3. **Geçici Eklenti Yükle**'ye tıkla ve klasördeki `manifest.json` dosyasını seç.
+
+**Seçenek C: Konsol Scripti (Kurulum Gerektirmez)**
+
+1. [Resmi Araç Sayfası](https://edvincodes.github.io/InstagramUnfollowers/)'na git.
+2. "Scripti Kopyala"ya tıkla.
+3. [Instagram](https://www.instagram.com)'ı aç ve `F12`'ye bas.
+4. Kodu Konsola yapıştır ve Enter'a bas.
+
+### 📱 Nasıl Kullanılır (Mobil - iOS/Android)
+
+1. [Araç Sayfası](https://edvincodes.github.io/InstagramUnfollowers/)'ndan kodu kopyala.
+2. "IG Scan" adında yeni bir Tarayıcı Yer İmi oluştur.
+3. Yer imini düzenle ve kodu URL alanına yapıştır.
+4. Instagram'ı aç, adres çubuğuna "IG Scan" yaz ve yer imine dokun.
 
 ---
 
