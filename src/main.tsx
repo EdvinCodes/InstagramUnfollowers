@@ -1,3 +1,5 @@
+import './publicPath';
+
 import React, { ChangeEvent, useEffect, useState } from 'react';
 import { render } from 'preact';
 

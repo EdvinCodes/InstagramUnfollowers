@@ -6,8 +6,8 @@
     "webpack-build": "webpack --mode production",
     "build-dev": "npm run build && webpack serve --mode development",
     "build-prod": "npm run webpack-build && webpack serve --mode production",
-    "update-readme": "node scripts/update-index.js public/index.html dist/content.js",
-    "build": "npm run webpack-build && npm run update-readme"
+    "copy-script": "node scripts/copy-script.js dist public",
+    "build": "npm run webpack-build && npm run copy-script"
   },
   "babel": {
     "plugins": [
