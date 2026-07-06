@@ -58,6 +58,42 @@ jobs:
         with:
           path: './public' # Correcto: Subimos la carpeta public que ya tiene content.js copiado
 
-      - name: Deploy to GitHub Pages
-        id: deployment
+      # GitHub Pages a veces devuelve "Deployment failed, try again later." de forma
+      # transitoria (fallo intermitente del backend de Pages, ver
+      # https://github.com/actions/deploy-pages/issues/406). El artifact ya está
+      # subido correctamente, así que reintentamos el propio paso de deploy con
+      # backoff en vez de fallar el workflow en el primer intento.
+      - name: Deploy to GitHub Pages (attempt 1)
+        id: deployment1
         uses: actions/deploy-pages@v5
+        continue-on-error: true
+
+      - name: Wait before retry 1
+        if: steps.deployment1.outcome == 'failure'
+        run: |
+          echo "Primer intento de deploy falló (probable fallo transitorio de GitHub Pages). Reintentando en 30s..."
+          sleep 30
+
+      - name: Deploy to GitHub Pages (attempt 2)
+        id: deployment2
+        if: steps.deployment1.outcome == 'failure'
+        uses: actions/deploy-pages@v5
+        continue-on-error: true
+
+      - name: Wait before retry 2
+        if: steps.deployment1.outcome == 'failure' && steps.deployment2.outcome == 'failure'
+        run: |
+          echo "Segundo intento de deploy falló. Reintentando en 60s..."
+          sleep 60
+
+      - name: Deploy to GitHub Pages (attempt 3)
+        id: deployment3
+        if: steps.deployment1.outcome == 'failure' && steps.deployment2.outcome == 'failure'
+        uses: actions/deploy-pages@v5
+
+      - name: Set deployment output
+        id: deployment
+        if: always()
+        run: |
+          URL="${{ steps.deployment3.outputs.page_url || steps.deployment2.outputs.page_url || steps.deployment1.outputs.page_url }}"
+          echo "page_url=$URL" >> "$GITHUB_OUTPUT"
