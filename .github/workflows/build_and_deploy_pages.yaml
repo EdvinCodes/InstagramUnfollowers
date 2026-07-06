@@ -25,10 +25,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20 # Fijamos la versión 20 para evitar problemas con .nvmrc
           cache: 'npm'
@@ -38,17 +38,26 @@ jobs:
 
       - name: Build Project
         run: npm run build
-        # Esto ejecutará webpack, creará el dist.js, y el script update-index.js
-        # inyectará el código dentro de public/index.html en el servidor de GitHub.
+        # Esto ejecuta webpack (genera dist/*.content.js) y luego copy-script.js,
+        # que copia esos archivos a public/ para que index.html los cargue con fetch().
 
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v6
+
+      # Evita el error "Multiple artifacts named github-pages were unexpectedly
+      # found" cuando se reintenta ("re-run") un job dentro del mismo run: borra
+      # cualquier artifact "github-pages" que haya quedado de un intento anterior.
+      - name: Delete stale artifact (if retrying this run)
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: github-pages
+          failOnError: false
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
-          path: './public' # Correcto: Subimos la carpeta public que ya tiene el index.html inyectado
+          path: './public' # Correcto: Subimos la carpeta public que ya tiene content.js copiado
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
