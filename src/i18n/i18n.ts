@@ -1,4 +1,4 @@
-import { detectLocale, translations, Locale, Translations } from './translations';
+import { detectLocale, translations, Locale, Translations, LOCALES } from './translations';
 
 let _locale: Locale = detectLocale();
 const LOCALE_KEY = 'ig-unfollowers-locale';
@@ -6,16 +6,8 @@ const LOCALE_KEY = 'ig-unfollowers-locale';
 // Restore persisted locale
 try {
   const saved = localStorage.getItem(LOCALE_KEY);
-  if (
-    saved === 'en' ||
-    saved === 'pt-BR' ||
-    saved === 'es' ||
-    saved === 'fr' ||
-    saved === 'it' ||
-    saved === 'de' ||
-    saved === 'tr'
-  ) {
-    _locale = saved;
+  if (saved && (LOCALES as readonly string[]).includes(saved)) {
+    _locale = saved as Locale;
   }
 } catch {
   // ignore

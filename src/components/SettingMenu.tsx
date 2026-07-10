@@ -515,10 +515,19 @@ export const SettingMenu = ({
               <option value='en'>🇬🇧 English</option>
               <option value='es'>🇪🇸 Español</option>
               <option value='pt-BR'>🇧🇷 Português (BR)</option>
+              <option value='hi'>🇮🇳 हिन्दी</option>
+              <option value='id'>🇮🇩 Bahasa Indonesia</option>
+              <option value='ar'>🇸🇦 العربية</option>
+              <option value='ja'>🇯🇵 日本語</option>
+              <option value='ko'>🇰🇷 한국어</option>
               <option value='fr'>🇫🇷 Français</option>
               <option value='it'>🇮🇹 Italiano</option>
               <option value='de'>🇩🇪 Deutsch</option>
               <option value='tr'>🇹🇷 Türkçe</option>
+              <option value='ru'>🇷🇺 Русский</option>
+              <option value='pl'>🇵🇱 Polski</option>
+              <option value='nl'>🇳🇱 Nederlands</option>
+              <option value='vi'>🇻🇳 Tiếng Việt</option>
             </select>
           </div>
 
