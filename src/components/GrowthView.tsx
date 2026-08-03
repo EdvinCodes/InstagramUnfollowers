@@ -184,6 +184,7 @@ export const GrowthView = ({ state, setState, onBack, isPro, onShowToast }: Grow
           <span style={{ fontSize: '0.65rem', verticalAlign: 'middle' }}>{t('growthBeta')}</span>
         </h2>
         <p style={{ color: '#94a3b8', fontSize: '0.82rem', marginBottom: '0.5rem' }}>{t('growthDescription')}</p>
+        <p style={{ color: '#a78bfa', fontSize: '0.78rem', marginBottom: '0.5rem' }}>{t('growthBetaFreeNotice')}</p>
         {isPro && (
           <p style={{ color: '#22c55e', fontSize: '0.78rem', marginBottom: '1rem' }}>
             {t('growthRemainingToday')(remainingDailyFollows())}

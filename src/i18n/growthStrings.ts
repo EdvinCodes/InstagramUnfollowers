@@ -80,6 +80,8 @@ export interface GrowthTranslationSlice {
   growthLogRateLimited: string;
   growthLogWaiting: (seconds: number) => string;
   growthLogCompleted: string;
+  growthLogFatalError: string;
+  growthBetaFreeNotice: string;
   growthYouFollowed: string;
 }
 
@@ -152,6 +154,9 @@ const en: GrowthTranslationSlice = {
   growthLogRateLimited: '⚠️ Rate limited — waiting before retry...',
   growthLogWaiting: seconds => `⏳ Waiting ${seconds}s before next follow...`,
   growthLogCompleted: '🎉 Process completed!',
+  growthLogFatalError: 'Unexpected error. Process stopped.',
+  growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
+  
   growthYouFollowed: 'You Followed',
 };
 
@@ -224,6 +229,9 @@ const ptBR: GrowthTranslationSlice = {
   growthLogRateLimited: '⚠️ Rate limit — aguardando antes de tentar novamente...',
   growthLogWaiting: seconds => `⏳ Aguardando ${seconds}s antes do próximo follow...`,
   growthLogCompleted: '🎉 Processo concluído!',
+  growthLogFatalError: 'Unexpected error. Process stopped.',
+  growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
+  
   growthYouFollowed: 'Você Seguiu',
 };
 
@@ -296,6 +304,9 @@ const es: GrowthTranslationSlice = {
   growthLogRateLimited: '⚠️ Rate limit — esperando antes de reintentar...',
   growthLogWaiting: seconds => `⏳ Esperando ${seconds}s antes del siguiente follow...`,
   growthLogCompleted: '🎉 ¡Proceso completado!',
+  growthLogFatalError: 'Unexpected error. Process stopped.',
+  growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
+  
   growthYouFollowed: 'Has Seguido',
 };
 
@@ -368,6 +379,9 @@ const fr: GrowthTranslationSlice = {
   growthLogRateLimited: '⚠️ Rate limit — attente avant nouvelle tentative...',
   growthLogWaiting: seconds => `⏳ Attente de ${seconds}s avant le prochain follow...`,
   growthLogCompleted: '🎉 Processus terminé !',
+  growthLogFatalError: 'Unexpected error. Process stopped.',
+  growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
+  
   growthYouFollowed: 'Vous avez suivi',
 };
 
@@ -440,6 +454,9 @@ const it: GrowthTranslationSlice = {
   growthLogRateLimited: '⚠️ Rate limit — attesa prima di riprovare...',
   growthLogWaiting: seconds => `⏳ Attesa di ${seconds}s prima del prossimo follow...`,
   growthLogCompleted: '🎉 Processo completato!',
+  growthLogFatalError: 'Unexpected error. Process stopped.',
+  growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
+  
   growthYouFollowed: 'Hai seguito',
 };
 
@@ -512,6 +529,9 @@ const de: GrowthTranslationSlice = {
   growthLogRateLimited: '⚠️ Rate Limit — warte vor erneutem Versuch...',
   growthLogWaiting: seconds => `⏳ Warte ${seconds}s vor dem nächsten Follow...`,
   growthLogCompleted: '🎉 Vorgang abgeschlossen!',
+  growthLogFatalError: 'Unexpected error. Process stopped.',
+  growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
+  
   growthYouFollowed: 'Du hast gefolgt',
 };
 
@@ -584,6 +604,9 @@ const tr: GrowthTranslationSlice = {
   growthLogRateLimited: '⚠️ Rate limit — yeniden denemeden önce bekleniyor...',
   growthLogWaiting: seconds => `⏳ Sonraki takipten önce ${seconds} sn bekleniyor...`,
   growthLogCompleted: '🎉 İşlem tamamlandı!',
+  growthLogFatalError: 'Unexpected error. Process stopped.',
+  growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
+  
   growthYouFollowed: 'Takip Ettin',
 };
 
@@ -656,6 +679,9 @@ const hi: GrowthTranslationSlice = {
   growthLogRateLimited: '⚠️ Rate limit — पुनः प्रयास से पहले प्रतीक्षा...',
   growthLogWaiting: seconds => `⏳ अगले फॉलो से पहले ${seconds} सेक प्रतीक्षा...`,
   growthLogCompleted: '🎉 प्रक्रिया पूर्ण!',
+  growthLogFatalError: 'Unexpected error. Process stopped.',
+  growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
+  
   growthYouFollowed: 'आपने फॉलो किया',
 };
 
@@ -728,6 +754,9 @@ const id: GrowthTranslationSlice = {
   growthLogRateLimited: '⚠️ Rate limit — menunggu sebelum mencoba lagi...',
   growthLogWaiting: seconds => `⏳ Menunggu ${seconds} dtk sebelum follow berikutnya...`,
   growthLogCompleted: '🎉 Proses selesai!',
+  growthLogFatalError: 'Unexpected error. Process stopped.',
+  growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
+  
   growthYouFollowed: 'Anda Mengikuti',
 };
 
@@ -800,6 +829,9 @@ const ar: GrowthTranslationSlice = {
   growthLogRateLimited: '⚠️ Rate limit — انتظار قبل إعادة المحاولة...',
   growthLogWaiting: seconds => `⏳ انتظار ${seconds} ث قبل المتابعة التالية...`,
   growthLogCompleted: '🎉 اكتملت العملية!',
+  growthLogFatalError: 'Unexpected error. Process stopped.',
+  growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
+  
   growthYouFollowed: 'تابعت',
 };
 
@@ -872,6 +904,9 @@ const ja: GrowthTranslationSlice = {
   growthLogRateLimited: '⚠️ Rate limit — 再試行前に待機...',
   growthLogWaiting: seconds => `⏳ 次のフォローまで${seconds}秒待機...`,
   growthLogCompleted: '🎉 処理完了！',
+  growthLogFatalError: 'Unexpected error. Process stopped.',
+  growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
+  
   growthYouFollowed: 'フォローしました',
 };
 
@@ -944,6 +979,9 @@ const ko: GrowthTranslationSlice = {
   growthLogRateLimited: '⚠️ Rate limit — 재시도 전 대기...',
   growthLogWaiting: seconds => `⏳ 다음 팔로우까지 ${seconds}초 대기...`,
   growthLogCompleted: '🎉 처리 완료!',
+  growthLogFatalError: 'Unexpected error. Process stopped.',
+  growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
+  
   growthYouFollowed: '팔로우함',
 };
 
@@ -1016,6 +1054,9 @@ const ru: GrowthTranslationSlice = {
   growthLogRateLimited: '⚠️ Rate limit — ожидание перед повтором...',
   growthLogWaiting: seconds => `⏳ Ожидание ${seconds} сек. перед следующей подпиской...`,
   growthLogCompleted: '🎉 Процесс завершён!',
+  growthLogFatalError: 'Unexpected error. Process stopped.',
+  growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
+  
   growthYouFollowed: 'Вы подписались',
 };
 
@@ -1088,6 +1129,9 @@ const pl: GrowthTranslationSlice = {
   growthLogRateLimited: '⚠️ Rate limit — oczekiwanie przed ponowną próbą...',
   growthLogWaiting: seconds => `⏳ Oczekiwanie ${seconds}s przed następną obserwacją...`,
   growthLogCompleted: '🎉 Proces zakończony!',
+  growthLogFatalError: 'Unexpected error. Process stopped.',
+  growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
+  
   growthYouFollowed: 'Obserwujesz',
 };
 
@@ -1160,6 +1204,9 @@ const nl: GrowthTranslationSlice = {
   growthLogRateLimited: '⚠️ Rate limit — wachten voor nieuwe poging...',
   growthLogWaiting: seconds => `⏳ ${seconds}s wachten voor volgende follow...`,
   growthLogCompleted: '🎉 Proces voltooid!',
+  growthLogFatalError: 'Unexpected error. Process stopped.',
+  growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
+  
   growthYouFollowed: 'Je volgde',
 };
 
@@ -1232,6 +1279,9 @@ const vi: GrowthTranslationSlice = {
   growthLogRateLimited: '⚠️ Rate limit — chờ trước khi thử lại...',
   growthLogWaiting: seconds => `⏳ Chờ ${seconds}s trước lượt follow tiếp theo...`,
   growthLogCompleted: '🎉 Hoàn tất quy trình!',
+  growthLogFatalError: 'Unexpected error. Process stopped.',
+  growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
+  
   growthYouFollowed: 'Bạn đã follow',
 };
 

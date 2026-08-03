@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { validateLicenseKey } from '../utils/licenseManager';
 
+/** Lemon Squeezy rejected this product category — PRO stays unlocked until a new payment provider is integrated. */
+export const PRO_PROMO_FREE = true;
+
 export const useLicense = () => {
-  // const [isPro, setIsPro] = useState<boolean>(false);
-  const [isPro, setIsPro] = useState<boolean>(true);
+  const [isPro, setIsPro] = useState<boolean>(PRO_PROMO_FREE);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {

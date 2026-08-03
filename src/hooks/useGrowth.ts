@@ -89,6 +89,7 @@ export function useGrowth(setState: SetStateUpdater, getState: () => State) {
       const seenCommenters = new Set<string>();
       const whitelistIds = loadWhitelistIds();
 
+      try {
       patchGrowth({
         phase: 'scraping',
         isRunning: true,
@@ -312,6 +313,11 @@ export function useGrowth(setState: SetStateUpdater, getState: () => State) {
         addLog(t('growthLogCompleted'));
       } else {
         patchGrowth({ isRunning: false });
+      }
+      } catch (error) {
+        console.error('[Growth]', error);
+        addLog(t('growthLogFatalError'));
+        patchGrowth({ phase: 'done', isRunning: false });
       }
     },
     [addLog, getState, patchGrowth, setState],

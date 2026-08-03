@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Built with](https://img.shields.io/badge/Built%20with-Preact%20%26%20TypeScript-blueviolet)](https://preactjs.com/)
 [![Works with](https://img.shields.io/badge/Instagram-Compatible-E1306C.svg)](https://www.instagram.com/)
-[![Version](https://img.shields.io/badge/version-8.0.0-orange.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
+[![Version](https://img.shields.io/badge/version-8.4.0--beta-orange.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
 
 [🇺🇸 English](#-english-version) | [🇪🇸 Español](#-versión-en-español) | [🇹🇷 Türkçe](#-türkçe-sürüm)
 
@@ -14,39 +14,46 @@
 
 ## 🇺🇸 English Version
 
-**The safest, most advanced tool to manage your Instagram community.**
-Unlike other tools that steal your password or use cloud servers, this tool runs **100% locally in your browser** using **Shadow DOM** for maximum safety and privacy.
+**The safest, most advanced Instagram Unfollowers tracker.** See who doesn't follow you back, detect ghost accounts with a 0-100 Ghost Score, export PDF health reports, and grow your audience — **100% locally in your browser**, no password required.
 
-> **🚀 v8.0.0 "The Strategic Roadmap Completion":** This milestone version marks the delivery of the full "TOP Product" vision. Featuring **Real-Time Monitoring**, **Native 6-Language Support**, and **Hardened Professional Exports**.
+> **🚀 v8.4.0-beta:** New **Growth Engine (beta)** — follow engaged commenters in your niche with anti-ban protection. **16 languages**. All PRO features **free** during beta (payment provider migration).
 
-### ✨ What's New in v8.0.0
+### ✨ What's New in v8.4.0-beta
 
-- **🔔 Real-Time Unfollower Alerts:** The background engine now detects unfollowers instantly while you browse Instagram and alerts you via native Push Notifications.
-- **🌐 Native Multi-Language Engine:** Professional translations for **English, Spanish, Portuguese, French, Italian, and German** across the entire app.
-- **🧠 Advanced Ghost Score (0-100):** Deep analysis of profile quality (No pic, keyboard mashing, bot patterns) with localized explanations.
-- **📊 Failsafe Professional Exports:** Re-engineered CSV and PDF engines with advanced error handling to prevent crashes on missing user metadata.
-- **👥 Multi-Account Support:** Safely manage multiple profiles. The database is segmented by User ID to prevent history mixing.
-- **🛡️ "Soft Block" (Remove Follower):** Clean your followers list without blocking them completely using the new dedicated action.
-- **🎨 Themes & UI:** Fully customizable Dark/Light modes with a professional finish.
-- **☁️ CloudSync Infrastructure:** Internal architecture prepared for cloud synchronization of history and whitelists.
+- **🚀 Growth Engine (Beta):** Scrape commenters from target accounts and follow them with ghost filtering, daily limits, and anti-ban delays.
+- **🌐 16 Languages:** English, Spanish, Portuguese, French, Italian, German, Turkish, Hindi, Indonesian, Arabic, Japanese, Korean, Russian, Polish, Dutch, Vietnamese.
+- **⚡ Performance:** Landing page 20× lighter (~45KB initial load). Lazy-loaded script chunks.
+- **🎁 PRO Unlocked:** All premium features free during beta while we migrate away from Lemon Squeezy.
 
-### ⚖️ Free vs. PRO Tier (v8.0.0 Special Status)
+### ✨ Core Features (v8.x)
 
-| Feature                       |  Free Tier   | **PRO Tier (Currently FREE\!)** 👑 |
-| :---------------------------- | :----------: | :--------------------------------: |
-| **Unlimited Scans**           |      ✅      |                 ✅                 |
-| **Real-Time Monitoring**      |      🔒      |           **✅ ACTIVE**            |
-| **Ghost Quality Filters**     |      🔒      |           **✅ ACTIVE**            |
-| **PDF Health Reports**        |      🔒      |           **✅ ACTIVE**            |
-| **Exact Ghost Score (0-100)** |      🔒      |           **✅ ACTIVE**            |
-| **Mass Auto-Unfollow**        |      🔒      |           **✅ ACTIVE**            |
-| **History Time Machine**      | Last 30 Days |           **Unlimited**            |
+- **🔔 Real-Time Unfollower Alerts:** Background engine detects unfollowers while you browse Instagram.
+- **🧠 Ghost Score (0-100):** Deep bot/inactive account analysis with localized explanations.
+- **📊 PDF & CSV Exports:** Professional health reports with advanced error handling.
+- **👥 Multi-Account Support:** Data isolated per Instagram account.
+- **🛡️ Soft Block:** Remove followers without fully blocking them.
+- **☁️ Cloud Sync Infrastructure:** Ready for PRO cloud backup.
 
-> **🎁 PROMO:** Due to current payment gateway updates, **all PRO features are unlocked for FREE** in this version\!
+### ⚖️ Free vs. PRO Tier (v8.4 beta — PRO temporarily FREE)
+
+| Feature                       |  Free Tier   | **PRO (FREE during beta)** 👑 |
+| :---------------------------- | :----------: | :---------------------------: |
+| **Unlimited Scans**           |      ✅      |              ✅               |
+| **Bookmarklet & Extension**   |      ✅      |              ✅               |
+| **Whitelist & Backup**        |      ✅      |              ✅               |
+| **16-Language UI**            |      ✅      |              ✅               |
+| **Real-Time Monitoring**      |      🔒      |          **✅ ACTIVE**          |
+| **Ghost Score & Filters**     |      🔒      |          **✅ ACTIVE**          |
+| **PDF Health Reports**        |      🔒      |          **✅ ACTIVE**          |
+| **Mass Auto-Unfollow**        |      🔒      |          **✅ ACTIVE**          |
+| **Growth Engine (Beta)**      |      🔒      |          **✅ ACTIVE**          |
+| **History Time Machine**      | Last 30 Days |         **Unlimited**         |
+
+> **🎁 Beta promo:** Lemon Squeezy declined this product category. All PRO features remain **unlocked for free** until a new payment provider is integrated.
 
 ### 🚀 How to Use (Desktop)
 
-**Option A: Chrome / Edge / Brave Extension (Recommended & Safest)**
+**Option A: Chrome / Edge / Brave Extension (Recommended)**
 
 1.  Download the latest `dist.zip` from the [Releases tab](https://github.com/edvincodes/InstagramUnfollowers/releases).
 2.  Unzip the folder.

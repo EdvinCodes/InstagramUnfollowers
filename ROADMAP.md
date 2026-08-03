@@ -46,12 +46,9 @@ Setup → Scraping (posts 15d + comentaristas) → Following (con filtros anti-b
 
 | Decisión | Elección | Motivo |
 |----------|----------|--------|
-| Monetización Growth | **PRO only** | Coherente con unfollow masivo; reduce abuso y riesgo legal |
-| Velocidad por defecto | **Tortuga** (3 min/follow) | Menor riesgo de action block |
-| Modo Kamikaze | **Oculto tras toggle "Experto"** | Evita bans accidentales |
-| Límite diario PRO | **50 follows/día** | Protección de cuenta |
-| Disclaimer | **Obligatorio + persistido** en localStorage | Responsabilidad legal |
-| i18n | **16 idiomas** | Consistencia con el resto de la app |
+| Monetización | **PRO gratis temporalmente** | Lemon Squeezy rechazó el producto; buscando alternativa |
+| Release Growth | **v8.4.0-beta** | Etiqueta beta hasta QA manual en Instagram real |
+| SEO prioritario | **Landing + README + GitHub topics** | Competir con davidarroyo1234 en keyword "instagram unfollowers" |
 
 ---
 
@@ -100,14 +97,14 @@ Setup → Scraping (posts 15d + comentaristas) → Following (con filtros anti-b
 - [x] Kamikaze solo visible con checkbox "Modo experto"
 - [x] Persistir aceptación disclaimer (`ig_growth_disclaimer_v1`)
 
-### Fase 5 — Release v8.4.0 ⏳ Pendiente
+### Fase 5 — Release v8.4.0-beta 🔄 En progreso
 
-- [ ] PR `feature/growth-v2` → `main`
-- [ ] Bump versión 8.4.0 en `package.json` + `manifest.json`
-- [ ] Release notes bilingües
-- [ ] Actualizar README + landing (`public/index.html`) con sección Growth
-- [ ] Deploy GitHub Pages
-- [ ] Tag + `dist.zip`
+- [x] Bump versión 8.4.0-beta
+- [x] SEO landing + README + sitemap actualizados
+- [x] GitHub topics (instagram-unfollowers, etc.)
+- [ ] QA manual checklist en Instagram real (owner)
+- [ ] Release notes + dist.zip
+- [ ] Merge `feature/growth-v2` → `main` + deploy Pages
 
 ### Fase 6 — Crecimiento y competitividad (post v8.4)
 
