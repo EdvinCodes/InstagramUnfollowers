@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Built with](https://img.shields.io/badge/Built%20with-Preact%20%26%20TypeScript-blueviolet)](https://preactjs.com/)
 [![Works with](https://img.shields.io/badge/Instagram-Compatible-E1306C.svg)](https://www.instagram.com/)
-[![Version](https://img.shields.io/badge/version-8.4.0--beta-orange.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
+[![Version](https://img.shields.io/badge/version-8.5.0-brightgreen.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
 
 [🇺🇸 English](#-english-version) | [🇪🇸 Español](#-versión-en-español) | [🇹🇷 Türkçe](#-türkçe-sürüm)
 
@@ -16,14 +16,15 @@
 
 **The safest, most advanced Instagram Unfollowers tracker.** See who doesn't follow you back, detect ghost accounts with a 0-100 Ghost Score, export PDF health reports, and grow your audience — **100% locally in your browser**, no password required.
 
-> **🚀 v8.4.0-beta:** New **Growth Engine (beta)** — follow engaged commenters in your niche with anti-ban protection. **16 languages**. All PRO features **free** during beta (payment provider migration).
+> **🚀 v8.5.0:** Tiny **bookmarklet loader** (~300 bytes), polished landing + SEO guides (Ghost Score / detect bots), Growth Engine still **beta** & PRO features **free** during payment-provider migration.
 
-### ✨ What's New in v8.4.0-beta
+### ✨ What's New in v8.5.0
 
-- **🚀 Growth Engine (Beta):** Scrape commenters from target accounts and follow them with ghost filtering, daily limits, and anti-ban delays.
-- **🌐 16 Languages:** English, Spanish, Portuguese, French, Italian, German, Turkish, Hindi, Indonesian, Arabic, Japanese, Korean, Russian, Polish, Dutch, Vietnamese.
-- **⚡ Performance:** Landing page 20× lighter (~45KB initial load). Lazy-loaded script chunks.
-- **🎁 PRO Unlocked:** All premium features free during beta while we migrate away from Lemon Squeezy.
+- **📎 Lightweight bookmarklet:** Copy a ~300-byte loader (not 1MB of JS). Fits mobile bookmarks; loads the full app on demand.
+- **🧭 Landing UX:** “3 Ways to Run”, drag-to-bookmarks, comparison table, install anchors, Guides section.
+- **📰 SEO guides:** [Ghost Score explained](https://edvincodes.github.io/InstagramUnfollowers/ghost-score.html) · [Detect Instagram bots 2026](https://edvincodes.github.io/InstagramUnfollowers/detect-instagram-bots.html).
+- **🚀 Growth Engine (Beta):** Still included from v8.4 — niche commenter follows with anti-ban delays (manual QA pending).
+- **🎁 PRO Unlocked:** All premium features free while we migrate away from Lemon Squeezy.
 
 ### ✨ Core Features (v8.x)
 
@@ -34,7 +35,7 @@
 - **🛡️ Soft Block:** Remove followers without fully blocking them.
 - **☁️ Cloud Sync Infrastructure:** Ready for PRO cloud backup.
 
-### ⚖️ Free vs. PRO Tier (v8.4 beta — PRO temporarily FREE)
+### ⚖️ Free vs. PRO Tier (v8.5 — PRO temporarily FREE)
 
 | Feature                       |  Free Tier   | **PRO (FREE during beta)** 👑 |
 | :---------------------------- | :----------: | :---------------------------: |
@@ -98,14 +99,15 @@
 
 **El rastreador de Instagram Unfollowers más seguro y avanzado.** Descubre quién no te sigue de vuelta, detecta cuentas fantasma con una Ghost Score de 0-100, exporta reportes PDF y haz crecer tu audiencia — **100% en local en tu navegador**, sin contraseña.
 
-> **🚀 v8.4.0-beta:** Nuevo **Growth Engine (beta)** — sigue automáticamente a comentaristas afines a tu nicho con protección anti-baneo. **16 idiomas**. Todas las funciones PRO **gratis** durante la beta (migración de pasarela de pago).
+> **🚀 v8.5.0:** **Bookmarklet ligero** (~300 bytes), landing mejorada + guías SEO (Ghost Score / detectar bots). Growth Engine sigue en **beta** y PRO está **gratis** durante la migración de pagos.
 
-### ✨ Novedades de la v8.4.0-beta
+### ✨ Novedades de la v8.5.0
 
-- **🚀 Growth Engine (Beta):** Extrae comentaristas de cuentas objetivo y síguelos con filtrado de fantasmas, límites diarios y retrasos anti-baneo.
-- **🌐 16 Idiomas:** Inglés, Español, Portugués, Francés, Italiano, Alemán, Turco, Hindi, Indonesio, Árabe, Japonés, Coreano, Ruso, Polaco, Neerlandés, Vietnamita.
-- **⚡ Rendimiento:** Landing 20× más ligera (~45KB de carga inicial). Chunks cargados bajo demanda.
-- **🎁 PRO Desbloqueado:** Todas las funciones premium gratis durante la beta mientras migramos de Lemon Squeezy.
+- **📎 Bookmarklet ligero:** Copia un loader de ~300 bytes (no 1MB de JS). Cabe en marcadores móviles; carga la app bajo demanda.
+- **🧭 Landing UX:** “3 Ways to Run”, arrastrar a marcadores, tabla comparativa, anclas de instalación, sección Guides.
+- **📰 Guías SEO:** [Ghost Score explicado](https://edvincodes.github.io/InstagramUnfollowers/ghost-score.html) · [Detectar bots 2026](https://edvincodes.github.io/InstagramUnfollowers/detect-instagram-bots.html).
+- **🚀 Growth Engine (Beta):** Incluido desde v8.4 — follows a comentaristas del nicho con anti-baneo (QA manual pendiente).
+- **🎁 PRO Desbloqueado:** Todas las funciones premium gratis mientras migramos de Lemon Squeezy.
 
 ### ✨ Funciones principales (v8.x)
 
@@ -116,7 +118,7 @@
 - **🛡️ Soft Block:** Elimina seguidores sin bloquearlos por completo.
 - **☁️ Infraestructura CloudSync:** Lista para respaldo en la nube PRO.
 
-### ⚖️ Gratis vs. PRO (v8.4 beta — PRO temporalmente GRATIS)
+### ⚖️ Gratis vs. PRO (v8.5 — PRO temporalmente GRATIS)
 
 | Función                       |  Versión Gratis  | **PRO (GRATIS en beta)** 👑 |
 | :----------------------------- | :---------------: | :---------------------------: |
@@ -178,7 +180,7 @@
 
 Turkish Translation/Türkçe Çeviri: mmd2626
 
-_Note: this community translation covers v8.0.0. Some v8.4.0-beta features (Growth Engine, 16-language UI, bookmarklet loader) are documented in the English section above. PRs updating this section are welcome!_
+_Note: this community translation covers v8.0.0. Some v8.5 features (Growth Engine, 16-language UI, bookmarklet loader, SEO guides) are documented in the English section above. PRs updating this section are welcome!_
 
 **Instagram topluluğunu yönetmek için en güvenli ve gelişmiş araç.**
 Şifreni çalan veya bulut sunucuları kullanan diğer araçların aksine, bu araç maksimum güvenlik ve gizlilik için **Shadow DOM** kullanarak **%100 tarayıcında yerel olarak** çalışır.
@@ -302,6 +304,6 @@ Esta herramienta es un proyecto independiente y no está afiliada, asociada, aut
 
 ## ❤️ Credits
 
-Developed with ❤️ by **Edvin**. **v8.4.0-beta - Growth Engine & 16 Languages.**
+Developed with ❤️ by **Edvin**. **v8.5.0 — Bookmarklet loader, SEO guides & Growth Engine (beta).**
 
 Licensed under the [MIT License](https://www.google.com/search?q=LICENSE).

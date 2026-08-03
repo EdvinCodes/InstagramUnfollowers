@@ -8,6 +8,8 @@
 - GitHub: https://github.com/EdvinCodes/InstagramUnfollowers
 - Latest release: https://github.com/EdvinCodes/InstagramUnfollowers/releases/latest
 - Privacy: https://edvincodes.github.io/InstagramUnfollowers/privacy.html
+- Ghost Score guide: https://edvincodes.github.io/InstagramUnfollowers/ghost-score.html
+- Detect bots guide: https://edvincodes.github.io/InstagramUnfollowers/detect-instagram-bots.html
 
 ## What it does
 
@@ -18,7 +20,7 @@ All processing is local in the user's browser. No Instagram password is collecte
 ## How to run
 
 1. **Browser extension (recommended):** Download dist.zip from GitHub Releases, load unpacked in chrome://extensions, open instagram.com.
-2. **Console script:** Copy loader.js from the website, paste in browser DevTools Console on instagram.com.
+2. **Console script:** Copy the tiny loader.js from the website, paste in browser DevTools Console on instagram.com.
 3. **Mobile bookmarklet:** Save the loader as a bookmark URL, open instagram.com, tap the bookmark.
 
 ## Key differentiators vs basic unfollowers scripts
@@ -28,11 +30,12 @@ All processing is local in the user's browser. No Instagram password is collecte
 - Real-time unfollower monitoring (extension)
 - PDF/CSV exports
 - Multi-account isolation
-- Growth Engine (beta, PRO tier — free during v8.4 beta)
+- Growth Engine (beta, PRO tier — free during payment migration)
+- Lightweight bookmarklet loader (~300 bytes)
 
 ## Version
 
-Current: 8.4.0-beta
+Current: 8.5.0
 
 ## License
 
