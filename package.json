@@ -7,7 +7,9 @@
     "build-dev": "npm run build && webpack serve --mode development",
     "build-prod": "npm run webpack-build && webpack serve --mode production",
     "copy-script": "node scripts/copy-script.js dist public",
-    "build": "npm run webpack-build && npm run copy-script"
+    "build": "npm run webpack-build && npm run copy-script",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "babel": {
     "plugins": [
@@ -35,7 +37,8 @@
     "webpack": "^5.97.1",
     "webpack-bundle-analyzer": "^5.3.0",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^5.2.0"
+    "webpack-dev-server": "^5.2.0",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "chart.js": "^4.5.1",

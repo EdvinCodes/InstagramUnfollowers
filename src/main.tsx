@@ -43,6 +43,9 @@ import { Logo } from './components/icons/Logo';
 import { startRealtimeMonitor, isMonitorEnabled } from './services/realtimeMonitor';
 import { CloudSync } from './services/cloudSync';
 
+import { GrowthView } from './components/GrowthView';
+import { createInitialGrowthState } from './model/growth-state';
+
 import { t } from './i18n/i18n';
 
 function App() {
@@ -97,6 +100,10 @@ function App() {
     }
     case 'unfollowing': {
       isActiveProcess = unfollowerState.isUnfollowing;
+      break;
+    }
+    case 'growth': {
+      isActiveProcess = state.isRunning;
       break;
     }
     default: {
@@ -420,7 +427,13 @@ function App() {
   let markup: React.JSX.Element;
   switch (state.status) {
     case 'initial': {
-      markup = <NotSearching onScan={onScan} />;
+      markup = (
+        <NotSearching
+          onScan={onScan}
+          onGrowth={() => setState(createInitialGrowthState())}
+          isPro={isPro}
+        />
+      );
       break;
     }
     case 'scanning': {
@@ -447,6 +460,18 @@ function App() {
           handleUnfollowFilter={handleUnfollowFilter}
           isPaused={isUnfollowPaused}
           togglePause={toggleUnfollowPause}
+        />
+      );
+      break;
+    }
+    case 'growth': {
+      markup = (
+        <GrowthView
+          state={state}
+          setState={setState}
+          onBack={() => setState({ status: 'initial' })}
+          isPro={isPro}
+          onShowToast={text => setToast({ show: true, text })}
         />
       );
       break;

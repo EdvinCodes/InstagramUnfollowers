@@ -1,3 +1,5 @@
+import { GROWTH_STRINGS, type GrowthTranslationSlice } from './growthStrings';
+
 export type Locale =
   | 'en'
   | 'pt-BR'
@@ -16,7 +18,7 @@ export type Locale =
   | 'nl'
   | 'vi';
 
-export interface Translations {
+export interface Translations extends GrowthTranslationSlice {
   appName: string;
   minimize: string;
   history: string;
@@ -359,6 +361,7 @@ const en: Translations = {
   kofiTitle: 'Did I save you hours? Buy me a coffee! ☕',
   kofiAriaLabel: 'Support on Ko-fi',
   support: 'Support',
+  ...GROWTH_STRINGS['en'],
 };
 
 //  Español
@@ -536,6 +539,7 @@ const es: Translations = {
   kofiTitle: '¿Te ahorré horas? ¡Invítame a un café! ☕',
   kofiAriaLabel: 'Apoyar en Ko-fi',
   support: 'Apoyar',
+  ...GROWTH_STRINGS['es'],
 };
 
 //  Português (BR)
@@ -712,6 +716,7 @@ const ptBR: Translations = {
   kofiTitle: 'Te poupei horas? Pague-me um café! ☕',
   kofiAriaLabel: 'Apoiar no Ko-fi',
   support: 'Apoiar',
+  ...GROWTH_STRINGS['pt-BR'],
 };
 
 //  Français
@@ -891,6 +896,7 @@ const fr: Translations = {
   kofiTitle: 'Je vous ai fait gagner des heures ? Offrez-moi un café ! ☕',
   kofiAriaLabel: 'Soutenir sur Ko-fi',
   support: 'Soutenir',
+  ...GROWTH_STRINGS['fr'],
 };
 
 //  Italiano
@@ -1068,6 +1074,7 @@ const it: Translations = {
   kofiTitle: 'Ti ho fatto risparmiare ore? Offrimi un caffè! ☕',
   kofiAriaLabel: 'Supporta su Ko-fi',
   support: 'Supporta',
+  ...GROWTH_STRINGS['it'],
 };
 
 // 🇩🇪 Deutsch
@@ -1245,6 +1252,7 @@ const de: Translations = {
   kofiTitle: 'Habe ich dir Stunden gespart? Kauf mir einen Kaffee! ☕',
   kofiAriaLabel: 'Auf Ko-fi unterstützen',
   support: 'Unterstützen',
+  ...GROWTH_STRINGS['de'],
 };
 
 //  Export
@@ -1419,6 +1427,7 @@ const tr: Translations = {
   kofiTitle: 'Saatlerini kurtardım mı? Bir kahve ısmarla! ☕',
   kofiAriaLabel: "Ko-fi'de Destekle",
   support: 'Destek',
+  ...GROWTH_STRINGS['tr'],
 };
 
 
@@ -1593,6 +1602,7 @@ const hi: Translations = {
   kofiTitle: 'क्या मैंने आपके घंटे बचाए? मुझे एक कॉफ़ी खरीदें! ☕',
   kofiAriaLabel: 'Ko-fi पर समर्थन करें',
   support: 'समर्थन',
+  ...GROWTH_STRINGS['hi'],
 };
 
 // Indonesian
@@ -1766,6 +1776,7 @@ const id: Translations = {
   kofiTitle: 'Sudah menghemat waktu Anda? Traktir kopi! ☕',
   kofiAriaLabel: 'Dukung di Ko-fi',
   support: 'Dukung',
+  ...GROWTH_STRINGS['id'],
 };
 
 // Arabic
@@ -1939,6 +1950,7 @@ const ar: Translations = {
   kofiTitle: 'هل وفرت عليك ساعات؟ ادعمني بقهوة! ☕',
   kofiAriaLabel: 'ادعم على Ko-fi',
   support: 'الدعم',
+  ...GROWTH_STRINGS['ar'],
 };
 
 // Japanese
@@ -2112,6 +2124,7 @@ const ja: Translations = {
   kofiTitle: '時間を節約できましたか？コーヒーをおごってください！ ☕',
   kofiAriaLabel: 'Ko-fiで支援',
   support: '支援',
+  ...GROWTH_STRINGS['ja'],
 };
 
 // Korean
@@ -2285,6 +2298,7 @@ const ko: Translations = {
   kofiTitle: '시간을 절약해 드렸나요? 커피 한 잔 사주세요! ☕',
   kofiAriaLabel: 'Ko-fi에서 후원',
   support: '후원',
+  ...GROWTH_STRINGS['ko'],
 };
 
 // Russian
@@ -2458,6 +2472,7 @@ const ru: Translations = {
   kofiTitle: 'Сэкономил вам часы? Угостите кофе! ☕',
   kofiAriaLabel: 'Поддержать на Ko-fi',
   support: 'Поддержка',
+  ...GROWTH_STRINGS['ru'],
 };
 
 // Polish
@@ -2631,6 +2646,7 @@ const pl: Translations = {
   kofiTitle: 'Zaoszczędziłem Ci godziny? Postaw kawę! ☕',
   kofiAriaLabel: 'Wesprzyj na Ko-fi',
   support: 'Wsparcie',
+  ...GROWTH_STRINGS['pl'],
 };
 
 // Dutch
@@ -2804,6 +2820,7 @@ const nl: Translations = {
   kofiTitle: 'Heb ik je uren bespaard? Trakteer op een koffie! ☕',
   kofiAriaLabel: 'Steun op Ko-fi',
   support: 'Steun',
+  ...GROWTH_STRINGS['nl'],
 };
 
 // Vietnamese
@@ -2977,6 +2994,7 @@ const vi: Translations = {
   kofiTitle: 'Tôi đã tiết kiệm giờ cho bạn? Mời tôi một ly cà phê! ☕',
   kofiAriaLabel: 'Hỗ trợ trên Ko-fi',
   support: 'Hỗ trợ',
+  ...GROWTH_STRINGS['vi'],
 };
 
 export const translations: Record<Locale, Translations> = {

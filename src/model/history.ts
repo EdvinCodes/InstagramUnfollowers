@@ -2,11 +2,12 @@ import { UserNode } from './user';
 
 // Tipos de cosas que pueden pasar
 export type HistoryEventType =
-  | 'DETECTED_UNFOLLOWER' // El escáner detectó que te dejó de seguir
-  | 'YOU_UNFOLLOWED' // Tú le diste al botón de Unfollow a través de la app
-  | 'WHITELISTED' // Lo protegiste (movido a whitelist)
-  | 'UNWHITELISTED' // Lo desprotegiste
-  | 'SOFT_BLOCKED'; // <-- AÑADIDO: Para cuando eliminas a un seguidor
+  | 'DETECTED_UNFOLLOWER'
+  | 'YOU_UNFOLLOWED'
+  | 'YOU_FOLLOWED'
+  | 'WHITELISTED'
+  | 'UNWHITELISTED'
+  | 'SOFT_BLOCKED';
 
 export interface HistoryEvent {
   id: string; // Un ID único para el evento (uuid)

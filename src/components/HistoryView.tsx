@@ -76,6 +76,8 @@ export const HistoryView = ({ onClose, isPro }: HistoryViewProps) => {
         return { icon: '🕵️', color: '#f87171', label: t('traitorDetected') };
       case 'YOU_UNFOLLOWED':
         return { icon: '👋', color: '#34d399', label: t('youUnfollowed') };
+      case 'YOU_FOLLOWED':
+        return { icon: '➕', color: '#22d3ee', label: t('growthYouFollowed') };
       case 'WHITELISTED':
         return { icon: '🛡️', color: '#60a5fa', label: t('whitelisted') };
       case 'UNWHITELISTED':
