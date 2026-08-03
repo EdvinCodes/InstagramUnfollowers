@@ -4,6 +4,7 @@ import {
   assertUnreachable,
   getCurrentPageUnfollowers,
   getMaxPage,
+  getSafePage,
   getUsersForDisplay,
   getDynamicStorageKey,
 } from '../utils/utils';
@@ -113,24 +114,37 @@ export const Searching = ({
     return getUsersForDisplay(scanResults, whitelistedResults, currentTab, searchTerm, filter, t);
   }, [scanResults, whitelistedResults, currentTab, searchTerm, filter]);
 
+  const scanningPage = state.status === 'scanning' ? state.page : 1;
+  const maxPage = getMaxPage(usersForDisplay);
+  const safePage = getSafePage(usersForDisplay, scanningPage);
+  const pageUsers = useMemo(
+    () => getCurrentPageUnfollowers(usersForDisplay, safePage),
+    [usersForDisplay, safePage],
+  );
+
+  useEffect(() => {
+    if (state.status !== 'scanning') {
+      return;
+    }
+    if (state.page === safePage) {
+      return;
+    }
+    setState({ ...state, page: safePage });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only resync when page bounds change
+  }, [safePage, scanningPage, state.status]);
+
   if (state.status !== 'scanning') {
     return null;
   }
 
-  let currentLetter = ''; // ← se muta durante el render
-  const renderLetterHeader = (firstLetter: string) => {
-    currentLetter = firstLetter; // ← mutación directa
-    return <div className='alphabet-character'>{currentLetter}</div>;
-  };
-
+  let lastRenderedLetter = '';
   const handlePageChange = (direction: 'prev' | 'next') => {
-    const maxPage = getMaxPage(usersForDisplay);
-    let newPage = state.page;
-    if (direction === 'prev' && state.page > 1) {
-      newPage--;
+    let newPage = safePage;
+    if (direction === 'prev' && safePage > 1) {
+      newPage = safePage - 1;
     }
-    if (direction === 'next' && state.page < maxPage) {
-      newPage++;
+    if (direction === 'next' && safePage < maxPage) {
+      newPage = safePage + 1;
     }
     if (newPage !== state.page) {
       setState({ ...state, page: newPage });
@@ -246,17 +260,29 @@ export const Searching = ({
             </button>
           </div>
         )}
-        <div className='grow t-center pagination-controls'>
+        <div className='pagination-controls'>
           <p>{t('pages')}</p>
-          <div className='flex justify-center align-center'>
-            <button className='btn-icon' onClick={() => handlePageChange('prev')}>
-              ❮
+          <div className='pagination-row'>
+            <button
+              type='button'
+              className='btn-icon'
+              onClick={() => handlePageChange('prev')}
+              disabled={safePage <= 1}
+              aria-label={t('page')}
+            >
+              ‹
             </button>
             <span className='page-indicator'>
-              {state.page} / {getMaxPage(usersForDisplay)}
+              {safePage} / {maxPage}
             </span>
-            <button className='btn-icon' onClick={() => handlePageChange('next')}>
-              ❯
+            <button
+              type='button'
+              className='btn-icon'
+              onClick={() => handlePageChange('next')}
+              disabled={safePage >= maxPage}
+              aria-label={t('page')}
+            >
+              ›
             </button>
           </div>
         </div>
@@ -313,13 +339,22 @@ export const Searching = ({
           </div>
         </nav>
 
-        {getCurrentPageUnfollowers(usersForDisplay, state.page).map(user => {
-          const firstLetter = user.username.substring(0, 1).toUpperCase();
-          const isNewLetter = firstLetter !== currentLetter;
+        {pageUsers.length === 0 ? (
+          <div className='results-empty-hint'>
+            <p>{t('displayed')}: 0</p>
+            <p className='text-muted'>{t('total')}: {state.results.length}</p>
+          </div>
+        ) : (
+          pageUsers.map(user => {
+            const firstLetter = (user.username?.[0] ?? '#').toUpperCase();
+            const showLetterHeader = firstLetter !== lastRenderedLetter;
+            if (showLetterHeader) {
+              lastRenderedLetter = firstLetter;
+            }
 
-          return (
-            <React.Fragment key={user.id}>
-              {isNewLetter && renderLetterHeader(firstLetter)}
+            return (
+              <React.Fragment key={user.id}>
+                {showLetterHeader && <div className='alphabet-character'>{firstLetter}</div>}
               <label className='result-item'>
                 <div
                   className='flex grow align-center'
@@ -510,7 +545,8 @@ export const Searching = ({
               </label>
             </React.Fragment>
           );
-        })}
+          })
+        )}
       </article>
     </section>
   );

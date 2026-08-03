@@ -20,15 +20,29 @@ export function getMaxPage(nonFollowersList: readonly UserNode[]): number {
   return pageCalc < 1 ? 1 : pageCalc;
 }
 
+export function getSafePage(list: readonly UserNode[], currentPage: number): number {
+  const maxPage = getMaxPage(list);
+  if (!Number.isFinite(currentPage) || currentPage < 1) {
+    return 1;
+  }
+  return currentPage > maxPage ? maxPage : currentPage;
+}
+
 export function getCurrentPageUnfollowers(
   nonFollowersList: readonly UserNode[],
   currentPage: number,
 ): readonly UserNode[] {
-  // Using localeCompare is better for string sorting
-  const sortedList = [...nonFollowersList].sort((a, b) => a.username.localeCompare(b.username));
-  // Use slice instead of splice to avoid mutation confusion (although we cloned it)
-  const startIndex = UNFOLLOWERS_PER_PAGE * (currentPage - 1);
+  const safePage = getSafePage(nonFollowersList, currentPage);
+  const sortedList = [...nonFollowersList].sort((a, b) =>
+    (a.username ?? '').localeCompare(b.username ?? '', undefined, { sensitivity: 'base' }),
+  );
+  const startIndex = UNFOLLOWERS_PER_PAGE * (safePage - 1);
   return sortedList.slice(startIndex, startIndex + UNFOLLOWERS_PER_PAGE);
+}
+
+export function viewerFollowsBack(user: UserNode): boolean {
+  const value = user.follows_viewer as unknown;
+  return value === true || value === 'true' || value === 1;
 }
 
 // Esta cadena es la que viene en la cache_key de las URLs que pasaste
@@ -71,19 +85,17 @@ export function getUsersForDisplay(
         if (isWhitelisted) {
           return false;
         }
-        // Solo mostrar si NO te siguen
-        if (user.follows_viewer) {
+        if (viewerFollowsBack(user)) {
           return false;
-        } // BUG FIX #4: comparación explícita con true
+        }
         break;
       case 'mutuals':
         if (isWhitelisted) {
           return false;
         }
-        // Solo mostrar si SÍ te siguen
-        if (!user.follows_viewer) {
+        if (!viewerFollowsBack(user)) {
           return false;
-        } // BUG FIX #4: comparación explícita con true
+        }
         break;
       default:
         return false;
@@ -125,8 +137,8 @@ export function getUsersForDisplay(
     // 3. BUSCADOR
     if (searchTerm !== '') {
       const matchesSearch =
-        user.username.toLowerCase().includes(lowerSearchTerm) ||
-        user.full_name.toLowerCase().includes(lowerSearchTerm);
+        (user.username ?? '').toLowerCase().includes(lowerSearchTerm) ||
+        (user.full_name ?? '').toLowerCase().includes(lowerSearchTerm);
       if (!matchesSearch) {
         return false;
       }

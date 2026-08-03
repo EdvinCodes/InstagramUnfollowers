@@ -153,6 +153,8 @@ export const Toolbar = ({
       case 'growth':
         return;
       case 'scanning':
+        setState({ ...state, searchTerm: value, page: 1, selectedResults: [] });
+        break;
       case 'unfollowing':
         setState({ ...state, searchTerm: value });
         break;
