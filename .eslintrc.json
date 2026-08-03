@@ -1,5 +1,5 @@
 {
-  "ignorePatterns": ["webpack.config.js", "scripts/*.js", "dist", "node_modules"],
+  "ignorePatterns": ["webpack.config.js", "scripts/*.js", "dist", "node_modules", "**/*.test.ts", "**/*.test.tsx"],
   "env": {
     "browser": true,
     "es2021": true

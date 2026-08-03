@@ -27,8 +27,8 @@ function getHeaders(): HeadersInit {
     'x-ig-app-id': IG_APP_ID,
     'x-csrftoken': csrfToken,
     'x-requested-with': 'XMLHttpRequest',
-    accept: '*/*',
-    referer: 'https://www.instagram.com/',
+    'accept': '*/*',
+    'referer': 'https://www.instagram.com/',
   };
 }
 
@@ -250,7 +250,7 @@ export async function followUser(userId: string): Promise<{ ok: boolean; status:
         'x-csrftoken': csrfToken,
         'content-type': 'application/x-www-form-urlencoded',
         'x-requested-with': 'XMLHttpRequest',
-        referer: 'https://www.instagram.com/',
+        'referer': 'https://www.instagram.com/',
       },
       credentials: 'include',
       body: `user_id=${userId}`,

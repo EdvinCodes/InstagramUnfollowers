@@ -7,7 +7,8 @@
     "build-dev": "npm run build && webpack serve --mode development",
     "build-prod": "npm run webpack-build && webpack serve --mode production",
     "copy-script": "node scripts/copy-script.js dist public",
-    "build": "npm run webpack-build && npm run copy-script",
+    "generate-loader": "node scripts/generate-loader.js",
+    "build": "npm run webpack-build && npm run copy-script && npm run generate-loader",
     "test": "vitest run",
     "test:watch": "vitest"
   },

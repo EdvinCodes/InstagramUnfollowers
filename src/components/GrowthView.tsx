@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import type { GrowthSpeed, GrowthState } from '../model/growth-state';
-import { createInitialGrowthState } from '../model/growth-state';
+import { createInitialGrowthState, type GrowthSpeed, type GrowthState } from '../model/growth-state';
 import type { State } from '../model/state';
 import { useGrowth } from '../hooks/useGrowth';
 import { parseTargetUsernames } from '../utils/growthHelpers';

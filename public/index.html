@@ -1,5 +1,5 @@
 ﻿<!doctype html>
-<html lang="en">
+<html lang="en" style="scroll-behavior: smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -150,7 +150,15 @@
             "name": "Does it work on mobile (iOS/Android)?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Yes, via a bookmarklet. Copy the code, save it as a browser bookmark on your phone, open Instagram, and tap the bookmark to run the scan in your mobile browser."
+              "text": "Yes, via a bookmarklet. Copy the lightweight loader (~300 bytes), save it as a browser bookmark URL on your phone, open instagram.com, and tap the bookmark — the full app loads automatically."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What is the Growth Engine (Beta)?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Growth (beta) finds users who comment on accounts in your niche and follows them with anti-ban delays and ghost filtering. It is a PRO feature, currently unlocked for free during the v8.4 beta."
             }
           },
           {
@@ -244,6 +252,45 @@
         max-width: 650px;
         margin-top: 0.5rem;
         line-height: 1.5;
+      }
+
+      /* QUICK NAV */
+      .quick-nav {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem 1.5rem;
+        margin-top: 1rem;
+      }
+      .quick-nav a {
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        padding: 0.3rem 0;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s ease;
+      }
+      .quick-nav a:hover {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+      }
+
+      .section-heading {
+        width: 100%;
+        text-align: center;
+        margin: 0 0 0.25rem 0;
+        font-size: 1.35rem;
+      }
+      .section-subheading {
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 0.92rem;
+        max-width: 640px;
+        margin: 0 auto 1.5rem;
+        line-height: 1.6;
       }
 
       .seo-subtitle strong {
@@ -364,6 +411,81 @@
         color: var(--text-main);
         border: var(--glass-border);
       }
+      /* INSTALL METHODS */
+      .install-section {
+        width: 100%;
+        animation: fadeInUp 0.8s ease-out 0.15s backwards;
+      }
+      .install-section h2 {
+        font-size: 1.35rem;
+        text-align: center;
+        margin: 0 0 0.5rem 0;
+      }
+      .install-section > p {
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        margin: 0 0 1.25rem 0;
+        line-height: 1.6;
+      }
+      .install-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        width: 100%;
+      }
+      .install-card {
+        background: rgba(30, 41, 59, 0.45);
+        border: var(--glass-border);
+        border-radius: 16px;
+        padding: 1.25rem;
+        text-align: left;
+      }
+      .install-card.recommended {
+        border-color: rgba(6, 182, 212, 0.45);
+        box-shadow: 0 0 24px rgba(6, 182, 212, 0.12);
+      }
+      .install-badge {
+        display: inline-block;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--primary);
+        background: rgba(6, 182, 212, 0.15);
+        padding: 0.2rem 0.55rem;
+        border-radius: 999px;
+        margin-bottom: 0.6rem;
+      }
+      .install-card h3 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.05rem;
+      }
+      .install-card p {
+        margin: 0;
+        font-size: 0.88rem;
+        color: var(--text-muted);
+        line-height: 1.55;
+      }
+      .install-card ol {
+        margin: 0.6rem 0 0 0;
+        padding-left: 1.1rem;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        line-height: 1.55;
+      }
+      .bookmarklet-hint {
+        width: 100%;
+        text-align: center;
+        font-size: 0.88rem;
+        color: var(--text-muted);
+        line-height: 1.6;
+        animation: fadeInUp 0.8s ease-out 0.45s backwards;
+      }
+      .bookmarklet-hint strong {
+        color: var(--text-main);
+      }
+
       .btn-secondary:hover {
         background: rgba(255, 255, 255, 0.1);
         border-color: rgba(255, 255, 255, 0.2);
@@ -810,7 +932,53 @@
           The ultimate <strong>100% local and safe</strong> tool to clean your Instagram community.
           Detect ghosts, manage multiple accounts, and remove non-followers without risks.
         </p>
+
+        <nav class="quick-nav" aria-label="Page sections">
+          <a href="#install">Install</a>
+          <a href="#compare">Why PRO</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#faq">FAQ</a>
+          <a href="https://github.com/EdvinCodes/InstagramUnfollowers" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </nav>
       </header>
+
+      <section class="install-section" id="install">
+        <h2>3 Ways to Run — Zero Password Required</h2>
+        <p>
+          Same as classic Instagram Unfollowers bookmarklets: open Instagram, run the script, scan.
+          The full app (~1 MB) loads on demand from this page — your data never leaves your browser.
+        </p>
+        <div class="install-grid">
+          <div class="install-card recommended">
+            <span class="install-badge">Recommended</span>
+            <h3>🧩 Browser Extension</h3>
+            <p>Best experience: floating button, background alerts, one-click scans.</p>
+            <ol>
+              <li>Download <code>dist.zip</code> from GitHub Releases</li>
+              <li>Load unpacked in <code>chrome://extensions</code></li>
+              <li>Open instagram.com — click the blue logo</li>
+            </ol>
+          </div>
+          <div class="install-card">
+            <h3>💻 Console Script</h3>
+            <p>Desktop quick start — no install. Copy the loader below.</p>
+            <ol>
+              <li>Click <strong>Copy Script</strong></li>
+              <li>Open instagram.com → F12 → Console</li>
+              <li>Paste and press Enter</li>
+            </ol>
+          </div>
+          <div class="install-card">
+            <h3>📱 Mobile Bookmarklet</h3>
+            <p>iOS &amp; Android — save as a bookmark, tap on Instagram.</p>
+            <ol>
+              <li>Drag <strong>Mobile Bookmarklet</strong> to bookmarks bar (desktop)</li>
+              <li>Or copy script → edit bookmark URL → paste</li>
+              <li>Open instagram.com → tap the bookmark</li>
+            </ol>
+          </div>
+        </div>
+      </section>
 
       <div class="code-wrapper">
         <div class="code-header">
@@ -819,7 +987,7 @@
             <span class="dot yellow"></span>
             <span class="dot green"></span>
           </div>
-          <span>script.js</span>
+          <span>loader.js</span>
           <span>v8.4.0-beta</span>
         </div>
         <div class="code-content">
@@ -845,6 +1013,50 @@
           Copy Script
         </button>
 
+        <a
+          id="bookmarklet-link"
+          class="btn btn-secondary"
+          href="#"
+          title="Drag to your bookmarks bar. Then open instagram.com and click it."
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+          </svg>
+          Mobile Bookmarklet
+        </a>
+
+        <a
+          class="btn btn-secondary"
+          href="https://github.com/EdvinCodes/InstagramUnfollowers/releases/latest"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Get Extension
+        </a>
+
         <!-- <a
           class="btn btn-pro"
           href="https://igunfollowerspro.lemonsqueezy.com/checkout/buy/32e77393-d119-4d87-92c9-a32b022c80dc"
@@ -866,22 +1078,6 @@
           Get PRO License
         </a> -->
 
-        <a id="bookmarklet-link" class="btn btn-secondary" href="#">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-          </svg>
-          Mobile Setup
-        </a>
-
         <a
           class="btn btn-kofi"
           href="https://ko-fi.com/edvincodes"
@@ -891,6 +1087,12 @@
           ☕ Support the Project
         </a>
       </div>
+
+      <p class="bookmarklet-hint">
+        <strong>Desktop bookmarklet:</strong> drag the <em>Mobile Bookmarklet</em> button to your
+        bookmarks bar (show it via Ctrl+Shift+B in Chrome). On phone: copy the script and paste it
+        as the URL of a new bookmark.
+      </p>
 
       <div class="features-grid">
         <div class="feature-card">
@@ -937,8 +1139,73 @@
           isolation, and a browser extension — while staying <strong>100% local</strong> with no
           password required.
         </p>
+        <div style="overflow-x: auto; max-width: 100%">
+          <table
+            style="
+              width: 100%;
+              border-collapse: collapse;
+              font-size: 0.9rem;
+              color: var(--text-muted);
+            "
+          >
+            <thead>
+              <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.1)">
+                <th style="text-align: left; padding: 0.75rem 1rem; color: var(--text-main)">
+                  Feature
+                </th>
+                <th style="text-align: center; padding: 0.75rem 1rem">Basic bookmarklet</th>
+                <th style="text-align: center; padding: 0.75rem 1rem; color: var(--primary)">
+                  Unfollowers PRO
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.06)">
+                <td style="padding: 0.65rem 1rem">Non-followers list</td>
+                <td style="text-align: center">✅</td>
+                <td style="text-align: center">✅</td>
+              </tr>
+              <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.06)">
+                <td style="padding: 0.65rem 1rem">Ghost Score 0–100</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">✅</td>
+              </tr>
+              <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.06)">
+                <td style="padding: 0.65rem 1rem">PDF / CSV exports</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">✅</td>
+              </tr>
+              <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.06)">
+                <td style="padding: 0.65rem 1rem">Real-time unfollower alerts</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">✅</td>
+              </tr>
+              <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.06)">
+                <td style="padding: 0.65rem 1rem">16 languages</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">✅</td>
+              </tr>
+              <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.06)">
+                <td style="padding: 0.65rem 1rem">Growth Engine (beta)</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">✅</td>
+              </tr>
+              <tr>
+                <td style="padding: 0.65rem 1rem">No password / 100% local</td>
+                <td style="text-align: center">✅</td>
+                <td style="text-align: center">✅</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
 
+      <section id="pricing" style="width: 100%">
+        <h2 class="section-heading">Free vs PRO — Choose Your Plan</h2>
+        <p class="section-subheading">
+          Every core feature is free forever. PRO adds Ghost Score, automation, exports, and the
+          Growth Engine — currently <strong>unlocked for everyone</strong> during the v8.4 beta.
+        </p>
       <div class="pricing">
         <div class="pricing-card">
           <h3 class="price-title">Free Forever</h3>
@@ -1199,30 +1466,7 @@
           > -->
         </div>
       </div>
-
-      <div class="instructions">
-        <h3>How to use / Cómo usar:</h3>
-        <div class="steps">
-          <div class="step">
-            <div class="step-number">1</div>
-            <div>Click <b>"Copy Script"</b> above.<br /><i>Haz clic en "Copiar Script".</i></div>
-          </div>
-          <div class="step">
-            <div class="step-number">2</div>
-            <div>
-              Go to <b>instagram.com</b> and log in.<br /><i>Ve a instagram.com e inicia sesión.</i>
-            </div>
-          </div>
-          <div class="step">
-            <div class="step-number">3</div>
-            <div>
-              Press <b>F12</b> (Console), paste, and hit <b>Enter</b>.<br /><i
-                >Pulsa F12 (Consola), pega el código y pulsa Enter.</i
-              >
-            </div>
-          </div>
-        </div>
-      </div>
+      </section>
 
       <div
         style="
@@ -1316,9 +1560,9 @@
         <details class="faq-item">
           <summary>Does it work on mobile (iOS/Android)?</summary>
           <p>
-            Yes, via a bookmarklet. Copy the code from this page, save it as a browser bookmark on
-            your phone, open Instagram, and tap the bookmark to run the scan directly in your
-            mobile browser.
+            Yes, via a bookmarklet. Copy the lightweight loader from this page, save it as a
+            bookmark URL on your phone, open instagram.com, and tap the bookmark — the full app
+            loads automatically in your mobile browser.
           </p>
         </details>
 
@@ -1411,10 +1655,12 @@
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
         </div>
-        <h2>Code Copied! / ¡Copiado!</h2>
+        <h2>Loader Copied! / ¡Copiado!</h2>
         <p>
-          Go to Instagram.com, open Console (F12), paste, and hit Enter.<br /><br /><i
-            >Ve a Instagram, abre la consola (F12), pega y dale a Enter.</i
+          1. Open <strong>instagram.com</strong> and log in.<br />
+          2. Press <strong>F12</strong> → Console tab.<br />
+          3. Paste and press <strong>Enter</strong>. The app loads in ~2 seconds.<br /><br /><i
+            >Abre instagram.com, consola (F12), pega y Enter. La app se carga sola.</i
           >
         </p>
         <button class="btn btn-secondary" onclick="toggleOverlay(false)">Close / Cerrar</button>
@@ -1422,17 +1668,16 @@
     </div>
 
     <script>
-      // Lazy-loads the console script from a separate static file instead of
-      // embedding it inline (previously ~900KB of inline JS, tanking page
-      // load performance and Core Web Vitals).
+      // Tiny loader (~300 bytes) — copies cleanly and fits in bookmarklet URLs.
+      // Full app (~1 MB) is fetched from content.js on instagram.com only.
       const codeDisplay = document.getElementById('code-display');
       const bookmarkletLink = document.getElementById('bookmarklet-link');
-      let instagramScript = '';
-      let scriptLoadPromise = null;
+      let loaderScript = '';
+      let loaderLoadPromise = null;
 
-      function loadInstagramScript() {
-        if (!scriptLoadPromise) {
-          scriptLoadPromise = fetch('content.js')
+      function loadLoaderScript() {
+        if (!loaderLoadPromise) {
+          loaderLoadPromise = fetch('loader.js')
             .then(res => {
               if (!res.ok) {
                 throw new Error(`HTTP ${res.status}`);
@@ -1440,20 +1685,15 @@
               return res.text();
             })
             .then(code => {
-              instagramScript = code;
-              return code;
+              loaderScript = code.trim();
+              return loaderScript;
             });
         }
-        return scriptLoadPromise;
+        return loaderLoadPromise;
       }
 
       function renderPreview(code) {
-        const previewText =
-          code.substring(0, 500) +
-          "\n\n/* ... [Full script hidden for performance. Click 'Copy Script' to get the full code] ... */";
-        codeDisplay.textContent = previewText;
-        // Prism's automatic highlight-on-DOMContentLoaded already ran before
-        // this async fetch resolves, so we re-highlight manually.
+        codeDisplay.textContent = code;
         if (window.Prism) {
           Prism.highlightElement(codeDisplay);
         }
@@ -1461,25 +1701,38 @@
 
       function setupBookmarklet(code) {
         if (bookmarkletLink) {
-          bookmarkletLink.href = `javascript:(function(){${encodeURIComponent(code)}})()`;
+          bookmarkletLink.href = 'javascript:' + encodeURIComponent(code);
         }
       }
 
-      loadInstagramScript()
+      loadLoaderScript()
         .then(code => {
           renderPreview(code);
           setupBookmarklet(code);
         })
         .catch(err => {
-          console.error('Failed to load content.js', err);
-          codeDisplay.textContent = '// Could not load the script. Please refresh the page or try again shortly.';
+          console.error('Failed to load loader.js', err);
+          codeDisplay.textContent =
+            '// Could not load loader.js. Run npm run build or refresh shortly.';
         });
+
+      if (bookmarkletLink) {
+        bookmarkletLink.addEventListener('click', e => {
+          // Touch devices cannot drag — show manual bookmark instructions.
+          if (window.matchMedia('(pointer: coarse)').matches) {
+            e.preventDefault();
+            alert(
+              'On mobile:\n1. Tap "Copy Script"\n2. Create a bookmark named "IG Unfollowers PRO"\n3. Edit it and paste the code as the URL\n4. Open instagram.com and tap the bookmark'
+            );
+          }
+        });
+      }
 
       async function copyToClipboard() {
         try {
-          const code = await loadInstagramScript();
+          const code = await loadLoaderScript();
           if (!code || code.length < 10) {
-            alert('No script found. Please try again in a moment.');
+            alert('Loader not ready. Please refresh and try again.');
             return;
           }
           await navigator.clipboard.writeText(code);

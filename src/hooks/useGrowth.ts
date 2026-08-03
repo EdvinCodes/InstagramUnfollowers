@@ -53,6 +53,10 @@ function loadWhitelistIds(): Set<string> {
 
 export function useGrowth(setState: SetStateUpdater, getState: () => State) {
   const stopSignal = useRef({ stopped: false });
+  // Reading through a function (instead of `stopSignal.current.stopped` directly)
+  // prevents TypeScript from narrowing the value to a stale literal across awaits,
+  // since the flag is mutated externally by `stopGrowth()`.
+  const isStopped = useCallback(() => stopSignal.current.stopped, []);
 
   const addLog = useCallback(
     (msg: string) => {
@@ -104,7 +108,7 @@ export function useGrowth(setState: SetStateUpdater, getState: () => State) {
       });
 
       for (const username of targets) {
-        if (stopSignal.current.stopped) {
+        if (isStopped()) {
           break;
         }
 
@@ -129,7 +133,7 @@ export function useGrowth(setState: SetStateUpdater, getState: () => State) {
         let commentersFromAccount = 0;
 
         for (const mediaId of postIds) {
-          if (stopSignal.current.stopped) {
+          if (isStopped()) {
             break;
           }
 
@@ -162,7 +166,7 @@ export function useGrowth(setState: SetStateUpdater, getState: () => State) {
         await sleep(GROWTH_ACCOUNT_DELAY_MS);
       }
 
-      if (stopSignal.current.stopped) {
+      if (isStopped()) {
         addLog(t('growthLogStopped'));
         patchGrowth({ phase: 'done', isRunning: false });
         return;
@@ -185,11 +189,11 @@ export function useGrowth(setState: SetStateUpdater, getState: () => State) {
       let followsSinceCooldown = 0;
 
       for (let i = 0; i < queue.length; i++) {
-        if (stopSignal.current.stopped) {
+        if (isStopped()) {
           break;
         }
 
-        while (!stopSignal.current.stopped) {
+        while (!isStopped()) {
           const current = getState();
           if (current.status !== 'growth' || !current.isPaused) {
             break;
@@ -197,7 +201,7 @@ export function useGrowth(setState: SetStateUpdater, getState: () => State) {
           await sleep(1000);
         }
 
-        if (stopSignal.current.stopped) {
+        if (isStopped()) {
           break;
         }
 
@@ -234,7 +238,7 @@ export function useGrowth(setState: SetStateUpdater, getState: () => State) {
             ghost: t('growthLogSkipGhost'),
             daily_limit: t('growthLogSkipDailyLimit'),
           };
-          addLog(skipMessages[skipReason] ?? t('growthLogSkipGhost'));
+          addLog(skipMessages[skipReason]);
           setState(prev =>
             prev.status === 'growth' ? { ...prev, skippedCount: prev.skippedCount + 1 } : prev,
           );
@@ -295,7 +299,7 @@ export function useGrowth(setState: SetStateUpdater, getState: () => State) {
           continue;
         }
 
-        if (i < queue.length - 1 && !stopSignal.current.stopped) {
+        if (i < queue.length - 1 && !isStopped()) {
           if (followsSinceCooldown >= GROWTH_FOLLOWS_BEFORE_COOLDOWN) {
             addLog(t('statusWaitingCooldown'));
             await sleep(GROWTH_RATE_LIMIT_BACKOFF_MS / 2);
@@ -308,7 +312,7 @@ export function useGrowth(setState: SetStateUpdater, getState: () => State) {
         }
       }
 
-      if (!stopSignal.current.stopped) {
+      if (!isStopped()) {
         patchGrowth({ phase: 'done', isRunning: false });
         addLog(t('growthLogCompleted'));
       } else {
@@ -320,7 +324,7 @@ export function useGrowth(setState: SetStateUpdater, getState: () => State) {
         patchGrowth({ phase: 'done', isRunning: false });
       }
     },
-    [addLog, getState, patchGrowth, setState],
+    [addLog, getState, isStopped, patchGrowth, setState],
   );
 
   const stopGrowth = useCallback(() => {

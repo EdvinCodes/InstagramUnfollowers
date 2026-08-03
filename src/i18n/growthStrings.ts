@@ -156,7 +156,7 @@ const en: GrowthTranslationSlice = {
   growthLogCompleted: '🎉 Process completed!',
   growthLogFatalError: 'Unexpected error. Process stopped.',
   growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
-  
+
   growthYouFollowed: 'You Followed',
 };
 
@@ -231,7 +231,7 @@ const ptBR: GrowthTranslationSlice = {
   growthLogCompleted: '🎉 Processo concluído!',
   growthLogFatalError: 'Unexpected error. Process stopped.',
   growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
-  
+
   growthYouFollowed: 'Você Seguiu',
 };
 
@@ -306,7 +306,7 @@ const es: GrowthTranslationSlice = {
   growthLogCompleted: '🎉 ¡Proceso completado!',
   growthLogFatalError: 'Unexpected error. Process stopped.',
   growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
-  
+
   growthYouFollowed: 'Has Seguido',
 };
 
@@ -381,7 +381,7 @@ const fr: GrowthTranslationSlice = {
   growthLogCompleted: '🎉 Processus terminé !',
   growthLogFatalError: 'Unexpected error. Process stopped.',
   growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
-  
+
   growthYouFollowed: 'Vous avez suivi',
 };
 
@@ -456,7 +456,7 @@ const it: GrowthTranslationSlice = {
   growthLogCompleted: '🎉 Processo completato!',
   growthLogFatalError: 'Unexpected error. Process stopped.',
   growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
-  
+
   growthYouFollowed: 'Hai seguito',
 };
 
@@ -531,7 +531,7 @@ const de: GrowthTranslationSlice = {
   growthLogCompleted: '🎉 Vorgang abgeschlossen!',
   growthLogFatalError: 'Unexpected error. Process stopped.',
   growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
-  
+
   growthYouFollowed: 'Du hast gefolgt',
 };
 
@@ -606,7 +606,7 @@ const tr: GrowthTranslationSlice = {
   growthLogCompleted: '🎉 İşlem tamamlandı!',
   growthLogFatalError: 'Unexpected error. Process stopped.',
   growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
-  
+
   growthYouFollowed: 'Takip Ettin',
 };
 
@@ -681,7 +681,7 @@ const hi: GrowthTranslationSlice = {
   growthLogCompleted: '🎉 प्रक्रिया पूर्ण!',
   growthLogFatalError: 'Unexpected error. Process stopped.',
   growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
-  
+
   growthYouFollowed: 'आपने फॉलो किया',
 };
 
@@ -756,7 +756,7 @@ const id: GrowthTranslationSlice = {
   growthLogCompleted: '🎉 Proses selesai!',
   growthLogFatalError: 'Unexpected error. Process stopped.',
   growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
-  
+
   growthYouFollowed: 'Anda Mengikuti',
 };
 
@@ -831,7 +831,7 @@ const ar: GrowthTranslationSlice = {
   growthLogCompleted: '🎉 اكتملت العملية!',
   growthLogFatalError: 'Unexpected error. Process stopped.',
   growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
-  
+
   growthYouFollowed: 'تابعت',
 };
 
@@ -906,7 +906,7 @@ const ja: GrowthTranslationSlice = {
   growthLogCompleted: '🎉 処理完了！',
   growthLogFatalError: 'Unexpected error. Process stopped.',
   growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
-  
+
   growthYouFollowed: 'フォローしました',
 };
 
@@ -981,7 +981,7 @@ const ko: GrowthTranslationSlice = {
   growthLogCompleted: '🎉 처리 완료!',
   growthLogFatalError: 'Unexpected error. Process stopped.',
   growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
-  
+
   growthYouFollowed: '팔로우함',
 };
 
@@ -1056,7 +1056,7 @@ const ru: GrowthTranslationSlice = {
   growthLogCompleted: '🎉 Процесс завершён!',
   growthLogFatalError: 'Unexpected error. Process stopped.',
   growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
-  
+
   growthYouFollowed: 'Вы подписались',
 };
 
@@ -1131,7 +1131,7 @@ const pl: GrowthTranslationSlice = {
   growthLogCompleted: '🎉 Proces zakończony!',
   growthLogFatalError: 'Unexpected error. Process stopped.',
   growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
-  
+
   growthYouFollowed: 'Obserwujesz',
 };
 
@@ -1206,7 +1206,7 @@ const nl: GrowthTranslationSlice = {
   growthLogCompleted: '🎉 Proces voltooid!',
   growthLogFatalError: 'Unexpected error. Process stopped.',
   growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
-  
+
   growthYouFollowed: 'Je volgde',
 };
 
@@ -1281,7 +1281,7 @@ const vi: GrowthTranslationSlice = {
   growthLogCompleted: '🎉 Hoàn tất quy trình!',
   growthLogFatalError: 'Unexpected error. Process stopped.',
   growthBetaFreeNotice: 'PRO features are free during the v8.4 beta.',
-  
+
   growthYouFollowed: 'Bạn đã follow',
 };
 

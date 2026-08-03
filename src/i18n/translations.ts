@@ -361,7 +361,7 @@ const en: Translations = {
   kofiTitle: 'Did I save you hours? Buy me a coffee! ☕',
   kofiAriaLabel: 'Support on Ko-fi',
   support: 'Support',
-  ...GROWTH_STRINGS['en'],
+  ...GROWTH_STRINGS.en,
 };
 
 //  Español
@@ -539,7 +539,7 @@ const es: Translations = {
   kofiTitle: '¿Te ahorré horas? ¡Invítame a un café! ☕',
   kofiAriaLabel: 'Apoyar en Ko-fi',
   support: 'Apoyar',
-  ...GROWTH_STRINGS['es'],
+  ...GROWTH_STRINGS.es,
 };
 
 //  Português (BR)
@@ -896,7 +896,7 @@ const fr: Translations = {
   kofiTitle: 'Je vous ai fait gagner des heures ? Offrez-moi un café ! ☕',
   kofiAriaLabel: 'Soutenir sur Ko-fi',
   support: 'Soutenir',
-  ...GROWTH_STRINGS['fr'],
+  ...GROWTH_STRINGS.fr,
 };
 
 //  Italiano
@@ -1074,7 +1074,7 @@ const it: Translations = {
   kofiTitle: 'Ti ho fatto risparmiare ore? Offrimi un caffè! ☕',
   kofiAriaLabel: 'Supporta su Ko-fi',
   support: 'Supporta',
-  ...GROWTH_STRINGS['it'],
+  ...GROWTH_STRINGS.it,
 };
 
 // 🇩🇪 Deutsch
@@ -1252,7 +1252,7 @@ const de: Translations = {
   kofiTitle: 'Habe ich dir Stunden gespart? Kauf mir einen Kaffee! ☕',
   kofiAriaLabel: 'Auf Ko-fi unterstützen',
   support: 'Unterstützen',
-  ...GROWTH_STRINGS['de'],
+  ...GROWTH_STRINGS.de,
 };
 
 //  Export
@@ -1323,7 +1323,7 @@ const tr: Translations = {
   checkingLicense: 'Lisans kontrol ediliyor...',
   allFeaturesUnlocked: 'Tüm premium özellikler açıldı. Desteğin için teşekkürler!',
   deactivateLicense: 'Lisansı Devre Dışı Bırak',
-  unlockFeatures: "Sağlık Raporu PDF, Hayalet Skoru 0-100 ve gelişmiş dışa aktarımların kilidini aç.",
+  unlockFeatures: 'Sağlık Raporu PDF, Hayalet Skoru 0-100 ve gelişmiş dışa aktarımların kilidini aç.',
   pasteLicenseKey: 'Lisans Anahtarını Yapıştır IGPRO-...',
   activate: 'Etkinleştir',
   invalidLicenseKey: 'Geçersiz Lisans Anahtarı.',
@@ -1427,7 +1427,7 @@ const tr: Translations = {
   kofiTitle: 'Saatlerini kurtardım mı? Bir kahve ısmarla! ☕',
   kofiAriaLabel: "Ko-fi'de Destekle",
   support: 'Destek',
-  ...GROWTH_STRINGS['tr'],
+  ...GROWTH_STRINGS.tr,
 };
 
 
@@ -1602,7 +1602,7 @@ const hi: Translations = {
   kofiTitle: 'क्या मैंने आपके घंटे बचाए? मुझे एक कॉफ़ी खरीदें! ☕',
   kofiAriaLabel: 'Ko-fi पर समर्थन करें',
   support: 'समर्थन',
-  ...GROWTH_STRINGS['hi'],
+  ...GROWTH_STRINGS.hi,
 };
 
 // Indonesian
@@ -1776,7 +1776,7 @@ const id: Translations = {
   kofiTitle: 'Sudah menghemat waktu Anda? Traktir kopi! ☕',
   kofiAriaLabel: 'Dukung di Ko-fi',
   support: 'Dukung',
-  ...GROWTH_STRINGS['id'],
+  ...GROWTH_STRINGS.id,
 };
 
 // Arabic
@@ -1950,7 +1950,7 @@ const ar: Translations = {
   kofiTitle: 'هل وفرت عليك ساعات؟ ادعمني بقهوة! ☕',
   kofiAriaLabel: 'ادعم على Ko-fi',
   support: 'الدعم',
-  ...GROWTH_STRINGS['ar'],
+  ...GROWTH_STRINGS.ar,
 };
 
 // Japanese
@@ -2124,7 +2124,7 @@ const ja: Translations = {
   kofiTitle: '時間を節約できましたか？コーヒーをおごってください！ ☕',
   kofiAriaLabel: 'Ko-fiで支援',
   support: '支援',
-  ...GROWTH_STRINGS['ja'],
+  ...GROWTH_STRINGS.ja,
 };
 
 // Korean
@@ -2298,7 +2298,7 @@ const ko: Translations = {
   kofiTitle: '시간을 절약해 드렸나요? 커피 한 잔 사주세요! ☕',
   kofiAriaLabel: 'Ko-fi에서 후원',
   support: '후원',
-  ...GROWTH_STRINGS['ko'],
+  ...GROWTH_STRINGS.ko,
 };
 
 // Russian
@@ -2472,7 +2472,7 @@ const ru: Translations = {
   kofiTitle: 'Сэкономил вам часы? Угостите кофе! ☕',
   kofiAriaLabel: 'Поддержать на Ko-fi',
   support: 'Поддержка',
-  ...GROWTH_STRINGS['ru'],
+  ...GROWTH_STRINGS.ru,
 };
 
 // Polish
@@ -2646,7 +2646,7 @@ const pl: Translations = {
   kofiTitle: 'Zaoszczędziłem Ci godziny? Postaw kawę! ☕',
   kofiAriaLabel: 'Wesprzyj na Ko-fi',
   support: 'Wsparcie',
-  ...GROWTH_STRINGS['pl'],
+  ...GROWTH_STRINGS.pl,
 };
 
 // Dutch
@@ -2820,7 +2820,7 @@ const nl: Translations = {
   kofiTitle: 'Heb ik je uren bespaard? Trakteer op een koffie! ☕',
   kofiAriaLabel: 'Steun op Ko-fi',
   support: 'Steun',
-  ...GROWTH_STRINGS['nl'],
+  ...GROWTH_STRINGS.nl,
 };
 
 // Vietnamese
@@ -2994,7 +2994,7 @@ const vi: Translations = {
   kofiTitle: 'Tôi đã tiết kiệm giờ cho bạn? Mời tôi một ly cà phê! ☕',
   kofiAriaLabel: 'Hỗ trợ trên Ko-fi',
   support: 'Hỗ trợ',
-  ...GROWTH_STRINGS['vi'],
+  ...GROWTH_STRINGS.vi,
 };
 
 export const translations: Record<Locale, Translations> = {
@@ -3037,20 +3037,50 @@ export const LOCALES: readonly Locale[] = [
 
 export function detectLocale(): Locale {
   const lang = navigator.language;
-  if (lang.startsWith('hi')) return 'hi';
-  if (lang.startsWith('id')) return 'id';
-  if (lang.startsWith('ar')) return 'ar';
-  if (lang.startsWith('ja')) return 'ja';
-  if (lang.startsWith('ko')) return 'ko';
-  if (lang.startsWith('ru')) return 'ru';
-  if (lang.startsWith('pl')) return 'pl';
-  if (lang.startsWith('nl')) return 'nl';
-  if (lang.startsWith('vi')) return 'vi';
-  if (lang.startsWith('tr')) return 'tr';
-  if (lang.startsWith('pt')) return 'pt-BR';
-  if (lang.startsWith('es')) return 'es';
-  if (lang.startsWith('fr')) return 'fr';
-  if (lang.startsWith('it')) return 'it';
-  if (lang.startsWith('de')) return 'de';
+  if (lang.startsWith('hi')) {
+return 'hi';
+}
+  if (lang.startsWith('id')) {
+return 'id';
+}
+  if (lang.startsWith('ar')) {
+return 'ar';
+}
+  if (lang.startsWith('ja')) {
+return 'ja';
+}
+  if (lang.startsWith('ko')) {
+return 'ko';
+}
+  if (lang.startsWith('ru')) {
+return 'ru';
+}
+  if (lang.startsWith('pl')) {
+return 'pl';
+}
+  if (lang.startsWith('nl')) {
+return 'nl';
+}
+  if (lang.startsWith('vi')) {
+return 'vi';
+}
+  if (lang.startsWith('tr')) {
+return 'tr';
+}
+  if (lang.startsWith('pt')) {
+return 'pt-BR';
+}
+  if (lang.startsWith('es')) {
+return 'es';
+}
+  if (lang.startsWith('fr')) {
+return 'fr';
+}
+  if (lang.startsWith('it')) {
+return 'it';
+}
+  if (lang.startsWith('de')) {
+return 'de';
+}
   return 'en';
 }

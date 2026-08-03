@@ -2,8 +2,8 @@
 
 > Objetivo: ser la **mejor herramienta de gestión de comunidad Instagram** del mundo, superando al competidor [davidarroyo1234/InstagramUnfollowers](https://github.com/davidarroyo1234/InstagramUnfollowers) en producto, confianza y descubrimiento.
 
-**Versión actual:** v8.3.0  
-**Rama activa de desarrollo:** `feature/growth-v2`  
+**Versión actual:** v8.4.0-beta  
+**Rama activa de desarrollo:** `main`  
 **Última actualización:** 2026-08-03
 
 ---
@@ -97,24 +97,30 @@ Setup → Scraping (posts 15d + comentaristas) → Following (con filtros anti-b
 - [x] Kamikaze solo visible con checkbox "Modo experto"
 - [x] Persistir aceptación disclaimer (`ig_growth_disclaimer_v1`)
 
-### Fase 5 — Release v8.4.0-beta 🔄 En progreso
+### Fase 5 — Release v8.4.0-beta ✅
 
 - [x] Bump versión 8.4.0-beta
 - [x] SEO landing + README + sitemap actualizados
 - [x] GitHub topics (instagram-unfollowers, etc.)
-- [ ] QA manual checklist en Instagram real (owner)
-- [ ] Release notes + dist.zip
-- [ ] Merge `feature/growth-v2` → `main` + deploy Pages
+- [ ] QA manual checklist en Instagram real (owner — pendiente)
+- [x] Release notes + dist.zip
+- [x] Merge `feature/growth-v2` → `main` + deploy Pages
 
-### Fase 6 — Crecimiento y competitividad (post v8.4)
+### Fase 6 — Crecimiento y competitividad (post v8.4) 🔄
 
-- [ ] **Bookmarklet mode** — script copiable estilo davidarroyo para usuarios sin extensión
-- [ ] **Chrome Web Store** — listing optimizado con screenshots
-- [ ] **GitHub topics** — `instagram`, `instagram-unfollowers`, `social-media-tools`
-- [ ] **Comparativa landing** — tabla PRO vs herramientas básicas (sin nombrar agresivamente)
+- [x] **Bookmarklet mode** — `loader.js` (~300 bytes) + drag bookmarklet + instrucciones mobile
+- [x] **Chrome Web Store prep** — `docs/CHROME_WEB_STORE.md` con copy, screenshots checklist, permisos
+- [x] **GitHub topics** — `instagram`, `instagram-unfollowers`, `social-media-tools`
+- [x] **Comparativa landing** — tabla PRO vs bookmarklets básicos
+- [x] **llms.txt** — descubrimiento para crawlers IA
+- [x] **Landing UX** — nav de anclas (Install/Why PRO/Pricing/FAQ), sección "3 Ways to Run", heading de pricing, eliminado bloque de instrucciones duplicado
+- [x] **README paridad ES/EN** — sección en español actualizada a v8.4.0-beta (antes en v8.0.0)
+- [x] **Code quality** — 0 errores de ESLint (`npm run build`, `tsc --noEmit`, `vitest`, `eslint` todos verdes)
+- [ ] **Chrome Web Store** — submit real (requiere cuenta dev + screenshots reales)
 - [ ] **Blog / docs** — "Cómo detectar bots en Instagram", "Ghost Score explicado"
 - [ ] **Analytics privados** — Plausible/Umami en landing (sin trackers invasivos)
-- [ ] **Referral / Ko-fi** — ya existe botón; medir conversión
+- [ ] **Payment provider** — Gumroad/Paddle como alternativa a Lemon Squeezy
+- [ ] **QA manual en Instagram real** — pendiente del owner (ver checklist Fase 5)
 
 ---
 
@@ -123,8 +129,8 @@ Setup → Scraping (posts 15d + comentaristas) → Following (con filtros anti-b
 | Versión | Objetivo | Estado |
 |---------|----------|--------|
 | v8.3.0 | Performance landing + deploy CI + 16 idiomas | ✅ Released |
-| v8.4.0 | Growth Engine PRO | 🔄 En desarrollo |
-| v8.5.0 | Bookmarklet + onboarding simplificado | 📋 Planificado |
+| v8.4.0-beta | Growth Engine PRO + release beta | ✅ Released |
+| v8.5.0 | Bookmarklet loader + landing UX + code quality (lint 0 errores) | 🔄 Código listo en `main`, pendiente bump de versión + release notes |
 | v8.6.0 | Reactivar Lemon Squeezy / licencias reales | 📋 Planificado |
 | v9.0.0 | Cloud Sync estable + multi-cuenta UI | 📋 Planificado |
 
@@ -188,12 +194,25 @@ src/
 
 ---
 
-## 8. Preguntas abiertas para el product owner
+## 8. Preguntas abiertas para el product owner — ✅ Resueltas
 
-1. **¿Reactivamos licencias Lemon Squeezy antes del release v8.4?** (actualmente PRO está desbloqueado para todos)
-2. **¿Publicamos Growth en release notes como "beta" o "stable"?**
-3. **¿Quieres bookmarklet en v8.5 o priorizamos Chrome Web Store primero?**
+1. ~~¿Reactivamos licencias Lemon Squeezy antes del release v8.4?~~ → **No.** Lemon Squeezy rechazó la categoría del producto; PRO permanece gratis hasta integrar un nuevo proveedor de pago.
+2. ~~¿Publicamos Growth en release notes como "beta" o "stable"?~~ → **Beta**, hasta completar el checklist QA manual (sección 5).
+3. ~~¿Bookmarklet en v8.5 o priorizamos Chrome Web Store primero?~~ → **Bookmarklet primero** (hecho en v8.5). Chrome Web Store queda como siguiente paso (sección 9).
+
+No quedan preguntas abiertas bloqueantes. Próxima decisión del owner: ejecutar el QA manual de Instagram cuando sea posible (único ítem pendiente para graduar Growth de beta a stable).
 
 ---
 
-*Este documento se actualiza en cada fase completada. Commits relacionados: `feature/growth-v2`.*
+## 9. Próximos pasos recomendados (orden sugerido)
+
+1. **QA manual en Instagram real** (owner) — validar Growth Engine end-to-end con el checklist de la sección 5. Es el único bloqueante real para pasar Growth de "beta" a "stable".
+2. **Screenshots reales** para `docs/CHROME_WEB_STORE.md` y submit a la Chrome Web Store — mayor palanca de descubrimiento nuevo (usuarios que buscan directamente en el store, no en Google).
+3. **Payment provider alternativo** (Gumroad/Paddle) — para poder monetizar PRO cuando el owner lo decida; hasta entonces mantener promo "gratis en beta".
+4. **1-2 posts de blog/SEO** ("Ghost Score explicado", "Cómo detectar bots en Instagram 2026") enlazando a la landing — refuerza long-tail keywords sin depender solo de GitHub stars.
+5. **Analytics privados** (Plausible/Umami) para medir conversión landing → extensión/bookmarklet y priorizar con datos reales.
+6. **Bump de versión + release notes v8.5.0** — el código ya está en `main`; falta subir versión en `package.json`/`manifest.json`, generar `dist.zip` y publicar el tag con el changelog de bookmarklet loader + landing UX + code quality.
+
+---
+
+*Este documento se actualiza en cada fase completada. Commits relacionados: `feature/growth-v2`, `main`.*

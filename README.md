@@ -68,19 +68,27 @@
 2.  Open Firefox and type `about:debugging#/runtime/this-firefox` in the address bar.
 3.  Click **Load Temporary Add-on** and select the `manifest.json` file inside the folder.
 
-**Option C: Console Script (No Installation)**
+**Option C: Console Script (No Installation — ~300 byte loader)**
 
 1.  Go to the [Official Tool Page](https://edvincodes.github.io/InstagramUnfollowers/).
-2.  Click "Copy Script".
-3.  Open [Instagram](https://www.instagram.com) and press `F12`.
-4.  Paste the code in the Console and hit Enter.
+2.  Click **Copy Script** (copies a tiny loader, not the full 1 MB bundle).
+3.  Open [Instagram](https://www.instagram.com) and press `F12` → Console.
+4.  Paste and hit Enter — the app loads automatically from GitHub Pages.
 
 ### 📱 How to Use (Mobile - iOS/Android)
 
-1.  Copy the code from the [Tool Page](https://edvincodes.github.io/InstagramUnfollowers/).
-2.  Create a new Browser Bookmark named "IG Scan".
-3.  Edit the bookmark and paste the code in the URL field.
-4.  Open Instagram, type "IG Scan" in the address bar, and tap the bookmark.
+**Option A: Bookmarklet (easiest on phone)**
+
+1.  On the [Tool Page](https://edvincodes.github.io/InstagramUnfollowers/), tap **Copy Script**.
+2.  Create a browser bookmark named "IG Unfollowers PRO".
+3.  Edit the bookmark and paste the copied code as the **URL**.
+4.  Open instagram.com, then tap the bookmark.
+
+**Option B: Drag bookmarklet (desktop → sync bookmarks)**
+
+1.  Drag the **Mobile Bookmarklet** button to your bookmarks bar.
+2.  Sync bookmarks to your phone (Chrome/Firefox/Safari).
+3.  Open instagram.com and tap the bookmark.
 
 ---
 
@@ -88,35 +96,42 @@
 
 ## 🇪🇸 Versión en Español
 
-**La herramienta más avanzada y segura para gestionar tu comunidad en Instagram.**
-A diferencia de otras apps, esta herramienta se ejecuta **100% localmente en tu navegador** usando **Shadow DOM** para máxima seguridad. La v8.0.0 completa nuestro **Roadmap Estratégico**, convirtiéndola en un producto de nivel profesional.
+**El rastreador de Instagram Unfollowers más seguro y avanzado.** Descubre quién no te sigue de vuelta, detecta cuentas fantasma con una Ghost Score de 0-100, exporta reportes PDF y haz crecer tu audiencia — **100% en local en tu navegador**, sin contraseña.
 
-> **🚀 v8.0.0 "Roadmap Estratégico Completado":** Esta versión marca la entrega de la visión "Producto TOP". Incluye **Monitoreo en Tiempo Real**, **Soporte Nativo de 6 Idiomas** y **Exportaciones Profesionales Blindadas**.
+> **🚀 v8.4.0-beta:** Nuevo **Growth Engine (beta)** — sigue automáticamente a comentaristas afines a tu nicho con protección anti-baneo. **16 idiomas**. Todas las funciones PRO **gratis** durante la beta (migración de pasarela de pago).
 
-### ✨ Novedades de la v8.0.0
+### ✨ Novedades de la v8.4.0-beta
 
-- **🔔 Alertas en Tiempo Real:** El motor en segundo plano detecta traidores al instante mientras navegas por Instagram y te avisa con notificaciones push.
-- **🌐 Motor Multi-Idioma Nativo:** Traducciones profesionales al **Inglés, Español, Portugués, Francés, Italiano y Alemán**.
-- **🧠 Nota Fantasma 0-100:** Análisis profundo de calidad (Sin foto, patrones de bot) con motivos detallados en tu idioma.
-- **📊 Exportaciones Blindadas:** Motores de CSV y PDF rediseñados para evitar fallos incluso con perfiles incompletos.
-- **👥 Soporte Multi-Cuenta:** Gestiona varios perfiles de forma segura. Base de datos aislada por ID de usuario.
-- **🛡️ "Soft Block" (Eliminar Seguidor):** Limpia tu lista de seguidores sin bloquearlos por completo.
-- **🎨 Temas e Interfaz:** Modos Claro/Oscuro totalmente personalizables con acabado profesional.
-- **☁️ Infraestructura CloudSync:** Arquitectura preparada para sincronización en la nube de historiales y listas blancas.
+- **🚀 Growth Engine (Beta):** Extrae comentaristas de cuentas objetivo y síguelos con filtrado de fantasmas, límites diarios y retrasos anti-baneo.
+- **🌐 16 Idiomas:** Inglés, Español, Portugués, Francés, Italiano, Alemán, Turco, Hindi, Indonesio, Árabe, Japonés, Coreano, Ruso, Polaco, Neerlandés, Vietnamita.
+- **⚡ Rendimiento:** Landing 20× más ligera (~45KB de carga inicial). Chunks cargados bajo demanda.
+- **🎁 PRO Desbloqueado:** Todas las funciones premium gratis durante la beta mientras migramos de Lemon Squeezy.
 
-### ⚖️ Comparativa: Gratis vs. PRO (Estado v8.0.0)
+### ✨ Funciones principales (v8.x)
 
-| Función                      | Versión Gratis  | **Versión PRO (¡GRATIS ahora\!)** 👑 |
-| :--------------------------- | :-------------: | :----------------------------------: |
-| **Escaneos Ilimitados**      |       ✅        |                  ✅                  |
-| **Alertas en Tiempo Real**   |       🔒        |            **✅ ACTIVO**             |
-| **Filtros Anti-Fantasmas**   |       🔒        |            **✅ ACTIVO**             |
-| **Reportes PDF de Salud**    |       🔒        |            **✅ ACTIVO**             |
-| **Nota Fantasma (0-100)**    |       🔒        |            **✅ ACTIVO**             |
-| **Auto-Unfollow Masivo**     |       🔒        |            **✅ ACTIVO**             |
-| **Historial (Time Machine)** | Últimos 30 Días |            **Ilimitado**             |
+- **🔔 Alertas de Unfollow en Tiempo Real:** El motor en segundo plano detecta traidores mientras navegas por Instagram.
+- **🧠 Ghost Score (0-100):** Análisis profundo de bots/cuentas inactivas con explicaciones localizadas.
+- **📊 Exportaciones PDF y CSV:** Reportes de salud profesionales con manejo de errores avanzado.
+- **👥 Soporte Multi-Cuenta:** Datos aislados por cuenta de Instagram.
+- **🛡️ Soft Block:** Elimina seguidores sin bloquearlos por completo.
+- **☁️ Infraestructura CloudSync:** Lista para respaldo en la nube PRO.
 
-> **🎁 OFERTA:** Debido a actualizaciones en la pasarela de pagos, **todas las funciones PRO son GRATUITAS** en esta versión.
+### ⚖️ Gratis vs. PRO (v8.4 beta — PRO temporalmente GRATIS)
+
+| Función                       |  Versión Gratis  | **PRO (GRATIS en beta)** 👑 |
+| :----------------------------- | :---------------: | :---------------------------: |
+| **Escaneos Ilimitados**        |         ✅         |               ✅               |
+| **Bookmarklet y Extensión**    |         ✅         |               ✅               |
+| **Lista Blanca y Backup**      |         ✅         |               ✅               |
+| **Interfaz en 16 Idiomas**     |         ✅         |               ✅               |
+| **Monitoreo en Tiempo Real**   |         🔒         |          **✅ ACTIVO**          |
+| **Ghost Score y Filtros**      |         🔒         |          **✅ ACTIVO**          |
+| **Reportes PDF de Salud**      |         🔒         |          **✅ ACTIVO**          |
+| **Auto-Unfollow Masivo**       |         🔒         |          **✅ ACTIVO**          |
+| **Growth Engine (Beta)**       |         🔒         |          **✅ ACTIVO**          |
+| **Historial (Time Machine)**   |  Últimos 30 Días  |          **Ilimitado**         |
+
+> **🎁 Oferta beta:** Lemon Squeezy rechazó esta categoría de producto. Todas las funciones PRO permanecen **desbloqueadas gratis** hasta integrar una nueva pasarela de pago.
 
 ### 🚀 Cómo Instalar (PC)
 
@@ -134,17 +149,27 @@ A diferencia de otras apps, esta herramienta se ejecuta **100% localmente en tu 
 2.  Ve a `about:debugging#/runtime/this-firefox` en Firefox.
 3.  Haz clic en **Cargar complemento temporal** y selecciona el `manifest.json`.
 
-**Opción C: Script por Consola (Sin Instalación)**
+**Opción C: Script por Consola (Sin Instalación — loader de ~300 bytes)**
 
-1.  Copia el código desde la [Página Oficial](https://edvincodes.github.io/InstagramUnfollowers/).
-2.  En Instagram, pulsa `F12`, pega el código en la Consola y pulsa Enter.
+1.  Ve a la [Página Oficial](https://edvincodes.github.io/InstagramUnfollowers/).
+2.  Haz clic en **Copy Script** (copia un loader pequeño, no los ~1MB completos).
+3.  Abre [Instagram](https://www.instagram.com), pulsa `F12` → Consola.
+4.  Pega y pulsa Enter — la app se carga sola desde GitHub Pages.
 
 ### 📱 Cómo usar (Móvil - iOS/Android)
 
-1.  Copia el código de la [Página Oficial](https://edvincodes.github.io/InstagramUnfollowers/).
-2.  Crea un marcador llamado "IG Scan" en tu navegador móvil.
-3.  Edita el marcador y pega el código en el campo de URL.
-4.  Abre Instagram, escribe "IG Scan" en la barra de direcciones y selecciona el marcador.
+**Opción A: Bookmarklet (lo más fácil en el móvil)**
+
+1.  En la [Página Oficial](https://edvincodes.github.io/InstagramUnfollowers/), toca **Copy Script**.
+2.  Crea un marcador llamado "IG Unfollowers PRO".
+3.  Edita el marcador y pega el código copiado como **URL**.
+4.  Abre instagram.com y toca el marcador.
+
+**Opción B: Arrastrar el bookmarklet (PC → sincronizar marcadores)**
+
+1.  Arrastra el botón **Mobile Bookmarklet** a tu barra de marcadores.
+2.  Sincroniza marcadores con tu móvil (Chrome/Firefox/Safari).
+3.  Abre instagram.com y toca el marcador.
 
 ---
 <div id="turkish"></div>
@@ -152,6 +177,8 @@ A diferencia de otras apps, esta herramienta se ejecuta **100% localmente en tu 
 ## 🇹🇷 Türkçe Sürüm
 
 Turkish Translation/Türkçe Çeviri: mmd2626
+
+_Note: this community translation covers v8.0.0. Some v8.4.0-beta features (Growth Engine, 16-language UI, bookmarklet loader) are documented in the English section above. PRs updating this section are welcome!_
 
 **Instagram topluluğunu yönetmek için en güvenli ve gelişmiş araç.**
 Şifreni çalan veya bulut sunucuları kullanan diğer araçların aksine, bu araç maksimum güvenlik ve gizlilik için **Shadow DOM** kullanarak **%100 tarayıcında yerel olarak** çalışır.
@@ -275,6 +302,6 @@ Esta herramienta es un proyecto independiente y no está afiliada, asociada, aut
 
 ## ❤️ Credits
 
-Developed with ❤️ by **Edvin**. **v8.0.0 - Strategic Roadmap Completed.**
+Developed with ❤️ by **Edvin**. **v8.4.0-beta - Growth Engine & 16 Languages.**
 
 Licensed under the [MIT License](https://www.google.com/search?q=LICENSE).
