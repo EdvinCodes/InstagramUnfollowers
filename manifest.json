@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Instagram Unfollowers Pro",
-  "version": "8.5.0",
-  "description": "Safe, local tool to manage your Instagram community. Runs in your browser.",
+  "name": "Instagram Unfollowers PRO - Ghost Score",
+  "version": "8.5.1",
+  "description": "See who doesn't follow you back. Ghost Score 0-100, PDF reports, 16 languages. 100% local - no password.",
   "permissions": ["storage", "alarms", "notifications"],
   "action": {
     "default_title": "IG Unfollowers PRO",

@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en" style="scroll-behavior: smooth">
   <head>
     <meta charset="UTF-8" />
@@ -989,7 +989,7 @@
             <span class="dot green"></span>
           </div>
           <span>loader.js</span>
-          <span>v8.5.0</span>
+          <span>v8.5.1</span>
         </div>
         <div class="code-content">
           <pre><code class="language-javascript" id="code-display">/* Script will be injected here automatically */</code></pre>
@@ -1770,11 +1770,24 @@
             alert('Loader not ready. Please refresh and try again.');
             return;
           }
-          await navigator.clipboard.writeText(code);
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(code);
+          } else {
+            // Fallback for older browsers / non-secure contexts
+            const ta = document.createElement('textarea');
+            ta.value = code;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+          }
           toggleOverlay(true);
         } catch (err) {
           console.error('Failed to copy:', err);
-          alert('Failed to copy code.');
+          alert('Failed to copy code. Select the code in the box above and copy manually (Ctrl+C).');
         }
       }
 
