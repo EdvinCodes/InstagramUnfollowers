@@ -65,12 +65,12 @@ chrome.runtime.onInstalled.addListener(() => {
 // 2. Listen for config changes from UI
 chrome.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === 'local') {
-    if (changes['ig-scan-frequency']) {
+    if (changes.ig_scan_frequency) {
       chrome.alarms.create('ig-scheduled-scan', {
-        periodInMinutes: 60 * 24 * Number(changes['ig-scan-frequency'].newValue),
+        periodInMinutes: 60 * 24 * Number(changes.ig_scan_frequency.newValue),
       });
     }
-    if (changes['ig-last-scan-date']) {
+    if (changes.ig_last_scan_date) {
       if (chrome.action) chrome.action.setBadgeText({ text: '' });
     }
   }

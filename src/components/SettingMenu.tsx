@@ -5,8 +5,8 @@ import type { Locale } from '../i18n/translations';
 import { isMonitorEnabled, setMonitorEnabled } from '../services/realtimeMonitor';
 // import { CloudSync, type SyncState } from '../services/cloudSync';
 // import { HistoryService } from '../services/historyService';
-import { getDynamicStorageKey } from '../utils/utils';
-import { WHITELISTED_RESULTS_STORAGE_KEY } from '../constants/constants';
+import { isChromeStorageAvailable, getDynamicStorageKey } from '../utils/utils';
+import { CHROME_SCAN_FREQUENCY_KEY, WHITELISTED_RESULTS_STORAGE_KEY } from '../constants/constants';
 
 interface SettingMenuProps {
   setSettingState: (state: boolean) => void;
@@ -67,14 +67,28 @@ export const SettingMenu = ({
 
   const [scanFrequency, setScanFrequency] = useState<number>(7);
 
-  // Leer la configuración actual de Chrome Storage (ESLint & TS Happy)
   useEffect(() => {
-    chrome.storage.local.get(['ig_scan_frequency'], result => {
-      if (result.ig_scan_frequency) {
-        setScanFrequency(Number(result.ig_scan_frequency)); // Forzamos a Number
+    if (!isChromeStorageAvailable()) {
+      return;
+    }
+    chrome.storage.local.get([CHROME_SCAN_FREQUENCY_KEY], result => {
+      if (result[CHROME_SCAN_FREQUENCY_KEY]) {
+        setScanFrequency(Number(result[CHROME_SCAN_FREQUENCY_KEY]));
       }
     });
   }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSettingState(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [setSettingState]);
 
   const handleActivate = async () => {
     const success = await activatePro(licenseInput);
@@ -179,8 +193,18 @@ export const SettingMenu = ({
 
   return (
     <form onSubmit={handleSave}>
-      <div className='backdrop'>
-        <div className='setting-menu'>
+      <div
+        className='backdrop'
+        onClick={() => setSettingState(false)}
+        role='presentation'
+      >
+        <div
+          className='setting-menu'
+          onClick={e => e.stopPropagation()}
+          role='dialog'
+          aria-modal='true'
+          aria-labelledby='settings-title'
+        >
           <div
             style={{
               display: 'flex',
@@ -189,7 +213,7 @@ export const SettingMenu = ({
               marginBottom: '1.5rem',
             }}
           >
-            <h3 style={{ margin: 0 }}>{t('settingsBackup')}</h3>
+            <h3 id='settings-title' style={{ margin: 0 }}>{t('settingsBackup')}</h3>
             <button
               type='button'
               className='close-btn'
@@ -208,7 +232,7 @@ export const SettingMenu = ({
             </button>
           </div>
           <SettingRow
-            label='Default time between search cycles'
+            label={t('timingSearchCycles')}
             name='searchCycles'
             min={500}
             value={timeBetweenSearchCycles}
@@ -216,7 +240,7 @@ export const SettingMenu = ({
           />
 
           <SettingRow
-            label='Default time to wait after five search cycles'
+            label={t('timingAfterFiveSearch')}
             name='fiveSearchCycles'
             min={4000}
             value={timeToWaitAfterFiveSearchCycles}
@@ -224,7 +248,7 @@ export const SettingMenu = ({
           />
 
           <SettingRow
-            label='Default time between unfollows'
+            label={t('timingBetweenUnfollows')}
             name='timeBetweenUnfollow'
             min={1000}
             value={timeBetweenUnfollows}
@@ -232,7 +256,7 @@ export const SettingMenu = ({
           />
 
           <SettingRow
-            label='Default time to wait after five unfollows'
+            label={t('timingAfterFiveUnfollows')}
             name='timeAfterFiveUnfollows'
             min={70000}
             value={timeToWaitAfterFiveUnfollows}
@@ -277,7 +301,9 @@ export const SettingMenu = ({
                   }
                   const val = Number(e.currentTarget.value);
                   setScanFrequency(val);
-                  chrome.storage.local.set({ ig_scan_frequency: val });
+                  if (isChromeStorageAvailable()) {
+                    chrome.storage.local.set({ [CHROME_SCAN_FREQUENCY_KEY]: val });
+                  }
                 }}
                 style={{
                   // 1. Ocultamos la flecha nativa del navegador
@@ -360,7 +386,7 @@ export const SettingMenu = ({
             ) : isPro ? (
               <div>
                 <p style={{ fontSize: '12px', color: '#4ade80', marginBottom: '10px' }}>
-                  {t('allFeaturesUnlocked')}
+                  {t('proTemporarilyFree')}
                 </p>
                 {/* <button
                   type='button'

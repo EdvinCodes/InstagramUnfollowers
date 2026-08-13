@@ -71,6 +71,7 @@ export const useUnfollowerQueue = (timings: Timings) => {
       }
 
       let counter = 0;
+      let abortedByRateLimit = false;
 
       for (const user of usersToUnfollow) {
         // 1. Verificación de Parada/Pausa
@@ -121,7 +122,13 @@ export const useUnfollowerQueue = (timings: Timings) => {
             mode: 'cors',
             credentials: 'include',
           });
-          success = response.ok;
+          if (response.status === 429) {
+            abortedByRateLimit = true;
+            shouldStopRef.current = true;
+            success = false;
+          } else {
+            success = response.ok;
+          }
         } catch (e) {
           console.error('Fetch error:', e);
           success = false;
@@ -164,7 +171,11 @@ export const useUnfollowerQueue = (timings: Timings) => {
       setUnfollowerState(prev => ({
         ...prev,
         isUnfollowing: false,
-        statusMessage: shouldStopRef.current ? t('statusStopped') : t('statusCompleted'),
+        statusMessage: abortedByRateLimit
+          ? t('statusRateLimited')
+          : shouldStopRef.current
+            ? t('statusStopped')
+            : t('statusCompleted'),
       }));
     },
     [timings],

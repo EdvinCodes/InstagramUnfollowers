@@ -1,4 +1,5 @@
 import { GROWTH_STRINGS, type GrowthTranslationSlice } from './growthStrings';
+import { UX_STRINGS, type UxTranslationSlice } from './uxStrings';
 
 export type Locale =
   | 'en'
@@ -18,7 +19,7 @@ export type Locale =
   | 'nl'
   | 'vi';
 
-export interface Translations extends GrowthTranslationSlice {
+export interface Translations extends GrowthTranslationSlice, UxTranslationSlice {
   appName: string;
   minimize: string;
   history: string;
@@ -362,6 +363,7 @@ const en: Translations = {
   kofiAriaLabel: 'Support on Ko-fi',
   support: 'Support',
   ...GROWTH_STRINGS.en,
+  ...UX_STRINGS.en,
 };
 
 //  Español
@@ -540,6 +542,7 @@ const es: Translations = {
   kofiAriaLabel: 'Apoyar en Ko-fi',
   support: 'Apoyar',
   ...GROWTH_STRINGS.es,
+  ...UX_STRINGS.es,
 };
 
 //  Português (BR)
@@ -717,6 +720,7 @@ const ptBR: Translations = {
   kofiAriaLabel: 'Apoiar no Ko-fi',
   support: 'Apoiar',
   ...GROWTH_STRINGS['pt-BR'],
+  ...UX_STRINGS['pt-BR'],
 };
 
 //  Français
@@ -897,6 +901,7 @@ const fr: Translations = {
   kofiAriaLabel: 'Soutenir sur Ko-fi',
   support: 'Soutenir',
   ...GROWTH_STRINGS.fr,
+  ...UX_STRINGS.fr,
 };
 
 //  Italiano
@@ -1075,6 +1080,7 @@ const it: Translations = {
   kofiAriaLabel: 'Supporta su Ko-fi',
   support: 'Supporta',
   ...GROWTH_STRINGS.it,
+  ...UX_STRINGS.it,
 };
 
 // 🇩🇪 Deutsch
@@ -1253,6 +1259,7 @@ const de: Translations = {
   kofiAriaLabel: 'Auf Ko-fi unterstützen',
   support: 'Unterstützen',
   ...GROWTH_STRINGS.de,
+  ...UX_STRINGS.de,
 };
 
 //  Export
@@ -1428,6 +1435,7 @@ const tr: Translations = {
   kofiAriaLabel: "Ko-fi'de Destekle",
   support: 'Destek',
   ...GROWTH_STRINGS.tr,
+  ...UX_STRINGS.tr,
 };
 
 
@@ -1603,6 +1611,7 @@ const hi: Translations = {
   kofiAriaLabel: 'Ko-fi पर समर्थन करें',
   support: 'समर्थन',
   ...GROWTH_STRINGS.hi,
+  ...UX_STRINGS.hi,
 };
 
 // Indonesian
@@ -1777,6 +1786,7 @@ const id: Translations = {
   kofiAriaLabel: 'Dukung di Ko-fi',
   support: 'Dukung',
   ...GROWTH_STRINGS.id,
+  ...UX_STRINGS.id,
 };
 
 // Arabic
@@ -1951,6 +1961,7 @@ const ar: Translations = {
   kofiAriaLabel: 'ادعم على Ko-fi',
   support: 'الدعم',
   ...GROWTH_STRINGS.ar,
+  ...UX_STRINGS.ar,
 };
 
 // Japanese
@@ -2125,6 +2136,7 @@ const ja: Translations = {
   kofiAriaLabel: 'Ko-fiで支援',
   support: '支援',
   ...GROWTH_STRINGS.ja,
+  ...UX_STRINGS.ja,
 };
 
 // Korean
@@ -2299,6 +2311,7 @@ const ko: Translations = {
   kofiAriaLabel: 'Ko-fi에서 후원',
   support: '후원',
   ...GROWTH_STRINGS.ko,
+  ...UX_STRINGS.ko,
 };
 
 // Russian
@@ -2473,6 +2486,7 @@ const ru: Translations = {
   kofiAriaLabel: 'Поддержать на Ko-fi',
   support: 'Поддержка',
   ...GROWTH_STRINGS.ru,
+  ...UX_STRINGS.ru,
 };
 
 // Polish
@@ -2647,6 +2661,7 @@ const pl: Translations = {
   kofiAriaLabel: 'Wesprzyj na Ko-fi',
   support: 'Wsparcie',
   ...GROWTH_STRINGS.pl,
+  ...UX_STRINGS.pl,
 };
 
 // Dutch
@@ -2821,6 +2836,7 @@ const nl: Translations = {
   kofiAriaLabel: 'Steun op Ko-fi',
   support: 'Steun',
   ...GROWTH_STRINGS.nl,
+  ...UX_STRINGS.nl,
 };
 
 // Vietnamese
@@ -2995,6 +3011,7 @@ const vi: Translations = {
   kofiAriaLabel: 'Hỗ trợ trên Ko-fi',
   support: 'Hỗ trợ',
   ...GROWTH_STRINGS.vi,
+  ...UX_STRINGS.vi,
 };
 
 export const translations: Record<Locale, Translations> = {

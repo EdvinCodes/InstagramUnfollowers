@@ -275,6 +275,7 @@ export const GrowthView = ({ state, setState, onBack, isPro, onShowToast }: Grow
 
   return (
     <div
+      className='growth-running'
       style={{
         padding: '1.25rem',
         display: 'flex',

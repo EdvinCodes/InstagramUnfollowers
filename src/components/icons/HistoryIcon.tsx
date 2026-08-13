@@ -7,12 +7,7 @@ interface Props {
 
 // eslint-disable-next-line react/prop-types
 export const HistoryIcon = ({ onClick, title }: Props) => (
-  <div
-    className='icon-button'
-    onClick={onClick}
-    style={{ cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center' }}
-    title={title}
-  >
+  <button type='button' className='icon-button' onClick={onClick} title={title} aria-label={title}>
     <svg
       width='24'
       height='24'
@@ -22,9 +17,10 @@ export const HistoryIcon = ({ onClick, title }: Props) => (
       strokeWidth='2'
       strokeLinecap='round'
       strokeLinejoin='round'
+      aria-hidden='true'
     >
       <circle cx='12' cy='12' r='10' />
       <polyline points='12 6 12 12 16 14' />
     </svg>
-  </div>
+  </button>
 );

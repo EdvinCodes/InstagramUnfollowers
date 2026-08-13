@@ -11,6 +11,7 @@ import {
 import { calculateGhostScore, getGhostLabel, getGhostColor } from '../utils/ghostScore';
 import { State } from '../model/state';
 import { UserNode } from '../model/user';
+import { ScanningFilter } from '../model/scanning-filter';
 import { WHITELISTED_RESULTS_STORAGE_KEY } from '../constants/constants';
 
 import { HistoryService } from '../services/historyService';
@@ -70,8 +71,7 @@ const FiltersSidebar = ({
         <input
           type='checkbox'
           name={filter.name}
-          // @ts-ignore
-          checked={state.filter[filter.name as keyof ScanningFilter]}
+          checked={state.status === 'scanning' ? state.filter[filter.name as keyof ScanningFilter] : false}
           onChange={handleScanFilter}
         />
         &nbsp;{filter.label}
@@ -268,7 +268,7 @@ export const Searching = ({
               className='btn-icon'
               onClick={() => handlePageChange('prev')}
               disabled={safePage <= 1}
-              aria-label={t('page')}
+              aria-label={t('prevPage')}
             >
               ‹
             </button>
@@ -280,7 +280,7 @@ export const Searching = ({
               className='btn-icon'
               onClick={() => handlePageChange('next')}
               disabled={safePage >= maxPage}
-              aria-label={t('page')}
+              aria-label={t('nextPage')}
             >
               ›
             </button>
@@ -312,6 +312,15 @@ export const Searching = ({
 
       {/* Lista de Resultados */}
       <article className='results-container'>
+        <input
+          type='search'
+          className='search-bar results-search'
+          placeholder={t('searchPlaceholder')}
+          value={state.searchTerm}
+          onKeyDown={e => e.stopPropagation()}
+          onChange={e => setState({ ...state, searchTerm: e.currentTarget.value, page: 1, selectedResults: [] })}
+          aria-label={t('searchAccounts')}
+        />
         <nav className='tabs-container'>
           <div
             className={`tab ${state.currentTab === 'non_whitelisted' ? 'tab-active' : ''}`}
@@ -341,12 +350,23 @@ export const Searching = ({
 
         {pageUsers.length === 0 ? (
           <div className='results-empty-hint'>
-            <p>{t('displayed')}: 0</p>
-            <p className='text-muted'>{t('total')}: {state.results.length}</p>
+            <p className='results-empty-title'>
+              {state.percentage < 100 && state.results.length === 0
+                ? t('emptyResultsScanning')
+                : state.searchTerm
+                  ? t('noSearchResults')
+                  : t('emptyResultsTitle')}
+            </p>
+            {!(state.percentage < 100 && state.results.length === 0) && (
+              <p className='text-muted'>{t('emptyResultsHint')}</p>
+            )}
+            <p className='text-muted'>
+              {t('displayed')}: 0 · {t('total')}: {state.results.length}
+            </p>
           </div>
         ) : (
           pageUsers.map(user => {
-            const firstLetter = (user.username?.[0] ?? '#').toUpperCase();
+            const firstLetter = (user.username[0] || '#').toUpperCase();
             const showLetterHeader = firstLetter !== lastRenderedLetter;
             if (showLetterHeader) {
               lastRenderedLetter = firstLetter;
@@ -374,6 +394,9 @@ export const Searching = ({
                       alt={user.username}
                       src={user.profile_pic_url}
                       loading='lazy'
+                      onError={e => {
+                        e.currentTarget.style.visibility = 'hidden';
+                      }}
                     />
                     <span className='avatar-icon-overlay-container'>
                       {state.currentTab === 'non_whitelisted' ? (

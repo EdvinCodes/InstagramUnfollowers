@@ -23,7 +23,13 @@ import { HistoryIcon } from './icons/HistoryIcon';
 
 // Icono simple de Minimizar
 const MinimizeIcon = ({ onClick }: { onClick: () => void }) => (
-  <div className='icon-button minimize-btn' onClick={onClick} title={t('minimize')}>
+  <button
+    type='button'
+    className='icon-button minimize-btn'
+    onClick={onClick}
+    title={t('minimize')}
+    aria-label={t('minimize')}
+  >
     <svg
       width='24'
       height='24'
@@ -33,10 +39,11 @@ const MinimizeIcon = ({ onClick }: { onClick: () => void }) => (
       strokeWidth='2'
       strokeLinecap='round'
       strokeLinejoin='round'
+      aria-hidden='true'
     >
       <polyline points='6 9 12 15 18 9' />
     </svg>
-  </div>
+  </button>
 );
 
 interface ToolBarProps {
@@ -165,42 +172,6 @@ export const Toolbar = ({
 
   return (
     <header className='app-header'>
-      {/* CSS RESPONSIVO INLINE */}
-      <style>{`
-        .minimize-btn {
-           cursor: pointer;
-           padding: 8px;
-           display: flex;
-           align-items: center;
-           border-radius: 50%;
-           transition: background 0.2s;
-        }
-        .minimize-btn:hover {
-           background: rgba(255,255,255,0.1);
-        }
-        
-        /* REGLAS MOVIL (< 500px) */
-        @media (max-width: 500px) {
-          .logo-text {
-            display: none !important; 
-          }
-          /* OCULTAMOS SEARCH BAR EN MOVIL */
-          .search-bar {
-            display: none !important;
-          }
-          .app-header-content {
-            gap: 0.5rem;
-            justify-content: space-between; /* Espaciado máximo */
-          }
-          .checkbox-label {
-             margin-right: 5px;
-          }
-          .checkbox-text {
-             font-size: 0.8rem;
-          }
-        }
-      `}</style>
-
       {isActiveProcess && (
         <progress
           className='progressbar'
@@ -231,17 +202,15 @@ export const Toolbar = ({
         </div>
 
         {/* SEARCH BAR (Ahora se oculta sola con el CSS de arriba) */}
-        {state.status !== 'initial' && (
+        {(state.status === 'scanning' || state.status === 'unfollowing') && (
           <input
             type='text'
-            className='search-bar'
+            className='search-bar header-search'
             placeholder={t('searchPlaceholder')}
-            value={
-              state.status === 'scanning' || state.status === 'unfollowing' ? state.searchTerm : ''
-            }
+            value={state.searchTerm}
             onKeyDown={e => e.stopPropagation()}
             onChange={handleSearchChange}
-            style={{ margin: '0 1rem' }}
+            aria-label={t('searchAccounts')}
           />
         )}
 
@@ -253,7 +222,7 @@ export const Toolbar = ({
                 type='checkbox'
                 disabled={state.percentage > 0 && state.percentage < 100 && !scanningPaused}
                 className='toggle-all-checkbox'
-                onClick={toggleCurrentPageUsers}
+                onChange={toggleCurrentPageUsers}
                 checked={isPageSelected}
               />
               <span className='checkbox-text'>{t('page')}</span>
@@ -264,7 +233,7 @@ export const Toolbar = ({
                 disabled={state.percentage > 0 && state.percentage < 100 && !scanningPaused}
                 checked={isAllSelected}
                 className='toggle-all-checkbox'
-                onClick={toggleAllUsers}
+                onChange={toggleAllUsers}
               />
               <span className='checkbox-text'>{t('all')}</span>
             </label>

@@ -1,6 +1,6 @@
 import './publicPath';
 
-import React, { ChangeEvent, useEffect, useState } from 'react';
+import React, { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import { render } from 'preact';
 
 // @ts-ignore
@@ -11,6 +11,7 @@ import { Toast } from './components/Toast';
 import { UserCheckIcon } from './components/icons/UserCheckIcon';
 import { UserUncheckIcon } from './components/icons/UserUncheckIcon';
 import {
+  CHROME_LAST_SCAN_DATE_KEY,
   DEFAULT_TIME_BETWEEN_SEARCH_CYCLES,
   DEFAULT_TIME_BETWEEN_UNFOLLOWS,
   DEFAULT_TIME_TO_WAIT_AFTER_FIVE_SEARCH_CYCLES,
@@ -23,6 +24,8 @@ import {
   getCurrentPageUnfollowers,
   getUsersForDisplay,
   getDynamicStorageKey,
+  isChromeStorageAvailable,
+  viewerFollowsBack,
 } from './utils/utils';
 import { identifyNewUnfollowers, saveScanSnapshot } from './utils/history';
 
@@ -46,21 +49,24 @@ import { CloudSync } from './services/cloudSync';
 import { GrowthView } from './components/GrowthView';
 import { createInitialGrowthState } from './model/growth-state';
 
-import { t } from './i18n/i18n';
+import { subscribeLocale, t } from './i18n/i18n';
+
+type ToastStyle = 'success' | 'error' | 'warning' | 'info';
+type ToastState =
+  | { readonly show: false }
+  | { readonly show: true; readonly text: string; readonly style: ToastStyle };
 
 function App() {
   const [state, setState] = useState<State>({
     status: 'initial',
   });
 
-  const [toast, setToast] = useState<
-    { readonly show: false } | { readonly show: true; readonly text: string }
-  >({
+  const [toast, setToast] = useState<ToastState>({
     show: false,
   });
 
-  // Estado para minimizar
   const [isMinimized, setIsMinimized] = useState(true);
+  const [, setLocaleTick] = useState(0);
 
   const { isPro, isLoading, activatePro, deactivatePro } = useLicense();
 
@@ -73,7 +79,6 @@ function App() {
     timeToWaitAfterFiveUnfollows: DEFAULT_TIME_TO_WAIT_AFTER_FIVE_UNFOLLOWS,
   });
 
-  // Inicialización de Hooks
   const {
     scannerState,
     startScan,
@@ -87,6 +92,14 @@ function App() {
     togglePause: toggleUnfollowPause,
     isPaused: isUnfollowPaused,
   } = useUnfollowerQueue(timings);
+
+  const showToast = useCallback((text: string, style: ToastStyle = 'info') => {
+    setToast({ show: true, text, style });
+  }, []);
+
+  const hideToast = useCallback(() => {
+    setToast({ show: false });
+  }, []);
 
   let isActiveProcess: boolean;
   switch (state.status) {
@@ -111,7 +124,8 @@ function App() {
     }
   }
 
-  // Recuperar el tema al iniciar
+  useEffect(() => subscribeLocale(() => setLocaleTick(tick => tick + 1)), []);
+
   useEffect(() => {
     const storedTheme = localStorage.getItem('ig_unfollowers_theme');
     if (storedTheme === 'light') {
@@ -131,100 +145,113 @@ function App() {
     localStorage.setItem('ig_unfollowers_theme', newTheme);
   };
 
-  // 1. Extraemos el porcentaje fuera del useEffect para ESLint y TypeScript
   const currentPercentage = state.status === 'scanning' ? state.percentage : 0;
 
-  // Sincronización del Escáner
   useEffect(() => {
-    if (state.status === 'scanning') {
-      // 1. Detectamos si terminó
-      const isFinished =
-        !scannerState.isScanning &&
-        (scannerState.progress >= 99 ||
-          scannerState.statusMessage === 'Completed' ||
-          scannerState.statusMessage.includes('Stopped'));
+    if (state.status !== 'scanning') {
+      return;
+    }
 
-      // 2. Usamos nuestra variable limpia 'currentPercentage'
-      const isJustFinished = isFinished && currentPercentage !== 100;
-      let processedResults = [...scannerState.results];
+    const isFinished = !scannerState.isScanning && scannerState.finishReason !== null;
+    const isJustFinished = isFinished && currentPercentage !== 100;
+    let processedResults = [...scannerState.results];
 
-      if (isJustFinished) {
-        processedResults = identifyNewUnfollowers(scannerState.results);
-        const newTraitors = processedResults.filter(u => u.is_new_unfollower);
+    if (isJustFinished) {
+      processedResults = identifyNewUnfollowers(scannerState.results);
+      const newTraitors = processedResults.filter(
+        u => u.is_new_unfollower && !viewerFollowsBack(u),
+      );
 
-        saveScanSnapshot(processedResults);
+      saveScanSnapshot(processedResults);
 
-        if (isPro && CloudSync.isConfigured()) {
-          const history = HistoryService.getHistory();
-          const wlKey = getDynamicStorageKey(WHITELISTED_RESULTS_STORAGE_KEY);
-          const wlRaw = localStorage.getItem(wlKey);
-          const whitelist = wlRaw ? (JSON.parse(wlRaw) as UserNode[]) : [];
-          void CloudSync.sync(history, whitelist);
-        }
-
-        if (newTraitors.length > 0) {
-          newTraitors.forEach(traitor => HistoryService.addEvent('DETECTED_UNFOLLOWER', traitor));
-        }
-
-        const totalNew = newTraitors.length;
-        if (totalNew > 0) {
-          setToast({ show: true, text: `Scan finished! Found ${totalNew} new unfollowers.` });
-        } else if (scannerState.statusMessage.includes('Stopped')) {
-          setToast({
-            show: true,
-            text: 'Scan stopped by Anti-Ban (Error 429). Showing partial results.',
-          });
-        } else {
-          setToast({ show: true, text: 'Scanning completed!' });
-        }
+      if (isPro && CloudSync.isConfigured()) {
+        const history = HistoryService.getHistory();
+        const wlKey = getDynamicStorageKey(WHITELISTED_RESULTS_STORAGE_KEY);
+        const wlRaw = localStorage.getItem(wlKey);
+        const whitelist = wlRaw ? (JSON.parse(wlRaw) as UserNode[]) : [];
+        void CloudSync.sync(history, whitelist);
       }
 
-      // 3. Actualizamos el estado
-      setState(prev => {
-        if (prev.status !== 'scanning') {
-          return prev;
+      if (newTraitors.length > 0) {
+        newTraitors.forEach(traitor => HistoryService.addEvent('DETECTED_UNFOLLOWER', traitor));
+      }
+
+      switch (scannerState.finishReason) {
+        case 'rate_limit':
+          showToast(t('scanStoppedRateLimit'), 'warning');
+          break;
+        case 'error':
+        case 'stopped':
+          showToast(t('scanErrorToast'), 'warning');
+          break;
+        case 'no_session':
+          showToast(t('statusNoSession'), 'error');
+          break;
+        case 'completed': {
+          const totalNew = newTraitors.length;
+          if (totalNew > 0) {
+            showToast(t('scanFinishedNew')(totalNew), 'success');
+          } else {
+            showToast(t('scanCompletedToast'), 'success');
+          }
+          break;
         }
-
-        if (isFinished && prev.percentage === 100) {
-          return prev;
-        }
-
-        return {
-          ...prev,
-          results: isJustFinished ? processedResults : scannerState.results,
-          // Forzamos el 100 exacto
-          percentage: isFinished ? 100 : scannerState.progress,
-        };
-      });
-    }
-  }, [scannerState, state.status, currentPercentage, isPro]);
-
-  // Sincronización del Unfollower
-  useEffect(() => {
-    if (state.status === 'unfollowing') {
-      setState(prev => {
-        if (prev.status !== 'unfollowing') {
-          return prev;
-        }
-        return {
-          ...prev,
-          percentage: unfollowerState.progress,
-          unfollowLog: unfollowerState.unfollowLog,
-        };
-      });
-
-      if (!unfollowerState.isUnfollowing && unfollowerState.progress === 100) {
-        setToast({ show: true, text: 'Unfollow process finished!' });
+        default:
+          break;
       }
     }
-  }, [unfollowerState, state.status]);
+
+    setState(prev => {
+      if (prev.status !== 'scanning') {
+        return prev;
+      }
+
+      if (isFinished && prev.percentage === 100) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        results: isJustFinished ? processedResults : scannerState.results,
+        percentage: isFinished ? 100 : scannerState.progress,
+      };
+    });
+  }, [scannerState, state.status, currentPercentage, isPro, showToast]);
+
+  useEffect(() => {
+    if (state.status !== 'unfollowing') {
+      return;
+    }
+
+    setState(prev => {
+      if (prev.status !== 'unfollowing') {
+        return prev;
+      }
+      return {
+        ...prev,
+        percentage: unfollowerState.progress,
+        unfollowLog: unfollowerState.unfollowLog,
+      };
+    });
+
+    if (!unfollowerState.isUnfollowing) {
+      if (unfollowerState.statusMessage === t('statusRateLimited')) {
+        showToast(t('scanStoppedRateLimit'), 'warning');
+      } else if (unfollowerState.progress === 100) {
+        showToast(t('unfollowFinished'), 'success');
+      }
+    }
+  }, [unfollowerState, state.status, showToast]);
 
   const onScan = async () => {
     if (state.status !== 'initial') {
       return;
     }
 
-    // <-- LEER WHITELIST CON CLAVE DINÁMICA
+    if (isChromeStorageAvailable()) {
+      chrome.storage.local.set({ [CHROME_LAST_SCAN_DATE_KEY]: Date.now() });
+    }
+
     const dynamicWhitelistKey = getDynamicStorageKey(WHITELISTED_RESULTS_STORAGE_KEY);
     const whitelistedResultsFromStorage: string | null = localStorage.getItem(dynamicWhitelistKey);
 
@@ -263,8 +290,7 @@ function App() {
     }
 
     if (state.selectedResults.length > 0) {
-      if (!confirm('Changing filter options will clear selected users')) {
-        // BUG FIX #3: Revertimos el checkbox en el DOM para que coincida con el estado
+      if (!confirm(t('confirmFilterChange'))) {
         e.currentTarget.checked = !e.currentTarget.checked;
         setState({ ...state });
         return;
@@ -400,10 +426,9 @@ function App() {
       };
     });
 
-    startUnfollowing(usersToProcess, actionType); // <-- Pasamos el actionType aquí
+    startUnfollowing(usersToProcess, actionType);
   };
 
-  // Checkboxes
   let isPageSelected = false;
   let isAllSelected = false;
 
@@ -471,7 +496,7 @@ function App() {
           setState={setState}
           onBack={() => setState({ status: 'initial' })}
           isPro={isPro}
-          onShowToast={text => setToast({ show: true, text })}
+          onShowToast={text => showToast(text, 'info')}
         />
       );
       break;
@@ -481,12 +506,18 @@ function App() {
     }
   }
 
+  const processStatus =
+    state.status === 'scanning'
+      ? scannerState.statusMessage
+      : state.status === 'unfollowing'
+        ? unfollowerState.statusMessage
+        : '';
+
   return (
     <main
       id='main'
       role='main'
       className={`iu theme-${theme}`}
-      // ARREGLO CLAVE: Si está minimizado, el fondo es transparente y los clics atraviesan
       style={
         isMinimized
           ? {
@@ -499,44 +530,18 @@ function App() {
     >
       <style>{styles.toString()}</style>
 
-      {/* LÓGICA DE MINIMIZADO */}
       {isMinimized ? (
-        <div
+        <button
+          type='button'
+          className='launcher-fab'
           onClick={() => setIsMinimized(false)}
-          title='Open Tool'
-          style={{
-            position: 'fixed',
-            bottom: '30px',
-            right: '30px',
-            width: '60px',
-            height: '60px',
-            borderRadius: '50%',
-            // CAMBIO: Gradiente Azul para coincidir con tu app
-            background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-            boxShadow: '0 4px 15px rgba(29, 78, 216, 0.4)', // Sombra azulada
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            zIndex: 999999,
-            pointerEvents: 'auto', // ARREGLO: Esto sí tiene que recibir clics
-            transition: 'transform 0.2s, box-shadow 0.2s',
-            border: '2px solid rgba(255,255,255,0.1)',
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.transform = 'scale(1.1)';
-            e.currentTarget.style.boxShadow = '0 6px 20px rgba(29, 78, 216, 0.6)';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = '0 4px 15px rgba(29, 78, 216, 0.4)';
-          }}
+          title={t('openTool')}
+          aria-label={t('openTool')}
         >
-          {/* Logo flotante */}
-          <div style={{ transform: 'scale(1.4)' }}>
+          <span className='launcher-fab__logo'>
             <Logo />
-          </div>
-        </div>
+          </span>
+        </button>
       ) : (
         <section className='overlay'>
           <Toolbar
@@ -548,9 +553,7 @@ function App() {
             toggleCurrentPageUsers={toggleCurrentPageUsers}
             setTimings={setTimings}
             currentTimings={timings}
-            onShowToast={text => {
-              setToast({ show: true, text });
-            }}
+            onShowToast={text => showToast(text, 'success')}
             isPageSelected={isPageSelected}
             isAllSelected={isAllSelected}
             onMinimize={() => setIsMinimized(true)}
@@ -564,32 +567,18 @@ function App() {
 
           {markup}
 
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 10,
-              left: 10,
-              background: 'rgba(0,0,0,0.7)',
-              color: 'white',
-              padding: 5,
-              borderRadius: 5,
-              pointerEvents: 'none',
-            }}
-          >
-            {state.status === 'scanning' && scannerState.statusMessage}
-            {state.status === 'unfollowing' && unfollowerState.statusMessage}
-          </div>
-
-          {toast.show && (
-            <Toast
-              show={toast.show}
-              message={toast.text}
-              onClose={() => {
-                setToast({ show: false });
-              }}
-            />
-          )}
+          {processStatus && <div className='process-status-bar'>{processStatus}</div>}
         </section>
+      )}
+
+      {toast.show && (
+        <Toast
+          show={toast.show}
+          message={toast.text}
+          style={toast.style}
+          closeLabel={t('closeNotification')}
+          onClose={hideToast}
+        />
       )}
     </main>
   );
@@ -609,7 +598,7 @@ if (location.hostname !== INSTAGRAM_HOSTNAME) {
     appHost.style.width = '100vw';
     appHost.style.height = '100vh';
     appHost.style.zIndex = '99999';
-    appHost.style.pointerEvents = 'none'; // Importante para la carga inicial
+    appHost.style.pointerEvents = 'none';
 
     document.body.appendChild(appHost);
     const shadowRoot = appHost.attachShadow({ mode: 'open' });

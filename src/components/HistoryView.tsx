@@ -49,6 +49,18 @@ export const HistoryView = ({ onClose, isPro }: HistoryViewProps) => {
     });
   }, [isPro]);
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [onClose]);
+
   const handleClear = () => {
     if (confirm(t('confirmClearHistory'))) {
       HistoryService.clearHistory();
@@ -119,16 +131,17 @@ export const HistoryView = ({ onClose, isPro }: HistoryViewProps) => {
         >
           <h3 style={{ margin: 0, fontSize: '1.5rem' }}>{t('timeMachine')}</h3>
           <button
+            type='button'
             className='close-btn'
             onClick={onClose}
             style={{
               background: 'transparent',
               fontSize: '1.5rem',
               cursor: 'pointer',
-              color: 'white',
               padding: '0.5rem',
               lineHeight: 1,
             }}
+            aria-label={t('cancel')}
           >
             ✕
           </button>
@@ -275,9 +288,7 @@ export const HistoryView = ({ onClose, isPro }: HistoryViewProps) => {
                           flexWrap: 'wrap',
                         }}
                       >
-                        <span
-                          style={{ fontWeight: 'bold', color: 'white', wordBreak: 'break-all' }}
-                        >
+                        <span className='history-username'>
                           @{event.user.username}
                         </span>
                         <span
@@ -302,6 +313,9 @@ export const HistoryView = ({ onClose, isPro }: HistoryViewProps) => {
                     <img
                       src={event.user.profile_pic_url}
                       alt=''
+                      onError={e => {
+                        e.currentTarget.style.visibility = 'hidden';
+                      }}
                       style={{
                         width: '40px',
                         height: '40px',
@@ -330,10 +344,11 @@ export const HistoryView = ({ onClose, isPro }: HistoryViewProps) => {
           }}
         >
           <button
+            type='button'
             className='btn-clear-history'
             onClick={handleClear}
             disabled={events.length === 0}
-            title='Permanently delete all logs'
+            title={t('clearHistory')}
           >
             <TrashIcon />
             {t('clearHistory')}

@@ -3,6 +3,10 @@ export const UNFOLLOWERS_PER_PAGE = 50;
 export const WHITELISTED_RESULTS_STORAGE_KEY = 'ig_unfollower_whitelisted_results';
 export const HISTORY_RESULTS_STORAGE_KEY = 'ig_unfollower_history_snapshot';
 
+/** Must match keys read by public/background.js */
+export const CHROME_SCAN_FREQUENCY_KEY = 'ig_scan_frequency';
+export const CHROME_LAST_SCAN_DATE_KEY = 'ig_last_scan_date';
+
 // TIMINGS CONSTANTS
 export const DEFAULT_TIME_BETWEEN_SEARCH_CYCLES = 1000;
 export const DEFAULT_TIME_TO_WAIT_AFTER_FIVE_SEARCH_CYCLES = 10000;

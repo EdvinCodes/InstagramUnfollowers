@@ -1,13 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 interface ToastProps {
   show?: boolean;
   style?: 'success' | 'error' | 'warning' | 'info';
   message: string;
   onClose?: () => void;
+  closeLabel?: string;
 }
 
-// Iconos SVG corregidos (self-closing tags)
 const Icons = {
   success: (
     <svg
@@ -74,23 +74,45 @@ const Icons = {
   ),
 };
 
-export const Toast = ({ show = false, style = 'info', message, onClose }: ToastProps) => (
-  <div className={`toast ${show ? 'show' : ''} ${style}`} role='alert' aria-live='assertive'>
-    <div className='toast__icon'>{Icons[style]}</div>
+export const Toast = ({
+  show = false,
+  style = 'info',
+  message,
+  onClose,
+  closeLabel = 'Close',
+}: ToastProps) => {
+  useEffect(() => {
+    if (!show || !onClose) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      onClose();
+    }, 4500);
+    return () => {
+      window.clearTimeout(timer);
+    };
+    // onClose is typically an inline lambda; message/show reset the timer instead
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [show, message]);
 
-    <div className='toast__content'>
-      <p className='toast__message'>{message}</p>
+  return (
+    <div className={`toast ${show ? 'show' : ''} ${style}`} role='alert' aria-live='assertive'>
+      <div className='toast__icon'>{Icons[style]}</div>
+
+      <div className='toast__content'>
+        <p className='toast__message'>{message}</p>
+      </div>
+
+      {onClose && (
+        <button
+          className='toast__close-button'
+          onClick={onClose}
+          title={closeLabel}
+          aria-label={closeLabel}
+        >
+          &times;
+        </button>
+      )}
     </div>
-
-    {onClose && (
-      <button
-        className='toast__close-button'
-        onClick={onClose}
-        title='Close notification'
-        aria-label='Close'
-      >
-        &times;
-      </button>
-    )}
-  </div>
-);
+  );
+};

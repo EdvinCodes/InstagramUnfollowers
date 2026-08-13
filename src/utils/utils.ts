@@ -34,7 +34,7 @@ export function getCurrentPageUnfollowers(
 ): readonly UserNode[] {
   const safePage = getSafePage(nonFollowersList, currentPage);
   const sortedList = [...nonFollowersList].sort((a, b) =>
-    (a.username ?? '').localeCompare(b.username ?? '', undefined, { sensitivity: 'base' }),
+    a.username.localeCompare(b.username, undefined, { sensitivity: 'base' }),
   );
   const startIndex = UNFOLLOWERS_PER_PAGE * (safePage - 1);
   return sortedList.slice(startIndex, startIndex + UNFOLLOWERS_PER_PAGE);
@@ -137,8 +137,8 @@ export function getUsersForDisplay(
     // 3. BUSCADOR
     if (searchTerm !== '') {
       const matchesSearch =
-        (user.username ?? '').toLowerCase().includes(lowerSearchTerm) ||
-        (user.full_name ?? '').toLowerCase().includes(lowerSearchTerm);
+        user.username.toLowerCase().includes(lowerSearchTerm) ||
+        user.full_name.toLowerCase().includes(lowerSearchTerm);
       if (!matchesSearch) {
         return false;
       }
@@ -287,10 +287,16 @@ export const exportToCSV = (
 // Esto evita que se mezclen datos entre diferentes cuentas en el mismo navegador.
 export function getDynamicStorageKey(baseKey: string): string {
   const userId = getCookie('ds_user_id') ?? 'unknown_user';
-  if (!userId) {
-    throw new Error('No active Instagram session found');
-  }
   return `${baseKey}_${userId}`;
+}
+
+export function isChromeStorageAvailable(): boolean {
+  try {
+    const chromeApi = (globalThis as { chrome?: typeof chrome }).chrome;
+    return !!chromeApi?.storage.local;
+  } catch {
+    return false;
+  }
 }
 
 export function removeFollowerUrlGenerator(idToRemove: string): string {

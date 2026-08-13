@@ -2,6 +2,7 @@ import { detectLocale, translations, Locale, Translations, LOCALES } from './tra
 
 let _locale: Locale = detectLocale();
 const LOCALE_KEY = 'ig-unfollowers-locale';
+const localeListeners = new Set<() => void>();
 
 // Restore persisted locale
 try {
@@ -17,6 +18,13 @@ export function getLocale(): Locale {
   return _locale;
 }
 
+export function subscribeLocale(listener: () => void): () => void {
+  localeListeners.add(listener);
+  return () => {
+    localeListeners.delete(listener);
+  };
+}
+
 export function setLocale(locale: Locale): void {
   _locale = locale;
   try {
@@ -24,6 +32,7 @@ export function setLocale(locale: Locale): void {
   } catch {
     // ignore
   }
+  localeListeners.forEach(listener => listener());
 }
 
 export function t<K extends keyof Translations>(key: K): Translations[K] {
