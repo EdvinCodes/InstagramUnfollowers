@@ -48,6 +48,8 @@ import { CloudSync } from './services/cloudSync';
 
 import { GrowthView } from './components/GrowthView';
 import { createInitialGrowthState } from './model/growth-state';
+import { PendingRequestsView } from './components/PendingRequestsView';
+import { createInitialPendingState } from './model/pending-requests-state';
 
 import { subscribeLocale, t } from './i18n/i18n';
 
@@ -116,6 +118,10 @@ function App() {
       break;
     }
     case 'growth': {
+      isActiveProcess = state.isRunning;
+      break;
+    }
+    case 'pending_requests': {
       isActiveProcess = state.isRunning;
       break;
     }
@@ -456,6 +462,7 @@ function App() {
         <NotSearching
           onScan={onScan}
           onGrowth={() => setState(createInitialGrowthState())}
+          onPendingRequests={() => setState(createInitialPendingState())}
           isPro={isPro}
         />
       );
@@ -501,6 +508,18 @@ function App() {
       );
       break;
     }
+    case 'pending_requests': {
+      markup = (
+        <PendingRequestsView
+          state={state}
+          setState={setState}
+          timings={timings}
+          isPro={isPro}
+          onShowToast={showToast}
+        />
+      );
+      break;
+    }
     default: {
       assertUnreachable(state);
     }
@@ -511,7 +530,9 @@ function App() {
       ? scannerState.statusMessage
       : state.status === 'unfollowing'
         ? unfollowerState.statusMessage
-        : '';
+        : state.status === 'pending_requests'
+          ? state.statusMessage
+          : '';
 
   return (
     <main

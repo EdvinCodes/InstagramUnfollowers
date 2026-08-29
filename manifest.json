@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Instagram Unfollowers PRO - Ghost Score",
-  "version": "8.5.1",
+  "version": "8.6.0",
   "description": "See who doesn't follow you back. Ghost Score 0-100, PDF reports, 16 languages. 100% local - no password.",
   "permissions": ["storage", "alarms", "notifications"],
   "action": {

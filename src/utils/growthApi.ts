@@ -36,8 +36,19 @@ export function getCurrentUserId(): string | null {
   return getCookie('ds_user_id') ?? null;
 }
 
+interface WebProfileFriendship {
+  following?: boolean;
+  outgoing_request?: boolean;
+}
+
 interface WebProfileResponse {
-  data?: { user?: { id?: string; is_private?: boolean } };
+  data?: {
+    user?: {
+      id?: string;
+      is_private?: boolean;
+      friendship_status?: WebProfileFriendship;
+    };
+  };
 }
 
 interface FeedItem {
@@ -79,9 +90,29 @@ interface UserInfoResponse {
 }
 
 interface FriendshipShowResponse {
-  friendship_status?: {
-    following?: boolean;
-    outgoing_request?: boolean;
+  following?: boolean;
+  outgoing_request?: boolean;
+  friendship_status?: WebProfileFriendship;
+}
+
+export function parseFriendshipStatus(json: unknown): FriendshipStatus | null {
+  if (!json || typeof json !== 'object') {
+    return null;
+  }
+  const record = json as Record<string, unknown>;
+  const nested = record.friendship_status;
+  const source =
+    nested && typeof nested === 'object' ? (nested as Record<string, unknown>) : record;
+  if (
+    !('following' in source) &&
+    !('outgoing_request' in source) &&
+    !('followed_by' in source)
+  ) {
+    return null;
+  }
+  return {
+    following: Boolean(source.following),
+    outgoingRequest: Boolean(source.outgoing_request),
   };
 }
 
@@ -222,21 +253,28 @@ export async function getUserBrief(userId: string): Promise<IgUserBrief | null> 
 }
 
 export async function getFriendshipStatus(userId: string): Promise<FriendshipStatus | null> {
+  const result = await fetchFriendshipStatus(userId);
+  return result.friendship;
+}
+
+export async function fetchFriendshipStatus(
+  userId: string,
+): Promise<{ status: number; friendship: FriendshipStatus | null }> {
   try {
     const res = await fetch(`https://www.instagram.com/api/v1/friendships/show/${userId}/`, {
       headers: getHeaders(),
       credentials: 'include',
     });
     if (!res.ok) {
-      return null;
+      return { status: res.status, friendship: null };
     }
     const json = (await res.json()) as FriendshipShowResponse;
     return {
-      following: Boolean(json.friendship_status?.following),
-      outgoingRequest: Boolean(json.friendship_status?.outgoing_request),
+      status: res.status,
+      friendship: parseFriendshipStatus(json),
     };
   } catch {
-    return null;
+    return { status: 0, friendship: null };
   }
 }
 
@@ -254,6 +292,50 @@ export async function followUser(userId: string): Promise<{ ok: boolean; status:
       },
       credentials: 'include',
       body: `user_id=${userId}`,
+    });
+    const body = await res.text();
+    return { ok: res.ok, status: res.status, body };
+  } catch {
+    return { ok: false, status: 0, body: '' };
+  }
+}
+
+export async function lookupUserByUsername(
+  username: string,
+): Promise<{ id: string | null; status: number; friendship: FriendshipStatus | null }> {
+  try {
+    const res = await fetch(
+      `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`,
+      { headers: getHeaders(), credentials: 'include' },
+    );
+    if (!res.ok) {
+      return { id: null, status: res.status, friendship: null };
+    }
+    const json = (await res.json()) as WebProfileResponse;
+    const user = json.data?.user;
+    return {
+      id: user?.id ?? null,
+      status: res.status,
+      friendship: parseFriendshipStatus(user ?? null),
+    };
+  } catch {
+    return { id: null, status: 0, friendship: null };
+  }
+}
+
+export async function cancelFollowRequest(
+  userId: string,
+): Promise<{ ok: boolean; status: number; body: string }> {
+  const csrfToken = getCookie('csrftoken') ?? '';
+  try {
+    const res = await fetch(`https://www.instagram.com/web/friendships/${userId}/unfollow/`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        'x-csrftoken': csrfToken,
+      },
+      mode: 'cors',
+      credentials: 'include',
     });
     const body = await res.text();
     return { ok: res.ok, status: res.status, body };

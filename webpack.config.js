@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const Dotenv = require('dotenv-webpack');
+const TerserPlugin = require('terser-webpack-plugin');
 // const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 
 // Plugin personalizado simple para copiar el manifest y el background script a /dist
@@ -71,6 +72,19 @@ module.exports = {
     filename: 'content.js',
     path: path.resolve(__dirname, 'dist'),
     clean: true,
+  },
+  optimization: {
+    minimizer: [
+      new TerserPlugin({
+        terserOptions: {
+          format: {
+            // Console-paste on Windows often re-reads this file as CP1252.
+            // ASCII-only escapes keep tildes and arrows intact after eval.
+            ascii_only: true,
+          },
+        },
+      }),
+    ],
   },
   plugins: [
     new Dotenv(),

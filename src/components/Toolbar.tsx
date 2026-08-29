@@ -101,6 +101,7 @@ export const Toolbar = ({
         }
         break;
       case 'growth':
+      case 'pending_requests':
         setState({ status: 'initial' });
         break;
       case 'scanning':
@@ -159,6 +160,12 @@ export const Toolbar = ({
       case 'initial':
       case 'growth':
         return;
+      case 'pending_requests':
+        if (state.phase !== 'running') {
+          return;
+        }
+        setState({ ...state, searchTerm: value });
+        break;
       case 'scanning':
         setState({ ...state, searchTerm: value, page: 1, selectedResults: [] });
         break;
@@ -176,7 +183,11 @@ export const Toolbar = ({
         <progress
           className='progressbar'
           value={
-            state.status === 'scanning' || state.status === 'unfollowing' ? state.percentage : 0
+            state.status === 'scanning' ||
+            state.status === 'unfollowing' ||
+            state.status === 'pending_requests'
+              ? state.percentage
+              : 0
           }
           max='100'
         />
@@ -202,7 +213,9 @@ export const Toolbar = ({
         </div>
 
         {/* SEARCH BAR (Ahora se oculta sola con el CSS de arriba) */}
-        {(state.status === 'scanning' || state.status === 'unfollowing') && (
+        {(state.status === 'scanning' ||
+          state.status === 'unfollowing' ||
+          (state.status === 'pending_requests' && state.phase === 'running')) && (
           <input
             type='text'
             className='search-bar header-search'

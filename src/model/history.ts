@@ -7,7 +7,8 @@ export type HistoryEventType =
   | 'YOU_FOLLOWED'
   | 'WHITELISTED'
   | 'UNWHITELISTED'
-  | 'SOFT_BLOCKED';
+  | 'SOFT_BLOCKED'
+  | 'REQUEST_CANCELLED';
 
 export interface HistoryEvent {
   id: string; // Un ID único para el evento (uuid)

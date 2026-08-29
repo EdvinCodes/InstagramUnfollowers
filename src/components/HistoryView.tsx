@@ -96,6 +96,8 @@ export const HistoryView = ({ onClose, isPro }: HistoryViewProps) => {
         return { icon: '🔓', color: '#94a3b8', label: t('unWhitelisted') };
       case 'SOFT_BLOCKED': // <-- Añadido para el Soft Block
         return { icon: '🚫', color: '#eab308', label: t('removedFollower') };
+      case 'REQUEST_CANCELLED':
+        return { icon: '🚫', color: '#fb923c', label: t('pendingYouCancelled') };
       default: // <-- Seguridad para que TypeScript no se queje
         return { icon: '📝', color: '#ffffff', label: t('unknownEvent') };
     }

@@ -664,6 +664,32 @@ input[type='checkbox'] {
     }
   }
 
+  .pending-entry-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    width: 100%;
+    max-width: 280px;
+    padding: 0.65rem 1.4rem;
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.16), rgba(234, 88, 12, 0.1));
+    border: 1px solid rgba(249, 115, 22, 0.4) !important;
+    color: #fdba74 !important;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.28), rgba(234, 88, 12, 0.18));
+      border-color: rgba(251, 146, 60, 0.7) !important;
+      color: #ffedd5 !important;
+      transform: translateY(-1px);
+    }
+  }
+
   .growth-entry-btn {
     display: flex;
     align-items: center;
@@ -1420,6 +1446,190 @@ input[type='checkbox'] {
   word-break: break-all;
 }
 
+.pending-setup {
+  top: 72px !important;
+  transform: translate(-50%, 0) !important;
+  max-width: min(580px, 92vw) !important;
+  max-height: calc(100vh - 88px);
+  overflow-y: auto;
+  text-align: left;
+  align-items: stretch !important;
+  padding: 1.5rem !important;
+  gap: 0.85rem !important;
+
+  .empty-state-title {
+    text-align: center;
+  }
+
+  .pending-setup-lead,
+  .pending-how,
+  .pending-paste-label {
+    color: variables.$text-muted;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    max-width: none;
+  }
+
+  .pending-how {
+    background: rgba(15, 23, 42, 0.45);
+    border: 1px solid rgba(249, 115, 22, 0.25);
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+
+    h3 {
+      margin: 0 0 0.6rem;
+      color: #fdba74;
+      font-size: 0.95rem;
+    }
+
+    ol {
+      margin: 0;
+      padding-left: 1.15rem;
+    }
+
+    li {
+      margin-bottom: 0.4rem;
+    }
+  }
+
+  .pending-how-note {
+    margin: 0.75rem 0 0;
+    font-size: 0.8rem;
+  }
+
+  .pending-upload-btn {
+    margin-top: 0.25rem;
+    padding: 0.9rem 1.5rem;
+    font-size: 0.95rem;
+    width: 100%;
+  }
+
+  .pending-paste {
+    width: 100%;
+    resize: vertical;
+    min-height: 88px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: rgba(15, 23, 42, 0.65);
+    color: #e2e8f0;
+    padding: 0.7rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+  }
+
+  .pending-back-btn,
+  .growth-entry-btn {
+    max-width: none;
+    width: 100%;
+  }
+}
+
+.pending-list-layout {
+  .pending-eta,
+  .pending-warning {
+    font-size: 0.75rem;
+    color: variables.$text-muted;
+    line-height: 1.45;
+  }
+
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    width: 100%;
+  }
+
+  .pending-result-item {
+    min-height: 52px;
+    height: auto;
+    padding: 0.45rem 0.85rem;
+  }
+
+  .pending-select-row {
+    display: flex;
+    gap: 0.8rem;
+    font-size: 0.8rem;
+    margin: 0.6rem 0;
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      cursor: pointer;
+    }
+  }
+
+  .pending-back-btn {
+    margin-top: 0.5rem;
+    width: 100%;
+    background: transparent;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    color: #cbd5e1;
+    border-radius: 8px;
+    padding: 0.45rem 0.7rem;
+    cursor: pointer;
+  }
+
+  .pending-log {
+    margin: 0.5rem 0;
+    padding: 0.5rem 0.6rem;
+    max-height: 180px;
+    overflow-y: auto;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    font-size: 0.72rem;
+    line-height: 1.4;
+  }
+
+  .pending-log-success {
+    color: #34d399;
+  }
+  .pending-log-fail {
+    color: #f87171;
+  }
+  .pending-log-skip {
+    color: #fbbf24;
+  }
+  .pending-log-warn {
+    color: #fb923c;
+  }
+
+  .pending-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(249, 115, 22, 0.2);
+    color: #fdba74;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .pending-user-meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    a {
+      color: inherit;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    span {
+      color: variables.$text-muted;
+      font-size: 0.8rem;
+    }
+  }
+
+  .pending-done-item {
+    opacity: 0.55;
+  }
+}
+
 .iu.theme-light {
   .history-username {
     color: #0f172a;
@@ -1439,5 +1649,21 @@ input[type='checkbox'] {
   .growth-running h2,
   .growth-view h2 {
     color: #0891b2;
+  }
+
+  .pending-setup .pending-how {
+    background: #fff7ed;
+    border-color: #fdba74;
+  }
+
+  .pending-setup .pending-paste {
+    background: #fff;
+    color: #0f172a;
+    border-color: #e2e8f0;
+  }
+
+  .pending-entry-btn {
+    background: #fff7ed;
+    color: #c2410c !important;
   }
 }

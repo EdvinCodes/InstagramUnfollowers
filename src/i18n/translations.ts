@@ -1,4 +1,5 @@
 import { GROWTH_STRINGS, type GrowthTranslationSlice } from './growthStrings';
+import { PENDING_STRINGS, type PendingTranslationSlice } from './pendingStrings';
 import { UX_STRINGS, type UxTranslationSlice } from './uxStrings';
 
 export type Locale =
@@ -19,7 +20,7 @@ export type Locale =
   | 'nl'
   | 'vi';
 
-export interface Translations extends GrowthTranslationSlice, UxTranslationSlice {
+export interface Translations extends GrowthTranslationSlice, UxTranslationSlice, PendingTranslationSlice {
   appName: string;
   minimize: string;
   history: string;
@@ -364,6 +365,7 @@ const en: Translations = {
   support: 'Support',
   ...GROWTH_STRINGS.en,
   ...UX_STRINGS.en,
+  ...PENDING_STRINGS.en,
 };
 
 //  Español
@@ -543,6 +545,7 @@ const es: Translations = {
   support: 'Apoyar',
   ...GROWTH_STRINGS.es,
   ...UX_STRINGS.es,
+  ...PENDING_STRINGS.es,
 };
 
 //  Português (BR)
@@ -721,6 +724,7 @@ const ptBR: Translations = {
   support: 'Apoiar',
   ...GROWTH_STRINGS['pt-BR'],
   ...UX_STRINGS['pt-BR'],
+  ...PENDING_STRINGS['pt-BR'],
 };
 
 //  Français
@@ -902,6 +906,7 @@ const fr: Translations = {
   support: 'Soutenir',
   ...GROWTH_STRINGS.fr,
   ...UX_STRINGS.fr,
+  ...PENDING_STRINGS.fr,
 };
 
 //  Italiano
@@ -1081,6 +1086,7 @@ const it: Translations = {
   support: 'Supporta',
   ...GROWTH_STRINGS.it,
   ...UX_STRINGS.it,
+  ...PENDING_STRINGS.it,
 };
 
 // 🇩🇪 Deutsch
@@ -1260,6 +1266,7 @@ const de: Translations = {
   support: 'Unterstützen',
   ...GROWTH_STRINGS.de,
   ...UX_STRINGS.de,
+  ...PENDING_STRINGS.de,
 };
 
 //  Export
@@ -1436,6 +1443,7 @@ const tr: Translations = {
   support: 'Destek',
   ...GROWTH_STRINGS.tr,
   ...UX_STRINGS.tr,
+  ...PENDING_STRINGS.tr,
 };
 
 
@@ -1612,6 +1620,7 @@ const hi: Translations = {
   support: 'समर्थन',
   ...GROWTH_STRINGS.hi,
   ...UX_STRINGS.hi,
+  ...PENDING_STRINGS.hi,
 };
 
 // Indonesian
@@ -1787,6 +1796,7 @@ const id: Translations = {
   support: 'Dukung',
   ...GROWTH_STRINGS.id,
   ...UX_STRINGS.id,
+  ...PENDING_STRINGS.id,
 };
 
 // Arabic
@@ -1962,6 +1972,7 @@ const ar: Translations = {
   support: 'الدعم',
   ...GROWTH_STRINGS.ar,
   ...UX_STRINGS.ar,
+  ...PENDING_STRINGS.ar,
 };
 
 // Japanese
@@ -2137,6 +2148,7 @@ const ja: Translations = {
   support: '支援',
   ...GROWTH_STRINGS.ja,
   ...UX_STRINGS.ja,
+  ...PENDING_STRINGS.ja,
 };
 
 // Korean
@@ -2312,6 +2324,7 @@ const ko: Translations = {
   support: '후원',
   ...GROWTH_STRINGS.ko,
   ...UX_STRINGS.ko,
+  ...PENDING_STRINGS.ko,
 };
 
 // Russian
@@ -2487,6 +2500,7 @@ const ru: Translations = {
   support: 'Поддержка',
   ...GROWTH_STRINGS.ru,
   ...UX_STRINGS.ru,
+  ...PENDING_STRINGS.ru,
 };
 
 // Polish
@@ -2662,6 +2676,7 @@ const pl: Translations = {
   support: 'Wsparcie',
   ...GROWTH_STRINGS.pl,
   ...UX_STRINGS.pl,
+  ...PENDING_STRINGS.pl,
 };
 
 // Dutch
@@ -2837,6 +2852,7 @@ const nl: Translations = {
   support: 'Steun',
   ...GROWTH_STRINGS.nl,
   ...UX_STRINGS.nl,
+  ...PENDING_STRINGS.nl,
 };
 
 // Vietnamese
@@ -3012,6 +3028,7 @@ const vi: Translations = {
   support: 'Hỗ trợ',
   ...GROWTH_STRINGS.vi,
   ...UX_STRINGS.vi,
+  ...PENDING_STRINGS.vi,
 };
 
 export const translations: Record<Locale, Translations> = {
