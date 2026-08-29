@@ -18,8 +18,13 @@ export const calculateGhostScore = (user: UserNode, t: any): GhostAnalysis => {
   const reasons: string[] = [];
   const usernameL = user.username.toLowerCase();
 
-  // Sin foto de perfil
-  if (user.has_anonymous_profile_picture || isProfilePicAnonymous(user.profile_pic_url)) {
+  const picUnknown = !user.profile_pic_url && !user.has_anonymous_profile_picture;
+
+  // Sin foto de perfil (URL vacía sin flag = export Meta, no es anónima)
+  if (
+    !picUnknown &&
+    (user.has_anonymous_profile_picture || isProfilePicAnonymous(user.profile_pic_url))
+  ) {
     score += 15;
     reasons.push(t.reasonNoPic);
   }
@@ -48,16 +53,18 @@ export const calculateGhostScore = (user: UserNode, t: any): GhostAnalysis => {
     reasons.push(t.reasonKeyboard);
   }
 
-  // Sin nombre real
-  if (!user.full_name || user.full_name.trim() === '') {
-    score += 10;
-    reasons.push(t.reasonNoName);
-  }
+  if (!picUnknown) {
+    // Sin nombre real
+    if (!user.full_name || user.full_name.trim() === '') {
+      score += 10;
+      reasons.push(t.reasonNoName);
+    }
 
-  // Nombre igual al username
-  if (user.full_name && user.full_name.trim().toLowerCase() === usernameL) {
-    score += 10;
-    reasons.push(t.reasonSameName);
+    // Nombre igual al username
+    if (user.full_name && user.full_name.trim().toLowerCase() === usernameL) {
+      score += 10;
+      reasons.push(t.reasonSameName);
+    }
   }
 
   let level: GhostLevel = 'safe';

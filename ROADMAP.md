@@ -1,161 +1,287 @@
-# Instagram Unfollowers PRO — Roadmap Maestro
+# Instagram Unfollowers PRO — Roadmap
 
-> Objetivo: ser la **mejor herramienta de gestión de comunidad Instagram** del mundo, superando al competidor [davidarroyo1234/InstagramUnfollowers](https://github.com/davidarroyo1234/InstagramUnfollowers) en producto, confianza y descubrimiento.
+> Visión: ser **la app de gestión de Instagram más completa** — no solo “quién no me sigue”, sino el centro local para **analizar, limpiar, proteger y hacer crecer** una cuenta, superando a [davidarroyo1234/InstagramUnfollowers](https://github.com/davidarroyo1234/InstagramUnfollowers) en producto, no solo en estrellas.
 
-**Versión actual:** v8.5.0  
-**Rama activa de desarrollo:** `main`  
-**Última actualización:** 2026-08-03
-
----
-
-## 1. Por qué el competidor tiene más estrellas (y cómo ganarle)
-
-| Factor | davidarroyo1234 (~4.7k ⭐) | Instagram Unfollowers PRO (EdvinCodes) |
-|--------|---------------------------|----------------------------------------|
-| **Antigüedad / SEO GitHub** | Repo original, nombre exacto del keyword | Fork/evolución PRO, menos backlinks históricos |
-| **Fricción de uso** | Copiar script → consola → RUN (0 instalación) | ✅ Bookmarklet loader + extensión (paridad) |
-| **Simplicidad percibida** | Una pantalla, un botón | Muchas features = curva de aprendizaje (mitigado con “3 Ways to Run”) |
-| **Descubrimiento** | Topics + años de SEO | Landing + guías SEO + topics; falta Chrome Web Store live |
-| **Confianza social** | 437 forks, comunidad larga | Menos PRs externos; open source + docs |
-| **Producto real** | Solo unfollow manual | Ghost Score, PDF, i18n×16, historial, Growth (beta), PRO |
-
-### Estrategia (estado)
-
-1. ✅ Extensión PRO + **modo bookmarklet** con loader ligero
-2. 🔄 SEO agresivo: FAQ schema, guías Ghost Score / bots; falta Store + más contenido
-3. ✅ GitHub topics + README bilingüe + comparativa PRO vs básicos
-4. 📋 Social proof / reviews Store — pendiente de submit
-5. ✅ Diferenciadores en landing: Ghost Score, 16 idiomas, Growth, PDF
-6. 🔄 No competir solo en estrellas — competir en Google + Store
+**Versión actual:** v8.7.0  
+**Rama:** `main`  
+**Última actualización:** 2026-08-30
 
 ---
 
-## 2. Growth Engine — Plan de implementación
+## 1. Tesis de producto
 
-### Decisiones de producto (cerradas)
+El competidor gana en SEO histórico y simplicidad (un botón). Nosotros ganamos si somos **la suite**:
 
-| Decisión | Elección | Motivo |
-|----------|----------|--------|
-| Monetización | **PRO gratis temporalmente** | Lemon Squeezy rechazó el producto; ver `docs/PAYMENT_PROVIDERS.md` |
-| Release Growth | **beta** hasta QA manual | Owner debe validar en Instagram real |
-| SEO prioritario | **Landing + guías + README** | Keyword "instagram unfollowers" + long-tail |
+| Ellos | Nosotros |
+|-------|----------|
+| Scan + unfollow | Scan + unfollow + Ghost Score + PDF + 16 idiomas + historial |
+| Solo API en vivo | **API en vivo + export de Meta** (rápido, 0 rate-limit) |
+| Una acción | Colas lentas reutilizables: unfollow, remove, cancelar solicitud, mute, restrict… |
+| Crecer a ciegas | Crecer **atado a higiene** (no re-solicitar, revisar a los 14 días) |
 
-### Fases Growth 0–5 ✅ (código)
+El caso de las **solicitudes pendientes** (v8.6) demostró el patrón ganador:
 
-Ver historial de commits `feature/growth-v2`. Checklist QA manual sigue pendiente (sección 5).
+**Importar archivo de Meta → listar / seleccionar / A–Z → cola lenta tipo unfollow → guardar progreso en localStorage.**
 
-### Fase 6 — Crecimiento y competitividad ✅ (código + docs; Store pendiente humano)
+Ese patrón se replica para casi toda la higiene de cuenta. Es más seguro, más completo y más diferenciador que inventar más bots.
 
-- [x] Bookmarklet `loader.js` (~300 bytes)
-- [x] Chrome Web Store **prep** (`docs/CHROME_WEB_STORE.md`)
-- [x] GitHub topics
-- [x] Comparativa landing
-- [x] `llms.txt`
-- [x] Landing UX (nav, 3 Ways to Run, pricing heading, Guides)
-- [x] README ES/EN paridad v8.5
-- [x] Code quality (eslint / tsc / vitest verdes)
-- [x] Guías SEO: `ghost-score.html`, `detect-instagram-bots.html`
-- [x] Docs analytics + payment (`docs/ANALYTICS.md`, `docs/PAYMENT_PROVIDERS.md`)
-- [ ] **Chrome Web Store submit** (cuenta Dev + screenshots reales — owner)
-- [ ] **QA manual Instagram** (owner)
-- [ ] **Analytics live** (pegar script Plausible/Umami — owner)
-- [ ] **Payment provider live** (cuenta Gumroad/Paddle — owner)
+### Lo que no haremos
+
+- Pedir contraseña, 2FA ni servidor proxy
+- Follows masivos tipo kamikaze como default
+- Scraping de explore, DMs, story viewers agresivos
+- Cualquier cosa que convierta la app en un bot de spam
+
+Instagram mata eso. Nosotros somos **limpieza + inteligencia local + export de Meta**.
 
 ---
 
-## 3. Hitos de producto
+## 2. Estado actual (v8.7.0)
+
+### Hecho
+
+- [x] Scan de following / no-followers / mutuals (GraphQL en vivo)
+- [x] Unfollow y soft-block (remove follower) con cola + pausa + 429
+- [x] Ghost Score 0–100, filtros, CSV, PDF
+- [x] Whitelist, historial, multi-cuenta por `ds_user_id`
+- [x] Growth Engine (beta): follow a comentaristas de un nicho
+- [x] Cancelar solicitudes **salientes** desde `pending_follow_requests.html`
+- [x] Scan **offline** following vs followers desde el export de Meta (sin API)
+- [x] Bookmarklet / Copy Script + extensión + CI → GitHub Pages
+- [x] i18n 16 idiomas (EN/ES completos en la feature nueva; resto con fallback)
+- [x] PRO temporalmente gratis (`PRO_PROMO_FREE`)
+
+### Pendiente humano (no bloquea producto)
+
+- [ ] QA manual Growth en Instagram real
+- [ ] Submit Chrome Web Store
+- [ ] Analytics live (Plausible/Umami)
+- [ ] Payment provider (Gumroad/Paddle) — ver `docs/PAYMENT_PROVIDERS.md`
+
+---
+
+## 3. Arquitectura de la app completa (hub)
+
+La home deja de ser “3 botones sueltos” y pasa a **cuatro módulos**:
+
+```
+Analizar          Limpiar              Crecer              Historial
+─────────         ───────              ──────              ────────
+Scan en vivo      Solicitudes out ✅   Growth beta         Time machine
+Scan desde Meta   Solicitudes in       Revisión 7/14 días  Diff exports
+Ghost Score       Inactivos            No re-solicitar     PDF salud
+Dashboard         Bloqueados           Tope diario         Cloud sync
+                  Mute / restrict
+                  Soft-block
+```
+
+Cada acción de escritura reutiliza: **cola + timings de Settings + log a pantalla completa + persistencia**.
+
+---
+
+## 4. El filón Meta (misma infra que v8.6)
+
+El export “Download your information” ya trae (y traerá) listas que hoy no usamos:
+
+| Archivo / fuente | Feature | Fase |
+|------------------|---------|------|
+| `following.html` + `followers_*.html` | Scan **offline** following vs followers | 8.7 |
+| Dos ZIPs de fechas distintas | **Diff** de comunidad (quién se fue, a quién seguiste) | 8.7 |
+| `pending_follow_requests.html` | Cancelar solicitudes enviadas | ✅ 8.6 |
+| Inbox de solicitudes **entrantes** (IG o export) | Denegar quién quiere seguirte | 8.8 |
+| `recent_follow_requests.html` | Quién aceptó / ignoró lo que enviaste | 8.8 |
+| `recently_unfollowed_profiles.html` | Cruce con historial de la app | 8.8 |
+| `blocked_profiles.html` | Revisar / desbloquear en cola | 8.8 |
+| Actividad (likes, comments, close friends, restricted) | Insights “nunca interactúa”, close friends, restrict | 8.9–9.x |
+
+Parser compartido: `pendingRequestsParser.ts` se generaliza a `metaExportParser.ts`.
+
+---
+
+## 5. Hitos de producto
 
 | Versión | Objetivo | Estado |
 |---------|----------|--------|
-| v8.3.0 | Performance landing + deploy CI + 16 idiomas | ✅ Released |
-| v8.4.0-beta | Growth Engine PRO | ✅ Released |
-| v8.5.0 | Bookmarklet loader + SEO guides + landing polish | ✅ Released |
-| v8.6.0 | Licencias reales (nuevo payment provider) | 📋 Planificado |
-| v9.0.0 | Cloud Sync estable + multi-cuenta UI | 📋 Planificado |
+| v8.3.0 | 16 idiomas + CI | ✅ |
+| v8.4.0 | Growth Engine beta | ✅ |
+| v8.5.0 | Bookmarklet + SEO | ✅ |
+| v8.6.0 | Cancelar solicitudes salientes (Meta) | ✅ |
+| **v8.7.0** | Scan offline from Meta export | ✅ |
+| **v8.7.x** | Diff de dos exports | 📋 Siguiente |
+| **v8.8** | Hub Limpiar: entrantes, bloqueados, recent requests | 📋 |
+| **v8.9** | Inactivos + mute/restrict + cola por antigüedad | 📋 |
+| **v9.0** | Dashboard de salud + PDF antes/después + home por módulos | 📋 |
+| **v9.1** | Growth atado a higiene (revisión 14 días, denylist) | 📋 |
+| **v9.2** | Cloud sync real + UI multi-cuenta | 📋 |
+| **v9.3** | Licencias reales + Chrome Web Store live | 📋 |
+| **v10** | Suite “todo en uno”: insights de actividad Meta + automatizaciones seguras | 📋 Visión |
 
 ---
 
-## 4. Deuda técnica conocida
+## 6. Fase 8.7 — Analizar sin tocar Instagram (máximo valor, mínimo riesgo)
+
+El scan en vivo sigue existiendo. El export es el camino **rápido y seguro**.
+
+- [x] Parser único para HTML/JSON de Meta (ES/EN y labels equivalentes)
+- [x] Importar `following.html` + `followers_1.html` (y `followers_2…`)
+- [x] Mismas pestañas que hoy: no-followers, mutuals, whitelist
+- [ ] Ghost Score heurístico aunque no haya foto en vivo (username + nombre)
+- [ ] Botón “Actualizar en vivo” opcional (GraphQL) para fotos y `follows_viewer` fresco
+- [ ] **Diff de dos exports:** subes enero y agosto → nuevos unfollowers, nuevos follows, solicitudes que siguen
+- [x] Guardar snapshots del export en localStorage (como el scan actual)
+- [x] Guía in-app: cómo pedir el ZIP a Meta (ya empezada en solicitudes)
+
+**Por qué primero:** 0 Action Block, funciona con 50k following, te obliga a volver a la app cada vez que Meta genera un ZIP.
+
+---
+
+## 7. Fase 8.8 — Hub “Limpiar” (el resto de listas Meta)
+
+Mismo UX que solicitudes pendientes: lista A–Z, seleccionar, log a pantalla completa.
+
+- [ ] **Solicitudes entrantes** — denegar inbox (cuenta privada)
+- [ ] **Recent follow requests** — ver resueltas; no cancelar por error a quien ya aceptó
+- [ ] **Bloqueados** — listar; desbloquear en cola lenta (opcional, con confirmación fuerte)
+- [ ] **Recently unfollowed** — cruzar con `YOU_UNFOLLOWED` del historial
+- [ ] Home: tarjeta “Limpiar cuenta” con cada lista y recuento
+- [ ] i18n completo EN/ES; resto de locales con las claves nuevas (no solo fallback)
+
+---
+
+## 8. Fase 8.9 — Acciones más finas
+
+No más “seguir gente”. Más **verbos** sobre la misma cola.
+
+- [ ] Unfollow de **inactivos** (último post > N meses; N configurable)
+- [ ] **Mute** stories / posts en vez de unfollow
+- [ ] **Restrict**
+- [ ] Quitar / añadir **close friends** (si el export o la API lo permiten)
+- [ ] Cola ordenada por **antigüedad** (pendientes viejas primero)
+- [ ] “No volver a solicitar” — denylist permanente (ya empezada en `ig_pending_cancelled_*`)
+- [ ] Soft-block en lote desde el export de followers
+
+Cada verbo = 1 endpoint + `useUnfollowerQueue` / `usePendingRequests` generalizado (`useActionQueue`).
+
+---
+
+## 9. Fase 9.0 — La app se siente completa
+
+- [ ] Home por módulos: **Analizar / Limpiar / Crecer / Historial**
+- [ ] Dashboard: following, followers, no-followers, solicitudes abiertas, ghosts, tendencia
+- [ ] PDF “antes / después” de una limpieza
+- [ ] Ghost Score también en following y en pendientes
+- [ ] Búsqueda, pestañas y log idénticos en todos los flujos (ya casi: unfollow = pendientes)
+- [ ] Settings: un solo sitio para timings, tema, idioma, backups
+- [ ] Vaciar progreso local de cada cola (reset consciente)
+
+---
+
+## 10. Fase 9.1 — Growth con sentido (sigue en beta hasta QA)
+
+El motor de follows se **subordina** a la higiene.
+
+- [ ] QA manual del checklist Growth (§14)
+- [ ] Tras un follow: recordatorio / cola de revisión a los 7 y 14 días
+- [ ] Si no te siguen → unfollow automático opcional (misma cola lenta)
+- [ ] Nunca solicitar a alguien en denylist (cancelados, bloqueados, whitelist)
+- [ ] Tope diario conservador visible; kamikaze escondido en expert
+- [ ] Objetivos: cuentas semilla (ya) + más adelante hashtag **solo lectura** para candidatas
+- [ ] Disclaimer y Action Block: no bajar la guardia
+
+---
+
+## 11. Fase 9.2–9.3 — Producto, no solo features
+
+- [ ] Cloud sync real (historial + whitelist + progreso de colas + denylist)
+- [ ] UI multi-cuenta (selector, no solo keys por cookie)
+- [ ] Backup unificado (JSON) de todo lo local
+- [ ] `PRO_PROMO_FREE = false` cuando haya provider
+- [ ] Licencias + landing de pago
+- [ ] Chrome Web Store + screenshots reales
+- [ ] Analytics (Plausible/Umami)
+- [ ] Copy Script de Pages siempre = `main` (ya lo hace el CI)
+
+---
+
+## 12. Fase 10 — Visión “todo”
+
+Cuando el hub y Meta estén sólidos, el export de **actividad** abre el resto:
+
+- Quién te sigue y **nunca** likea / comenta (si el ZIP lo trae)
+- Hashtags que sigues
+- Cuentas restringidas / ocultas
+- Close friends vs following real
+- Informe anual de comunidad
+- Reglas: “si X y Y, entonces mute/unfollow” (siempre con confirmación y cola lenta)
+
+Esto es v10: no se empieza hasta que 8.7–9.0 estén en producción y estables.
+
+---
+
+## 13. Competencia y descubrimiento
+
+| Factor | Competidor (~4.7k ⭐) | Nosotros |
+|--------|----------------------|----------|
+| Fricción | Consola, 0 install | ✅ Copy Script + extensión |
+| Producto | Unfollow | Suite (scan, ghosts, PDF, growth, Meta, limpieza) |
+| Store | — | 📋 Submit pendiente |
+| SEO | Años de keyword | Landing + 2 guías; faltan más páginas (cleaner, Meta export, inactivos) |
+
+**SEO a escribir cuando existan las features:** `instagram-pending-requests.html`, `instagram-account-cleaner.html`, `instagram-meta-export.html`.
+
+---
+
+## 14. Deuda técnica
 
 | Item | Prioridad | Notas |
 |------|-----------|-------|
-| `useLicense` hardcodeado `isPro = true` | Alta | Reactivar antes de monetizar |
-| Query hash GraphQL puede caducar | Media | Monitorizar 429 |
-| `GrowthView` inline styles | Baja | Migrar a SCSS cuando estabilice |
-| Sin E2E tests Instagram | Media | Checklist manual sección 5 |
-| Tests unitarios solo en helpers | OK | API IG no mockeable fiable |
+| Extraer `useActionQueue` (unfollow + pending + futuras) | Alta | Evitar copiar colas |
+| Generalizar parser Meta | ✅ | `metaExportParser.ts` |
+| `useLicense` / `PRO_PROMO_FREE` | Alta | Antes de cobrar |
+| Query hash GraphQL puede caducar | Media | El scan Meta reduce la dependencia |
+| Tests: parsers y colas, no la API de IG | Media | Ya hay tests de pending + friendship |
+| i18n: no dejar features nuevas solo en EN/ES | Media | Cada módulo nuevo llena 16 locales |
+| `GrowthView` inline styles | Baja | Cuando se toque el hub |
+| E2E contra Instagram | No | Imposible de forma fiable; checklist manual |
 
 ---
 
-## 5. Checklist QA manual (Growth — owner)
+## 15. Checklist QA Growth (owner)
 
-1. [ ] Extensión → botón "Growth BETA" visible  
-2. [ ] Disclaimer aparece y persiste  
-3. [ ] Free (PRO off): Start bloqueado  
-4. [ ] PRO: scraping 1 cuenta con posts recientes  
+1. [ ] Botón Growth visible  
+2. [ ] Disclaimer persiste  
+3. [ ] PRO off: Start bloqueado (cuando se reactive el paywall)  
+4. [ ] Scraping 1 cuenta con posts recientes  
 5. [ ] Comentaristas > 0  
 6. [ ] Ghosts saltados  
 7. [ ] Follow en historial (`YOU_FOLLOWED`)  
 8. [ ] Pausa / reanudar / detener  
-9. [ ] Límite diario 50  
-10. [ ] i18n Growth  
-11. [ ] `beforeunload` si growth activo  
-12. [ ] Build producción OK  
+9. [ ] Límite diario  
+10. [ ] `beforeunload` si hay cola activa  
 
 ---
 
-## 6. Estructura Growth (v2)
-
-```
-src/
-├── constants/growth.ts
-├── model/growth-state.ts
-├── utils/growthHelpers.ts (+ tests)
-├── utils/growthApi.ts
-├── hooks/useGrowth.ts
-└── components/GrowthView.tsx
-```
-
-Landing SEO:
-
-```
-public/ghost-score.html
-public/detect-instagram-bots.html
-public/loader.js   # generado en build
-scripts/generate-loader.js
-```
-
----
-
-## 7. Métricas de éxito (3 meses)
+## 16. Métricas (hacia la suite)
 
 | Métrica | Objetivo |
 |---------|----------|
+| Quien usa **Limpiar** (Meta) vs solo Scan | > 30% de sesiones |
+| Diff de 2º export en 90 días | Retención real |
+| Action blocks en colas | < 1% sesiones |
 | GitHub stars | 500+ |
-| Visitas landing/día | +50% vs baseline |
-| Retención extensión | Re-scan en 7 días |
-| Growth adoption | 10% de sesiones PRO |
-| Action blocks | < 1% sesiones Growth |
+| Store live | Sí |
+| PRO de pago | Cuando el hub Limpiar esté estable |
 
 ---
 
-## 8. Preguntas abiertas — ✅ Resueltas
+## 17. Próximo paso concreto
 
-1. Lemon Squeezy → **no**; PRO gratis hasta nuevo provider.  
-2. Growth → **beta** hasta QA.  
-3. Bookmarklet primero → **hecho en v8.5**; Store siguiente (humano).
+**Diff de dos exports (cierre 8.7)** o, si solo hay un ZIP, **hub Limpiar 8.8** con las listas que ya vienen en el dump (`recently_unfollowed`, `blocked`, `recent_follow_requests`) en modo lectura.
 
----
+El scan offline ya está en producción. El siguiente valor es retención (volver con un 2º ZIP) o usar el resto de archivos del mismo dump sin tocar Instagram.
 
-## 9. Próximos pasos (solo owner / humano)
-
-1. **QA manual Instagram** (checklist §5)  
-2. **Screenshots + submit Chrome Web Store** (`docs/CHROME_WEB_STORE.md`)  
-3. **Cuenta Plausible/Umami** → pegar snippet (`docs/ANALYTICS.md`)  
-4. **Gumroad/Paddle** cuando quieras cobrar (`docs/PAYMENT_PROVIDERS.md`)  
-
-Todo lo automatizable en código/SEO/release de v8.5 está hecho.
+Owner / humano en paralelo: Store, analytics, QA Growth, payment.
 
 ---
 
-*Actualizado en cada release. Rama: `main`.*
+*Este documento es la fuente de verdad del producto. Actualizar en cada release.*

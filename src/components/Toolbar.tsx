@@ -102,12 +102,15 @@ export const Toolbar = ({
         break;
       case 'growth':
       case 'pending_requests':
+      case 'meta_import':
         setState({ status: 'initial' });
         break;
       case 'scanning':
       case 'unfollowing':
         setState({ status: 'initial' });
         break;
+      default:
+        assertUnreachable(state);
     }
   };
 
@@ -159,6 +162,7 @@ export const Toolbar = ({
     switch (state.status) {
       case 'initial':
       case 'growth':
+      case 'meta_import':
         return;
       case 'pending_requests':
         if (state.phase !== 'running') {
@@ -228,7 +232,7 @@ export const Toolbar = ({
         )}
 
         {/* CHECKBOXES */}
-        {state.status === 'scanning' && (
+        {state.status === 'scanning' && state.source !== 'meta' && (
           <div style={{ display: 'flex', gap: '8px', marginRight: '0.5rem', alignItems: 'center' }}>
             <label className='checkbox-label' title={t('selectPage')}>
               <input

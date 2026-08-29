@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Built with](https://img.shields.io/badge/Built%20with-Preact%20%26%20TypeScript-blueviolet)](https://preactjs.com/)
 [![Works with](https://img.shields.io/badge/Instagram-Compatible-E1306C.svg)](https://www.instagram.com/)
-[![Version](https://img.shields.io/badge/version-8.6.0-brightgreen.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
+[![Version](https://img.shields.io/badge/version-8.7.0-brightgreen.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
 
 [🇺🇸 English](#-english-version) | [🇪🇸 Español](#-versión-en-español) | [🇹🇷 Türkçe](#-türkçe-sürüm)
 
@@ -16,7 +16,11 @@
 
 **The safest, most advanced Instagram Unfollowers tracker.** See who doesn't follow you back, detect ghost accounts with a 0-100 Ghost Score, export PDF health reports, and grow your audience — **100% locally in your browser**, no password required.
 
-> **🚀 v8.6.0:** Cancel outgoing **pending follow requests** from a Meta data export, with the same slow safe queue as unfollow.
+> **🚀 v8.7.0:** Offline scan from a Meta export — compare `following.html` and `followers_*.html` locally, with zero Instagram requests.
+
+### ✨ What's New in v8.7.0
+
+- **📂 Offline Meta scan:** Upload `following.html` + `followers_1.html` (and more follower files if you have them). See non-followers and mutuals instantly. Nothing is sent to Instagram. Unfollow still needs a live scan (the export has no user IDs).
 
 ### ✨ What's New in v8.6.0
 
@@ -103,7 +107,11 @@
 
 **El rastreador de Instagram Unfollowers más seguro y avanzado.** Descubre quién no te sigue de vuelta, detecta cuentas fantasma con una Ghost Score de 0-100, exporta reportes PDF y haz crecer tu audiencia — **100% en local en tu navegador**, sin contraseña.
 
-> **🚀 v8.6.0:** Cancela **solicitudes de seguimiento pendientes** que enviaste, a partir del export de Meta, con la misma cola lenta y segura que el unfollow.
+> **🚀 v8.7.0:** Escaneo offline con el export de Meta — cruza `following.html` y `followers_*.html` en local, sin peticiones a Instagram.
+
+### ✨ Novedades de la v8.7.0
+
+- **📂 Scan offline de Meta:** Sube `following.html` + `followers_1.html` (y más archivos de followers si los hay). Ves no-followers y mutuals al instante. No se envía nada a Instagram. Para dejar de seguir hace falta el escaneo en vivo (el export no trae IDs).
 
 ### ✨ Novedades de la v8.6.0
 

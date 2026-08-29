@@ -7,6 +7,7 @@ import { PendingRequestsState } from './pending-requests-state';
 
 export type State =
   | { readonly status: 'initial' }
+  | { readonly status: 'meta_import' }
   | ScanningState
   | UnfollowingState
   | GrowthState

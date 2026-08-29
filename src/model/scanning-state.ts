@@ -4,6 +4,7 @@ import { ScanningFilter } from './scanning-filter';
 
 export interface ScanningState {
   readonly status: 'scanning';
+  readonly source: 'live' | 'meta';
   readonly page: number;
   readonly currentTab: ScanningTab;
   readonly searchTerm: string;

@@ -50,6 +50,8 @@ import { GrowthView } from './components/GrowthView';
 import { createInitialGrowthState } from './model/growth-state';
 import { PendingRequestsView } from './components/PendingRequestsView';
 import { createInitialPendingState } from './model/pending-requests-state';
+import { MetaImportView } from './components/MetaImportView';
+import { buildMetaScanResults, markNewMetaUnfollowers, saveMetaSnapshot } from './utils/metaScan';
 
 import { subscribeLocale, t } from './i18n/i18n';
 
@@ -125,6 +127,10 @@ function App() {
       isActiveProcess = state.isRunning;
       break;
     }
+    case 'meta_import': {
+      isActiveProcess = false;
+      break;
+    }
     default: {
       assertUnreachable(state);
     }
@@ -154,7 +160,7 @@ function App() {
   const currentPercentage = state.status === 'scanning' ? state.percentage : 0;
 
   useEffect(() => {
-    if (state.status !== 'scanning') {
+    if (state.status !== 'scanning' || state.source === 'meta') {
       return;
     }
 
@@ -272,6 +278,7 @@ function App() {
 
     setState({
       status: 'scanning',
+      source: 'live',
       page: 1,
       searchTerm: '',
       currentTab: 'non_whitelisted',
@@ -406,8 +413,49 @@ function App() {
     };
   }, [isActiveProcess]);
 
+  const applyMetaScan = (following: { username: string; fullName: string }[], followers: { username: string; fullName: string }[]) => {
+    const dynamicWhitelistKey = getDynamicStorageKey(WHITELISTED_RESULTS_STORAGE_KEY);
+    const whitelistedResultsFromStorage: string | null = localStorage.getItem(dynamicWhitelistKey);
+    let whitelistedResults: readonly UserNode[] = [];
+    if (whitelistedResultsFromStorage !== null) {
+      try {
+        whitelistedResults = JSON.parse(whitelistedResultsFromStorage);
+      } catch {
+        localStorage.removeItem(dynamicWhitelistKey);
+      }
+    }
+
+    const built = buildMetaScanResults(following, followers);
+    const processed = markNewMetaUnfollowers(built);
+    saveMetaSnapshot(processed);
+
+    const nonFollowers = processed.filter(user => !user.follows_viewer).length;
+    setState({
+      status: 'scanning',
+      source: 'meta',
+      page: 1,
+      searchTerm: '',
+      currentTab: 'non_whitelisted',
+      percentage: 100,
+      results: processed,
+      selectedResults: [],
+      whitelistedResults,
+      filter: {
+        showVerified: false,
+        showPrivate: false,
+        showWithOutProfilePicture: false,
+        showGhostsOnly: false,
+      },
+    });
+    showToast(t('metaImported')(following.length, followers.length, nonFollowers), 'success');
+  };
+
   const onStartUnfollowing = (actionType: 'unfollow' | 'remove_follower' = 'unfollow') => {
     if (state.status !== 'scanning' || state.selectedResults.length === 0) {
+      return;
+    }
+    if (state.source === 'meta') {
+      showToast(t('metaUnfollowDisabled'), 'warning');
       return;
     }
 
@@ -463,6 +511,7 @@ function App() {
           onScan={onScan}
           onGrowth={() => setState(createInitialGrowthState())}
           onPendingRequests={() => setState(createInitialPendingState())}
+          onMetaImport={() => setState({ status: 'meta_import' })}
           isPro={isPro}
         />
       );
@@ -520,6 +569,16 @@ function App() {
       );
       break;
     }
+    case 'meta_import': {
+      markup = (
+        <MetaImportView
+          onImported={applyMetaScan}
+          onBack={() => setState({ status: 'initial' })}
+          onShowToast={showToast}
+        />
+      );
+      break;
+    }
     default: {
       assertUnreachable(state);
     }
@@ -527,7 +586,9 @@ function App() {
 
   const processStatus =
     state.status === 'scanning'
-      ? scannerState.statusMessage
+      ? state.source === 'meta'
+        ? t('metaOfflineBanner')
+        : scannerState.statusMessage
       : state.status === 'unfollowing'
         ? unfollowerState.statusMessage
         : state.status === 'pending_requests'

@@ -58,27 +58,35 @@ const FiltersSidebar = ({
 }: {
   state: State;
   handleScanFilter: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}) => (
-  <menu className='flex column m-clear p-clear'>
-    <p style={{ fontWeight: 'bold' }}>{t('filterResults')}</p>
-    {[
-      { name: 'showVerified', label: t('verified') },
-      { name: 'showPrivate', label: t('private') },
-      { name: 'showWithOutProfilePicture', label: t('noProfilePic') },
-      { name: 'showGhostsOnly', label: t('ghostsBotsOnly') },
-    ].map(filter => (
-      <label key={filter.name} className='badge m-small' style={{ cursor: 'pointer' }}>
-        <input
-          type='checkbox'
-          name={filter.name}
-          checked={state.status === 'scanning' ? state.filter[filter.name as keyof ScanningFilter] : false}
-          onChange={handleScanFilter}
-        />
-        &nbsp;{filter.label}
-      </label>
-    ))}
-  </menu>
-);
+}) => {
+  const isMeta = state.status === 'scanning' && state.source === 'meta';
+  const filters = isMeta
+    ? []
+    : [
+        { name: 'showVerified', label: t('verified') },
+        { name: 'showPrivate', label: t('private') },
+        { name: 'showWithOutProfilePicture', label: t('noProfilePic') },
+        { name: 'showGhostsOnly', label: t('ghostsBotsOnly') },
+      ];
+
+  return (
+    <menu className='flex column m-clear p-clear'>
+      {!isMeta && <p style={{ fontWeight: 'bold' }}>{t('filterResults')}</p>}
+      {isMeta && <p className='meta-offline-note'>{t('metaOfflineBanner')}</p>}
+      {filters.map(filter => (
+        <label key={filter.name} className='badge m-small' style={{ cursor: 'pointer' }}>
+          <input
+            type='checkbox'
+            name={filter.name}
+            checked={state.status === 'scanning' ? state.filter[filter.name as keyof ScanningFilter] : false}
+            onChange={handleScanFilter}
+          />
+          &nbsp;{filter.label}
+        </label>
+      ))}
+    </menu>
+  );
+};
 
 const EMPTY_LIST: readonly UserNode[] = [];
 
@@ -181,6 +189,11 @@ export const Searching = ({
   };
 
   const handleUnfollowStart = (actionType: 'unfollow' | 'remove_follower') => {
+    if (state.source === 'meta') {
+      onStartUnfollowing(actionType);
+      return;
+    }
+
     // EL PAYWALL
     if (!isPro && state.selectedResults.length > 1) {
       alert(t('proFeatureMultiUnfollow'));
@@ -286,7 +299,7 @@ export const Searching = ({
             </button>
           </div>
         </div>
-        {state.currentTab === 'mutuals' && (
+        {state.source !== 'meta' && state.currentTab === 'mutuals' && (
           <button
             className='unfollow'
             style={{
@@ -301,13 +314,15 @@ export const Searching = ({
             {t('removeFollower')} ({state.selectedResults.length})
           </button>
         )}
-        <button
-          className='unfollow btn-danger'
-          onClick={() => handleUnfollowStart('unfollow')}
-          disabled={state.selectedResults.length === 0}
-        >
-          {t('unfollow')} ({state.selectedResults.length})
-        </button>
+        {state.source !== 'meta' && (
+          <button
+            className='unfollow btn-danger'
+            onClick={() => handleUnfollowStart('unfollow')}
+            disabled={state.selectedResults.length === 0}
+          >
+            {t('unfollow')} ({state.selectedResults.length})
+          </button>
+        )}
       </aside>
 
       {/* Lista de Resultados */}
@@ -389,15 +404,21 @@ export const Searching = ({
                     onClick={e => handleWhitelistToggle(e, user)}
                     style={{ flexShrink: 0 }}
                   >
-                    <img
-                      className='avatar'
-                      alt={user.username}
-                      src={user.profile_pic_url}
-                      loading='lazy'
-                      onError={e => {
-                        e.currentTarget.style.visibility = 'hidden';
-                      }}
-                    />
+                    {state.source === 'meta' || !user.profile_pic_url ? (
+                      <div className='avatar avatar-letter' aria-hidden='true'>
+                        {(user.username[0] || '#').toUpperCase()}
+                      </div>
+                    ) : (
+                      <img
+                        className='avatar'
+                        alt={user.username}
+                        src={user.profile_pic_url}
+                        loading='lazy'
+                        onError={e => {
+                          e.currentTarget.style.visibility = 'hidden';
+                        }}
+                      />
+                    )}
                     <span className='avatar-icon-overlay-container'>
                       {state.currentTab === 'non_whitelisted' ? (
                         <UserCheckIcon />
@@ -471,7 +492,7 @@ export const Searching = ({
                       )}
 
                       {/* Badge Ghost/Bot/Suspicious — maxWidth para no aplastar el username */}
-                      {(() => {
+                      {state.source !== 'meta' && (() => {
                         const ghost = calculateGhostScore(user, t);
                         if (ghost.level === 'safe') {
                           return null;
@@ -558,13 +579,15 @@ export const Searching = ({
                   )}
                 </div>
 
-                <input
-                  className='account-checkbox'
-                  type='checkbox'
-                  checked={state.selectedResults.some(r => r.id === user.id)}
-                  onChange={e => toggleUser(e.currentTarget.checked, user)}
-                  style={{ flexShrink: 0 }}
-                />
+                {state.source !== 'meta' && (
+                  <input
+                    className='account-checkbox'
+                    type='checkbox'
+                    checked={state.selectedResults.some(r => r.id === user.id)}
+                    onChange={e => toggleUser(e.currentTarget.checked, user)}
+                    style={{ flexShrink: 0 }}
+                  />
+                )}
               </label>
             </React.Fragment>
           );
