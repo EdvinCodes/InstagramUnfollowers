@@ -7,7 +7,9 @@ import {
   getSafePage,
   getUsersForDisplay,
   getDynamicStorageKey,
+  isSameAccount,
 } from '../utils/utils';
+import { UserAvatar } from './UserAvatar';
 import { calculateGhostScore, getGhostLabel, getGhostColor } from '../utils/ghostScore';
 import { communityDiffCount, listDiffPeople, paginateDiffPeople, type MetaDiffKind } from '../utils/metaDiff';
 import { State } from '../model/state';
@@ -19,7 +21,7 @@ import { HistoryService } from '../services/historyService';
 
 export interface SearchingProps {
   state: State;
-  setState: (state: State) => void;
+  setState: React.Dispatch<React.SetStateAction<State>>;
   scanningPaused: boolean;
   pauseScan: () => void;
   handleScanFilter: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -167,7 +169,7 @@ export const Searching = ({
     if (state.page === safePage) {
       return;
     }
-    setState({ ...state, page: safePage });
+    setState(prev => (prev.status === 'scanning' ? { ...prev, page: safePage } : prev));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only resync when page bounds change
   }, [safePage, scanningPage, state.status]);
 
@@ -185,7 +187,7 @@ export const Searching = ({
       newPage = safePage + 1;
     }
     if (newPage !== state.page) {
-      setState({ ...state, page: newPage });
+      setState(prev => (prev.status === 'scanning' ? { ...prev, page: newPage } : prev));
     }
   };
 
@@ -201,7 +203,7 @@ export const Searching = ({
         HistoryService.addEvent('WHITELISTED', user);
         break;
       case 'whitelisted':
-        newWhitelisted = state.whitelistedResults.filter(u => u.id !== user.id);
+        newWhitelisted = state.whitelistedResults.filter(u => !isSameAccount(u, user));
         HistoryService.addEvent('UNWHITELISTED', user);
         break;
       case 'changes':
@@ -217,7 +219,7 @@ export const Searching = ({
       console.error('Error writing whitelist', err);
     }
 
-    setState({ ...state, whitelistedResults: newWhitelisted });
+    setState(prev => (prev.status === 'scanning' ? { ...prev, whitelistedResults: newWhitelisted } : prev));
   };
 
   const handleUnfollowStart = (actionType: 'unfollow' | 'remove_follower') => {
@@ -497,21 +499,7 @@ export const Searching = ({
                     onClick={e => handleWhitelistToggle(e, user)}
                     style={{ flexShrink: 0 }}
                   >
-                    {state.source === 'meta' || !user.profile_pic_url ? (
-                      <div className='avatar avatar-letter' aria-hidden='true'>
-                        {(user.username[0] || '#').toUpperCase()}
-                      </div>
-                    ) : (
-                      <img
-                        className='avatar'
-                        alt={user.username}
-                        src={user.profile_pic_url}
-                        loading='lazy'
-                        onError={e => {
-                          e.currentTarget.style.visibility = 'hidden';
-                        }}
-                      />
-                    )}
+                    <UserAvatar username={user.username} src={user.profile_pic_url} />
                     <span className='avatar-icon-overlay-container'>
                       {state.currentTab === 'non_whitelisted' ? (
                         <UserCheckIcon />

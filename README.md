@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Built with](https://img.shields.io/badge/Built%20with-Preact%20%26%20TypeScript-blueviolet)](https://preactjs.com/)
 [![Works with](https://img.shields.io/badge/Instagram-Compatible-E1306C.svg)](https://www.instagram.com/)
-[![Version](https://img.shields.io/badge/version-8.8.0-brightgreen.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
+[![Version](https://img.shields.io/badge/version-8.8.1-brightgreen.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
 
 [🇺🇸 English](#-english-version) | [🇪🇸 Español](#-versión-en-español) | [🇹🇷 Türkçe](#-türkçe-sürüm)
 
@@ -16,7 +16,12 @@
 
 **The safest, most advanced Instagram Unfollowers tracker.** See who doesn't follow you back, detect ghost accounts with a 0-100 Ghost Score, export PDF health reports, and grow your audience — **100% locally in your browser**, no password required.
 
-> **🚀 v8.8.0:** A suite home — Analyze, Clean, Grow, History — plus Meta clean lists and a community diff between two exports.
+> **🚀 v8.8.1:** Time Machine that survives a mass cleanup, plus Ghost/CSV/scan bugfixes. The landing now lists the full suite.
+
+### ✨ What's New in v8.8.1
+
+- **⏳ Time Machine:** Letter avatars when Meta has no photo. Cancelled requests collapse into a daily summary so they never wipe unfollowers or detections. Filters: all / detected / unfollowed / cancelled.
+- **🐛 Scan & Ghost fixes:** Live NEW badge now means “they stopped following you”. Incomplete scans no longer overwrite the snapshot. Ghost Score, CSV and PDF show real labels again.
 
 ### ✨ What's New in v8.8.0
 
@@ -42,6 +47,9 @@
 
 ### ✨ Core Features (v8.x)
 
+- **🏠 Suite home:** Analyze, Clean, Grow, History.
+- **📂 Meta export tools:** Offline scan, pending cancel, clean lists, community diff.
+- **⏳ Time Machine:** Local history that stays readable after a big cleanup.
 - **🔔 Real-Time Unfollower Alerts:** Background engine detects unfollowers while you browse Instagram.
 - **🧠 Ghost Score (0-100):** Deep bot/inactive account analysis with localized explanations.
 - **📊 PDF & CSV Exports:** Professional health reports with advanced error handling.
@@ -113,7 +121,12 @@
 
 **El rastreador de Instagram Unfollowers más seguro y avanzado.** Descubre quién no te sigue de vuelta, detecta cuentas fantasma con una Ghost Score de 0-100, exporta reportes PDF y haz crecer tu audiencia — **100% en local en tu navegador**, sin contraseña.
 
-> **🚀 v8.8.0:** Home de suite — Analizar, Limpiar, Crecer, Historial — más listas Meta y un diff entre dos exports.
+> **🚀 v8.8.1:** Time Machine que aguanta una limpieza masiva, más arreglos de Ghost/CSV/scan. La landing ya lista la suite completa.
+
+### ✨ Novedades de la v8.8.1
+
+- **⏳ Time Machine:** Letra si Meta no trae foto. Las canceladas se resumen por día para no borrar unfollowers ni detecciones. Filtros: todo / detectados / unfollows / canceladas.
+- **🐛 Scan y Ghost:** El badge NEW del scan en vivo es “dejó de seguirte”. Un scan a medias ya no pisa el snapshot. Ghost Score, CSV y PDF vuelven a mostrar textos reales.
 
 ### ✨ Novedades de la v8.8.0
 
@@ -139,6 +152,9 @@
 
 ### ✨ Funciones principales (v8.x)
 
+- **🏠 Hub de suite:** Analizar, Limpiar, Crecer, Historial.
+- **📂 Herramientas Meta:** Scan offline, cancelar pendientes, listas de limpieza, diff de comunidad.
+- **⏳ Time Machine:** Historial local que se entiende después de una limpieza grande.
 - **🔔 Alertas de Unfollow en Tiempo Real:** El motor en segundo plano detecta traidores mientras navegas por Instagram.
 - **🧠 Ghost Score (0-100):** Análisis profundo de bots/cuentas inactivas con explicaciones localizadas.
 - **📊 Exportaciones PDF y CSV:** Reportes de salud profesionales con manejo de errores avanzado.
@@ -332,6 +348,6 @@ Esta herramienta es un proyecto independiente y no está afiliada, asociada, aut
 
 ## ❤️ Credits
 
-Developed with ❤️ by **Edvin**. **v8.5.0 — Bookmarklet loader, SEO guides & Growth Engine (beta).**
+Developed with ❤️ by **Edvin**. **v8.8.1 — Suite home, Meta tools & Time Machine.**
 
 Licensed under the [MIT License](https://www.google.com/search?q=LICENSE).

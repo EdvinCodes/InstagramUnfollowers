@@ -2,7 +2,7 @@
 
 > Visión: ser **la app de gestión de Instagram más completa** — no solo “quién no me sigue”, sino el centro local para **analizar, limpiar, proteger y hacer crecer** una cuenta, superando a [davidarroyo1234/InstagramUnfollowers](https://github.com/davidarroyo1234/InstagramUnfollowers) en producto, no solo en estrellas.
 
-**Versión actual:** v8.8.0  
+**Versión actual:** v8.8.1  
 **Rama:** `main`  
 **Última actualización:** 2026-08-30
 
@@ -36,7 +36,7 @@ Instagram mata eso. Nosotros somos **limpieza + inteligencia local + export de M
 
 ---
 
-## 2. Estado actual (v8.8.0)
+## 2. Estado actual (v8.8.1)
 
 ### Hecho
 
@@ -50,6 +50,8 @@ Instagram mata eso. Nosotros somos **limpieza + inteligencia local + export de M
 - [x] Hub de home: Analizar / Limpiar / Crecer / Historial
 - [x] Listas Meta de solo lectura (unfollowed, blocked, recent requests)
 - [x] Diff entre dos exports de following/followers
+- [x] Time Machine: avatares letra, resumen diario de canceladas, filtros
+- [x] Snapshot v2 del scan en vivo (NEW = dejó de seguirte; no pisar si el scan falla)
 - [x] Bookmarklet / Copy Script + extensión + CI → GitHub Pages
 - [x] i18n 16 idiomas (EN/ES completos en la feature nueva; resto con fallback)
 - [x] PRO temporalmente gratis (`PRO_PROMO_FREE`)
@@ -112,6 +114,7 @@ Parser compartido: `pendingRequestsParser.ts` se generaliza a `metaExportParser.
 | **v8.7.0** | Scan offline from Meta export | ✅ |
 | **v8.7.x** | Diff de dos exports | ✅ |
 | **v8.8.0** | Home hub + listas Limpiar (unfollowed / blocked / recent) | ✅ |
+| **v8.8.1** | Time Machine + fixes Ghost/CSV/scan + landing de suite | ✅ |
 | **v8.9** | Inactivos + mute/restrict + cola por antigüedad | 📋 |
 | **v9.0** | Dashboard de salud + PDF antes/después | 📋 |
 | **v9.1** | Growth atado a higiene (revisión 14 días, denylist) | 📋 |

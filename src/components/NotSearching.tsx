@@ -124,12 +124,7 @@ export const NotSearching = ({
               <p>{t('hubCleanDesc')}</p>
             </div>
           </div>
-          <button
-            type='button'
-            className='hub-card__row'
-            onClick={onPendingRequests}
-            title={!isPro ? t('growthProRequired') : undefined}
-          >
+          <button type='button' className='hub-card__row' onClick={onPendingRequests}>
             <span>{t('pendingEntry')}</span>
             {stats.pendingOpen > 0 && <small>{t('hubPendingSaved')(stats.pendingOpen)}</small>}
           </button>

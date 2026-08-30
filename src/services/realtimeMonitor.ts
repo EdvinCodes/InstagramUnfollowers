@@ -6,8 +6,7 @@
  * background.js which fires a Chrome notification.
  */
 import { UserNode, User } from '../model/user';
-import { urlGenerator, sleep, getCookie } from '../utils/utils';
-import { loadPreviousSnapshotIds, saveScanSnapshot } from '../utils/history';
+import { urlGenerator, sleep, getCookie, getDynamicStorageKey } from '../utils/utils';
 
 const MONITOR_ENABLED_KEY = 'ig-realtime-monitor-enabled';
 const PREV_NF_SNAPSHOT_KEY = 'ig-prev-nonfollower-ids';
@@ -20,7 +19,7 @@ let _intervalId: ReturnType<typeof setInterval> | null = null;
 
 export function isMonitorEnabled(): boolean {
   try {
-    return localStorage.getItem(MONITOR_ENABLED_KEY) === 'true';
+    return localStorage.getItem(getDynamicStorageKey(MONITOR_ENABLED_KEY)) === 'true';
   } catch {
     return false;
   }
@@ -61,39 +60,40 @@ async function silentScan(): Promise<UserNode[]> {
 
 // Core check
 
-async function checkForNewUnfollowers(): Promise<void> {
-  const baselineIds = loadPreviousSnapshotIds();
-  if (!baselineIds || baselineIds.size === 0) {
-    return;
+function readPrevNonFollowerIds(): Set<string> {
+  try {
+    const stored = localStorage.getItem(getDynamicStorageKey(PREV_NF_SNAPSHOT_KEY));
+    return stored ? new Set(JSON.parse(stored) as string[]) : new Set();
+  } catch {
+    return new Set();
   }
+}
 
+function writePrevNonFollowerIds(ids: readonly string[]): void {
+  try {
+    localStorage.setItem(getDynamicStorageKey(PREV_NF_SNAPSHOT_KEY), JSON.stringify(ids));
+  } catch {
+    // storage full — ignore
+  }
+}
+
+async function checkForNewUnfollowers(): Promise<void> {
   const currentFollowing = await silentScan();
   if (currentFollowing.length === 0) {
     return;
   }
 
-  let prevNfIds: Set<string>;
-  try {
-    const stored = localStorage.getItem(PREV_NF_SNAPSHOT_KEY);
-    prevNfIds = stored ? new Set(JSON.parse(stored) as string[]) : new Set();
-  } catch {
-    prevNfIds = new Set();
-  }
-
-  // Current non-followers = people you follow who DON'T follow you back
+  const prevNfIds = readPrevNonFollowerIds();
   const currentNf = currentFollowing.filter(u => !u.follows_viewer);
+  const currentIds = currentNf.map(u => u.id);
 
-  // Brand-new unfollowers = in currentNf NOW but were NOT non-followers before
-  const brandNew = currentNf.filter(u => !prevNfIds.has(u.id));
-
-  // Save updated non-follower snapshot
-  try {
-    localStorage.setItem(PREV_NF_SNAPSHOT_KEY, JSON.stringify(currentNf.map(u => u.id)));
-  } catch {
-    // storage full — ignore
+  if (prevNfIds.size === 0) {
+    writePrevNonFollowerIds(currentIds);
+    return;
   }
 
-  saveScanSnapshot(currentFollowing);
+  const brandNew = currentNf.filter(u => !prevNfIds.has(u.id));
+  writePrevNonFollowerIds(currentIds);
 
   if (brandNew.length === 0) {
     return;
@@ -138,7 +138,7 @@ export function stopRealtimeMonitor(): void {
 
 export function setMonitorEnabled(enabled: boolean): void {
   try {
-    localStorage.setItem(MONITOR_ENABLED_KEY, String(enabled));
+    localStorage.setItem(getDynamicStorageKey(MONITOR_ENABLED_KEY), String(enabled));
   } catch {
     // ignore
   }

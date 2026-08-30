@@ -45,7 +45,16 @@ function loadWhitelistIds(): Set<string> {
       return new Set();
     }
     const users = JSON.parse(raw) as UserNode[];
-    return new Set(users.map(u => u.id));
+    const ids = new Set<string>();
+    for (const user of users) {
+      if (user.id) {
+        ids.add(user.id);
+      }
+      if (user.username) {
+        ids.add(user.username.toLowerCase());
+      }
+    }
+    return ids;
   } catch {
     return new Set();
   }
@@ -219,6 +228,7 @@ export function useGrowth(setState: SetStateUpdater, getState: () => State) {
 
         const skipReason = getGrowthSkipReason({
           userId: targetUserId,
+          username: brief?.username,
           selfUserId,
           followingIds: new Set(friendship?.following ? [targetUserId] : []),
           pendingRequestIds: new Set(friendship?.outgoingRequest ? [targetUserId] : []),

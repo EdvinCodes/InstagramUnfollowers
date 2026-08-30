@@ -4,6 +4,7 @@ import { ScanningTab } from '../model/scanning-tab';
 import { ScanningFilter } from '../model/scanning-filter';
 import { UnfollowLogEntry } from '../model/unfollow-log-entry';
 import { UnfollowFilter } from '../model/unfollow-filter';
+import { getTranslations } from '../i18n/i18n';
 import { calculateGhostScore, getGhostLabel } from './ghostScore';
 
 // Copies the list of usernames to the clipboard.
@@ -40,6 +41,18 @@ export function getCurrentPageUnfollowers(
   return sortedList.slice(startIndex, startIndex + UNFOLLOWERS_PER_PAGE);
 }
 
+export function isSameAccount(
+  a: { id?: string; username?: string },
+  b: { id?: string; username?: string },
+): boolean {
+  if (a.id && b.id && a.id === b.id) {
+    return true;
+  }
+  const left = a.username?.trim().toLowerCase();
+  const right = b.username?.trim().toLowerCase();
+  return !!left && !!right && left === right;
+}
+
 export function viewerFollowsBack(user: UserNode): boolean {
   const value = user.follows_viewer as unknown;
   return value === true || value === 'true' || value === 1;
@@ -72,7 +85,7 @@ export function getUsersForDisplay(
   const lowerSearchTerm = searchTerm.toLowerCase();
 
   return results.filter(user => {
-    const isWhitelisted = whitelistedResults.some(w => w.id === user.id);
+    const isWhitelisted = whitelistedResults.some(w => isSameAccount(w, user));
 
     // 1. LÓGICA DE PESTAÑAS
     switch (currentTab) {
@@ -220,10 +233,13 @@ export const exportToCSV = (
   results: readonly UserNode[],
   whitelistedResults: readonly UserNode[],
   isPro: boolean,
-  t: any, // Objeto de traducciones
+  t: any, // Objeto de traducciones o función t()
 ) => {
   if (results.length === 0) {
     return;
+  }
+  if (typeof t === 'function') {
+    t = getTranslations();
   }
 
   const headers = [
@@ -240,7 +256,7 @@ export const exportToCSV = (
   ];
 
   const csvRows = results.map(user => {
-    const isWhitelisted = whitelistedResults.some(w => w.id === user.id);
+    const isWhitelisted = whitelistedResults.some(w => isSameAccount(w, user));
     const relation = user.follows_viewer ? t.mutual : t.nonFollower;
     const status = user.is_new_unfollower ? t.newBadge : t.old;
     const profileUrl = `https://www.instagram.com/${user.username}`;

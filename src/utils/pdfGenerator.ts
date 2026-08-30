@@ -1,3 +1,4 @@
+import { getTranslations } from '../i18n/i18n';
 import { UserNode } from '../model/user';
 import { calculateGhostScore } from './ghostScore';
 
@@ -6,6 +7,9 @@ export const generateHealthReportPDF = async (
   whitelisted: readonly UserNode[],
   t: any,
 ): Promise<void> => {
+  if (typeof t === 'function') {
+    t = getTranslations();
+  }
   const [{ jsPDF }, { default: autoTable }, { default: Chart }] = await Promise.all([
     import('jspdf'),
     import('jspdf-autotable'),

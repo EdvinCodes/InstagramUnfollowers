@@ -1,51 +1,64 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { HistoryEvent, HistoryEventType } from '../model/history';
 import { HistoryService } from '../services/historyService';
-import { StatsChart } from './StatsChart';
 import { t } from '../i18n/i18n';
+import {
+  HistoryFilter,
+  isCancelledSummary,
+  matchesHistoryFilter,
+  totalCancelled,
+} from '../utils/historyEvents';
+import { StatsChart } from './StatsChart';
+import { UserAvatar } from './UserAvatar';
 
 interface HistoryViewProps {
   onClose: () => void;
   isPro: boolean;
 }
 
-export const HistoryView = ({ onClose, isPro }: HistoryViewProps) => {
-  const [events, setEvents] = useState<HistoryEvent[]>([]);
-  const [stats, setStats] = useState({
+const TrashIcon = () => (
+  <svg
+    viewBox='0 0 24 24'
+    fill='none'
+    stroke='currentColor'
+    strokeLinecap='round'
+    strokeLinejoin='round'
+  >
+    <polyline points='3 6 5 6 21 6' />
+    <path d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' />
+  </svg>
+);
+
+function emptyStats() {
+  return {
     totalUnfollowedByYou: 0,
     totalTraitorsDetected: 0,
     totalWhitelisted: 0,
+    totalCancelled: 0,
     lastScanDate: null as number | null,
-  });
+  };
+}
 
-  const TrashIcon = () => (
-    <svg
-      viewBox='0 0 24 24'
-      fill='none'
-      stroke='currentColor'
-      strokeLinecap='round'
-      strokeLinejoin='round'
-    >
-      <polyline points='3 6 5 6 21 6' />
-      <path d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' />
-    </svg>
-  );
+export const HistoryView = ({ onClose, isPro }: HistoryViewProps) => {
+  const [events, setEvents] = useState<HistoryEvent[]>([]);
+  const [filter, setFilter] = useState<HistoryFilter>('all');
+  const [stats, setStats] = useState(emptyStats);
 
   useEffect(() => {
     let history = HistoryService.getHistory();
 
     if (!isPro) {
       const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-      history = history.filter(h => h.timestamp >= thirtyDaysAgo);
+      history = history.filter(item => item.timestamp >= thirtyDaysAgo);
     }
 
     setEvents(history);
-
     setStats({
-      totalTraitorsDetected: history.filter(h => h.type === 'DETECTED_UNFOLLOWER').length,
-      totalUnfollowedByYou: history.filter(h => h.type === 'YOU_UNFOLLOWED').length,
-      totalWhitelisted: history.filter(h => h.type === 'WHITELISTED').length,
-      lastScanDate: history.find(h => h.type === 'DETECTED_UNFOLLOWER')?.timestamp || null,
+      totalTraitorsDetected: history.filter(item => item.type === 'DETECTED_UNFOLLOWER').length,
+      totalUnfollowedByYou: history.filter(item => item.type === 'YOU_UNFOLLOWED').length,
+      totalWhitelisted: history.filter(item => item.type === 'WHITELISTED').length,
+      totalCancelled: totalCancelled(history),
+      lastScanDate: history.find(item => item.type === 'DETECTED_UNFOLLOWER')?.timestamp || null,
     });
   }, [isPro]);
 
@@ -61,16 +74,16 @@ export const HistoryView = ({ onClose, isPro }: HistoryViewProps) => {
     };
   }, [onClose]);
 
+  const visibleEvents = useMemo(
+    () => events.filter(event => matchesHistoryFilter(event, filter)),
+    [events, filter],
+  );
+
   const handleClear = () => {
     if (confirm(t('confirmClearHistory'))) {
       HistoryService.clearHistory();
       setEvents([]);
-      setStats({
-        totalUnfollowedByYou: 0,
-        totalTraitorsDetected: 0,
-        lastScanDate: null,
-        totalWhitelisted: 0,
-      });
+      setStats(emptyStats());
     }
   };
 
@@ -94,257 +107,154 @@ export const HistoryView = ({ onClose, isPro }: HistoryViewProps) => {
         return { icon: '🛡️', color: '#60a5fa', label: t('whitelisted') };
       case 'UNWHITELISTED':
         return { icon: '🔓', color: '#94a3b8', label: t('unWhitelisted') };
-      case 'SOFT_BLOCKED': // <-- Añadido para el Soft Block
+      case 'SOFT_BLOCKED':
         return { icon: '🚫', color: '#eab308', label: t('removedFollower') };
       case 'REQUEST_CANCELLED':
         return { icon: '🚫', color: '#fb923c', label: t('pendingYouCancelled') };
-      default: // <-- Seguridad para que TypeScript no se queje
+      default:
         return { icon: '📝', color: '#ffffff', label: t('unknownEvent') };
     }
   };
+
+  const filters: { id: HistoryFilter; label: string }[] = [
+    { id: 'all', label: t('historyFilterAll') },
+    { id: 'detected', label: t('historyFilterDetected') },
+    { id: 'cleaned', label: t('historyFilterCleaned') },
+    { id: 'cancelled', label: t('historyFilterCancelled') },
+  ];
+
   return (
     <div className='backdrop' onClick={onClose} style={{ padding: '0' }}>
-      {/* ARREGLO 1: Padding 0 en backdrop para aprovechar espacio en móvil */}
-
       <div
-        className='setting-menu'
+        className='setting-menu history-modal'
         onClick={e => e.stopPropagation()}
         style={{
-          // ARREGLO 2: Estilos para Layout Flexible Vertical
           display: 'flex',
           flexDirection: 'column',
-          width: '95%', // Ancho casi total en móvil
-          maxWidth: '600px', // Tope en escritorio
-          height: '85vh', // Altura fija
+          width: '95%',
+          maxWidth: '600px',
+          height: '85vh',
           maxHeight: '850px',
           padding: '1.5rem',
-          overflow: 'hidden', // Ocultamos scroll del contenedor padre
+          overflow: 'hidden',
         }}
       >
-        {/* === HEADER (Fijo) === */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '1rem',
-            flexShrink: 0, // No encoger
-          }}
-        >
-          <h3 style={{ margin: 0, fontSize: '1.5rem' }}>{t('timeMachine')}</h3>
+        <div className='history-modal__header'>
+          <h3>{t('timeMachine')}</h3>
           <button
             type='button'
             className='close-btn'
             onClick={onClose}
-            style={{
-              background: 'transparent',
-              fontSize: '1.5rem',
-              cursor: 'pointer',
-              padding: '0.5rem',
-              lineHeight: 1,
-            }}
             aria-label={t('cancel')}
           >
             ✕
           </button>
         </div>
 
-        {/* === BODY SCROLLABLE (Chart + Lista) === */}
-        {/* ARREGLO 3: Wrapper con scroll para el contenido central */}
-        <div
-          style={{
-            flex: 1,
-            overflowY: 'auto',
-            minHeight: 0,
-            paddingRight: '5px', // Espacio para la barra de scroll visual
-          }}
-        >
-          {/* DASHBOARD */}
-          <div
-            style={{
-              background: 'rgba(255,255,255,0.03)',
-              borderRadius: '16px',
-              padding: '1rem', // Menos padding en móvil
-              marginBottom: '1.5rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center', // Centrado en móvil
-              gap: '1.5rem',
-              flexWrap: 'wrap',
-            }}
-          >
+        <div className='history-modal__body'>
+          <div className='history-dashboard'>
             <StatsChart
               detected={stats.totalTraitorsDetected}
               cleaned={stats.totalUnfollowedByYou}
               whitelisted={stats.totalWhitelisted}
+              cancelled={stats.totalCancelled}
             />
 
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.8rem',
-                minWidth: '140px',
-              }}
-            >
-              {/* Traitors */}
-              <div
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div
-                    style={{
-                      width: '10px',
-                      height: '10px',
-                      borderRadius: '50%',
-                      background: '#f87171',
-                    }}
-                  />
-                  <span style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>{t('traitors')}</span>
-                </div>
-                <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#f87171' }}>
-                  {stats.totalTraitorsDetected}
+            <div className='history-legend'>
+              <div className='history-legend__row'>
+                <span>
+                  <i style={{ background: '#f87171' }} />
+                  {t('traitors')}
                 </span>
+                <strong style={{ color: '#f87171' }}>{stats.totalTraitorsDetected}</strong>
               </div>
-              {/* Cleaned */}
-              <div
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div
-                    style={{
-                      width: '10px',
-                      height: '10px',
-                      borderRadius: '50%',
-                      background: '#34d399',
-                    }}
-                  />
-                  <span style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>{t('cleaned')}</span>
-                </div>
-                <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#34d399' }}>
-                  {stats.totalUnfollowedByYou}
+              <div className='history-legend__row'>
+                <span>
+                  <i style={{ background: '#34d399' }} />
+                  {t('cleaned')}
                 </span>
+                <strong style={{ color: '#34d399' }}>{stats.totalUnfollowedByYou}</strong>
               </div>
-              {/* Protected */}
-              <div
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div
-                    style={{
-                      width: '10px',
-                      height: '10px',
-                      borderRadius: '50%',
-                      background: '#60a5fa',
-                    }}
-                  />
-                  <span style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>{t('protected')}</span>
-                </div>
-                <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#60a5fa' }}>
-                  {stats.totalWhitelisted}
+              <div className='history-legend__row'>
+                <span>
+                  <i style={{ background: '#fb923c' }} />
+                  {t('historyCancelled')}
                 </span>
+                <strong style={{ color: '#fb923c' }}>{stats.totalCancelled}</strong>
+              </div>
+              <div className='history-legend__row'>
+                <span>
+                  <i style={{ background: '#60a5fa' }} />
+                  {t('protected')}
+                </span>
+                <strong style={{ color: '#60a5fa' }}>{stats.totalWhitelisted}</strong>
               </div>
             </div>
           </div>
 
-          {/* TIMELINE LIST */}
-          <div
-            className='unfollow-log-container'
-            style={{
-              background: 'rgba(0,0,0,0.2)',
-              borderRadius: '12px',
-              padding: '0',
-              // Eliminamos overflow aquí porque ahora scrollea el padre (el wrapper)
-              overflow: 'visible',
-            }}
-          >
-            {events.length === 0 ? (
-              <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>
+          <div className='history-filters' role='tablist' aria-label={t('timeMachine')}>
+            {filters.map(item => (
+              <button
+                key={item.id}
+                type='button'
+                role='tab'
+                aria-selected={filter === item.id}
+                className={filter === item.id ? 'history-filter history-filter--active' : 'history-filter'}
+                onClick={() => setFilter(item.id)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
+          <div className='unfollow-log-container history-timeline'>
+            {visibleEvents.length === 0 ? (
+              <div className='history-empty'>
                 <p>{t('noHistoryYet')}</p>
               </div>
             ) : (
-              events.map(event => {
+              visibleEvents.map(event => {
                 const style = getEventStyle(event.type);
+                const summary = isCancelledSummary(event);
+                const count = event.count ?? 1;
                 return (
-                  <div
-                    key={event.id}
-                    style={{
-                      padding: '1rem',
-                      borderBottom: '1px solid rgba(255,255,255,0.05)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '1rem',
-                    }}
-                  >
-                    <div style={{ fontSize: '1.5rem', flexShrink: 0 }}>{style.icon}</div>
-
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      {' '}
-                      {/* minWidth 0 ayuda al truncado de texto flex */}
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          marginBottom: '0.2rem',
-                          flexWrap: 'wrap',
-                        }}
-                      >
+                  <div key={event.id} className='history-row'>
+                    <div className='history-row__icon' aria-hidden='true'>
+                      {style.icon}
+                    </div>
+                    <div className='history-row__copy'>
+                      <div className='history-row__title'>
                         <span className='history-username'>
-                          @{event.user.username}
+                          {summary
+                            ? t('historyCancelledBatch')(count)
+                            : `@${event.user.username}`}
                         </span>
-                        <span
-                          style={{
-                            fontSize: '0.7rem',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            background: style.color,
-                            color: '#000',
-                            fontWeight: 'bold',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
+                        <span className='history-row__badge' style={{ background: style.color }}>
                           {style.label}
                         </span>
                       </div>
-                      <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                      <div className='history-row__meta'>
                         {formatDate(event.timestamp)}
+                        {summary ? ` · ${t('historyCancelledHint')}` : ''}
                       </div>
                     </div>
-
-                    <img
-                      src={event.user.profile_pic_url}
-                      alt=''
-                      onError={e => {
-                        e.currentTarget.style.visibility = 'hidden';
-                      }}
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        flexShrink: 0,
-                      }}
-                    />
+                    {summary ? (
+                      <div className='avatar-container avatar-container--sm history-batch-avatar' aria-hidden='true'>
+                        <div className='avatar avatar-letter'>#</div>
+                      </div>
+                    ) : (
+                      <div className='avatar-container avatar-container--sm'>
+                        <UserAvatar username={event.user.username} src={event.user.profile_pic_url} />
+                      </div>
+                    )}
                   </div>
                 );
               })
             )}
           </div>
         </div>
-        {/* === FIN BODY SCROLLABLE === */}
 
-        {/* === FOOTER (Fijo Abajo) === */}
-        <div
-          style={{
-            marginTop: '1rem',
-            display: 'flex',
-            justifyContent: 'flex-end',
-            borderTop: '1px solid rgba(255,255,255,0.05)',
-            paddingTop: '1rem',
-            flexShrink: 0, // No encoger
-          }}
-        >
+        <div className='history-modal__footer'>
           <button
             type='button'
             className='btn-clear-history'

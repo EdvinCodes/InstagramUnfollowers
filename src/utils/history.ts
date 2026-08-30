@@ -1,20 +1,24 @@
 import { HISTORY_RESULTS_STORAGE_KEY } from '../constants/constants';
 import { UserNode } from '../model/user';
-import { getDynamicStorageKey } from './utils';
+import { getDynamicStorageKey, viewerFollowsBack } from './utils';
+
+const SNAPSHOT_VERSION = 2;
 
 interface HistorySnapshot {
+  version?: number;
   timestamp: number;
   ids: string[];
 }
 
 /**
- * Guarda los resultados actuales en localStorage para compararlos en el futuro.
- * Solo guardamos los IDs para no llenar la memoria.
+ * Guarda solo IDs de no-followers para comparar "quién dejó de seguirte".
+ * v2: un snapshot viejo (todos los following) se ignora para no marcar falsos NEW.
  */
 export function saveScanSnapshot(results: readonly UserNode[]): void {
   const snapshot: HistorySnapshot = {
+    version: SNAPSHOT_VERSION,
     timestamp: Date.now(),
-    ids: results.map(u => u.id),
+    ids: results.filter(user => !viewerFollowsBack(user)).map(user => user.id),
   };
 
   try {
@@ -27,9 +31,6 @@ export function saveScanSnapshot(results: readonly UserNode[]): void {
   }
 }
 
-/**
- * Carga el snapshot anterior y devuelve un Set de IDs para búsqueda rápida.
- */
 export function loadPreviousSnapshotIds(): Set<string> | null {
   const stored = localStorage.getItem(getDynamicStorageKey(HISTORY_RESULTS_STORAGE_KEY));
   if (!stored) {
@@ -37,7 +38,7 @@ export function loadPreviousSnapshotIds(): Set<string> | null {
   }
   try {
     const snapshot: HistorySnapshot = JSON.parse(stored);
-    if (!Array.isArray(snapshot.ids)) {
+    if (snapshot.version !== SNAPSHOT_VERSION || !Array.isArray(snapshot.ids)) {
       return null;
     }
     return new Set(snapshot.ids);
@@ -47,22 +48,15 @@ export function loadPreviousSnapshotIds(): Set<string> | null {
   }
 }
 
-/**
- * Compara los resultados actuales con el historial.
- * Devuelve la lista de usuarios con la propiedad 'is_new_unfollower' marcada.
- */
 export function identifyNewUnfollowers(currentResults: readonly UserNode[]): UserNode[] {
   const previousIds = loadPreviousSnapshotIds();
 
   if (!previousIds) {
-    return [...currentResults];
+    return currentResults.map(user => ({ ...user, is_new_unfollower: false }));
   }
 
-  return currentResults.map(user => {
-    const isNew = !previousIds.has(user.id);
-    return {
-      ...user,
-      is_new_unfollower: isNew,
-    };
-  });
+  return currentResults.map(user => ({
+    ...user,
+    is_new_unfollower: !viewerFollowsBack(user) && !previousIds.has(user.id),
+  }));
 }

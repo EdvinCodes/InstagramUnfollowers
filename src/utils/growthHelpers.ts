@@ -80,6 +80,7 @@ export function remainingDailyFollows(
 
 export interface GrowthSkipContext {
   userId: string;
+  username?: string;
   selfUserId: string | null;
   followingIds: ReadonlySet<string>;
   pendingRequestIds: ReadonlySet<string>;
@@ -96,7 +97,10 @@ export function getGrowthSkipReason(ctx: GrowthSkipContext): GrowthSkipReason | 
   if (ctx.selfUserId && ctx.userId === ctx.selfUserId) {
     return 'self';
   }
-  if (ctx.whitelistIds.has(ctx.userId)) {
+  if (
+    ctx.whitelistIds.has(ctx.userId) ||
+    (ctx.username && ctx.whitelistIds.has(ctx.username.toLowerCase()))
+  ) {
     return 'whitelisted';
   }
   if (ctx.followingIds.has(ctx.userId)) {

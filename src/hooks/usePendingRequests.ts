@@ -131,10 +131,15 @@ export function usePendingRequests(
           break;
         }
         if (!lookup.id) {
+          const transient = lookup.status === 0 || lookup.status === 401 || lookup.status === 403 || lookup.status >= 500;
           failed += 1;
           processed += 1;
-          addCancelledUsernames([user.username]);
-          addResult('skip', user.username, t('pendingSkipNotFound')(user.username));
+          if (!transient) {
+            addCancelledUsernames([user.username]);
+            addResult('skip', user.username, t('pendingSkipNotFound')(user.username));
+          } else {
+            addResult('fail', user.username, t('pendingFailed')(user.username));
+          }
           patch({
             processedCount: processed,
             failedCount: failed,

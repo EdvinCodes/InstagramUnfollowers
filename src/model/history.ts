@@ -15,6 +15,7 @@ export interface HistoryEvent {
   timestamp: number; // Fecha en milisegundos
   type: HistoryEventType; // Qué pasó
   user: UserNode; // A quién le pasó (guardamos la foto y nombre de ese momento)
+  count?: number; // Resumen diario (solicitudes canceladas)
 }
 
 // Estructura de estadísticas para el Dashboard (futuro)
@@ -22,5 +23,6 @@ export interface HistoryStats {
   totalUnfollowedByYou: number;
   totalTraitorsDetected: number;
   totalWhitelisted: number;
+  totalCancelled: number;
   lastScanDate: number | null;
 }

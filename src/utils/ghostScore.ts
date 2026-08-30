@@ -1,5 +1,10 @@
+import { getTranslations } from '../i18n/i18n';
 import { UserNode } from '../model/user';
 import { assertUnreachable, isProfilePicAnonymous } from './utils';
+
+function labels(t: any) {
+  return typeof t === 'function' ? getTranslations() : t;
+}
 
 export type GhostLevel = 'safe' | 'suspicious' | 'ghost' | 'bot';
 
@@ -14,6 +19,7 @@ export interface GhostAnalysis {
 }
 
 export const calculateGhostScore = (user: UserNode, t: any): GhostAnalysis => {
+  const copy = labels(t);
   let score = 0;
   const reasons: string[] = [];
   const usernameL = user.username.toLowerCase();
@@ -26,19 +32,19 @@ export const calculateGhostScore = (user: UserNode, t: any): GhostAnalysis => {
     (user.has_anonymous_profile_picture || isProfilePicAnonymous(user.profile_pic_url))
   ) {
     score += 15;
-    reasons.push(t.reasonNoPic);
+    reasons.push(copy.reasonNoPic);
   }
 
   // Secuencia numérica larga
   if (/\d{6,}/.test(user.username)) {
     score += 20;
-    reasons.push(t.reasonLongNums);
+    reasons.push(copy.reasonLongNums);
   }
 
   // Patrón letras+números tipo bot
   if (/^[a-z]{2,6}\d{4,}$/.test(usernameL)) {
     score += 25;
-    reasons.push(t.reasonBotPattern);
+    reasons.push(copy.reasonBotPattern);
   }
 
   // Keyboard mashing — filas del teclado QWERTY
@@ -50,20 +56,20 @@ export const calculateGhostScore = (user: UserNode, t: any): GhostAnalysis => {
   );
   if (hasKeyboardMash) {
     score += 25;
-    reasons.push(t.reasonKeyboard);
+    reasons.push(copy.reasonKeyboard);
   }
 
   if (!picUnknown) {
     // Sin nombre real
     if (!user.full_name || user.full_name.trim() === '') {
       score += 10;
-      reasons.push(t.reasonNoName);
+      reasons.push(copy.reasonNoName);
     }
 
     // Nombre igual al username
     if (user.full_name && user.full_name.trim().toLowerCase() === usernameL) {
       score += 10;
-      reasons.push(t.reasonSameName);
+      reasons.push(copy.reasonSameName);
     }
   }
 
@@ -80,13 +86,14 @@ export const calculateGhostScore = (user: UserNode, t: any): GhostAnalysis => {
 };
 
 export const getGhostLabel = (level: GhostLevel, t: any): string => {
+  const copy = labels(t);
   switch (level) {
     case 'bot':
-      return t.lblBot;
+      return copy.lblBot;
     case 'ghost':
-      return t.lblInact;
+      return copy.lblInact;
     case 'suspicious':
-      return t.lblRisk;
+      return copy.lblRisk;
     case 'safe':
       return '';
     default:

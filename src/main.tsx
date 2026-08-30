@@ -178,23 +178,25 @@ function App() {
     let processedResults = [...scannerState.results];
 
     if (isJustFinished) {
-      processedResults = identifyNewUnfollowers(scannerState.results);
-      const newTraitors = processedResults.filter(
-        u => u.is_new_unfollower && !viewerFollowsBack(u),
-      );
+      const scanCompleted = scannerState.finishReason === 'completed';
+      let newTraitors: UserNode[] = [];
+      if (scanCompleted) {
+        processedResults = identifyNewUnfollowers(scannerState.results);
+        newTraitors = processedResults.filter(u => u.is_new_unfollower && !viewerFollowsBack(u));
 
-      saveScanSnapshot(processedResults);
+        saveScanSnapshot(processedResults);
 
-      if (isPro && CloudSync.isConfigured()) {
-        const history = HistoryService.getHistory();
-        const wlKey = getDynamicStorageKey(WHITELISTED_RESULTS_STORAGE_KEY);
-        const wlRaw = localStorage.getItem(wlKey);
-        const whitelist = wlRaw ? (JSON.parse(wlRaw) as UserNode[]) : [];
-        void CloudSync.sync(history, whitelist);
-      }
+        if (isPro && CloudSync.isConfigured()) {
+          const history = HistoryService.getHistory();
+          const wlKey = getDynamicStorageKey(WHITELISTED_RESULTS_STORAGE_KEY);
+          const wlRaw = localStorage.getItem(wlKey);
+          const whitelist = wlRaw ? (JSON.parse(wlRaw) as UserNode[]) : [];
+          void CloudSync.sync(history, whitelist);
+        }
 
-      if (newTraitors.length > 0) {
-        newTraitors.forEach(traitor => HistoryService.addEvent('DETECTED_UNFOLLOWER', traitor));
+        if (newTraitors.length > 0) {
+          newTraitors.forEach(traitor => HistoryService.addEvent('DETECTED_UNFOLLOWER', traitor));
+        }
       }
 
       switch (scannerState.finishReason) {

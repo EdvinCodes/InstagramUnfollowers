@@ -35,6 +35,10 @@ export function setLocale(locale: Locale): void {
   localeListeners.forEach(listener => listener());
 }
 
+export function getTranslations(): Translations {
+  return translations[_locale];
+}
+
 export function t<K extends keyof Translations>(key: K): Translations[K] {
   return translations[_locale][key];
 }

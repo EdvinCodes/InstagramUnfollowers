@@ -13,6 +13,7 @@ import {
   getUsersForDisplay,
 } from '../utils/utils';
 import { listDiffPeople } from '../utils/metaDiff';
+import { metaUserToNode } from '../utils/metaScan';
 import { CopyIcon } from './icons/CopyIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
 
@@ -140,10 +141,35 @@ export const Toolbar = ({
   };
 
   const handleExportClick = () => {
-    if (state.status === 'scanning') {
-      exportToCSV(state.results, state.whitelistedResults, isPro, t); // Pasa isPro aquí
-      onShowToast(t('exportedToCSV')(state.results.length));
+    if (state.status !== 'scanning') {
+      return;
     }
+    if (state.currentTab === 'changes' && state.metaDiff) {
+      const people = listDiffPeople(state.metaDiff, state.searchTerm);
+      exportToCSV(
+        people.map(person =>
+          metaUserToNode(
+            { username: person.username, fullName: person.fullName },
+            person.kinds.includes('now_mutual') || person.kinds.includes('new_follower'),
+          ),
+        ),
+        state.whitelistedResults,
+        isPro,
+        t,
+      );
+      onShowToast(t('exportedToCSV')(people.length));
+      return;
+    }
+    const usersToExport = getUsersForDisplay(
+      state.results,
+      state.whitelistedResults,
+      state.currentTab,
+      state.searchTerm,
+      state.filter,
+      t,
+    );
+    exportToCSV(usersToExport, state.whitelistedResults, isPro, t);
+    onShowToast(t('exportedToCSV')(usersToExport.length));
   };
 
   const handlePdfClick = async () => {
