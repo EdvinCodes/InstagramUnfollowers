@@ -1,6 +1,7 @@
 export interface MetaExportUser {
   readonly username: string;
   readonly fullName: string;
+  readonly dateLabel?: string;
 }
 
 const USERNAME_RE = /^[a-zA-Z0-9._]{1,30}$/;
@@ -100,16 +101,26 @@ export function dedupeMetaUsers(users: readonly MetaExportUser[]): MetaExportUse
     result.push({
       username,
       fullName: user.fullName.trim() || username,
+      ...(user.dateLabel?.trim() ? { dateLabel: user.dateLabel.trim() } : {}),
     });
   }
   return result;
 }
 
+function dateAfterTable(html: string, tableEnd: number): string | undefined {
+  const nearby = html.slice(tableEnd, tableEnd + 500);
+  const match = nearby.match(/<div[^>]*class="[^"]*_a6-o[^"]*"[^>]*>([^<]+)<\/div>/i);
+  const label = match ? decodeHtml(match[1]) : '';
+  return label || undefined;
+}
+
 function parseHtmlTables(html: string): MetaExportUser[] {
   const users: MetaExportUser[] = [];
-  const tables = html.match(/<table[\s\S]*?<\/table>/gi) ?? [];
+  const tableRe = /<table[\s\S]*?<\/table>/gi;
+  let tableMatch = tableRe.exec(html);
 
-  for (const table of tables) {
+  while (tableMatch) {
+    const table = tableMatch[0];
     let fullName = '';
     let username = '';
     ROW_RE.lastIndex = 0;
@@ -125,8 +136,14 @@ function parseHtmlTables(html: string): MetaExportUser[] {
       row = ROW_RE.exec(table);
     }
     if (username) {
-      users.push({ username, fullName: fullName || username });
+      const dateLabel = dateAfterTable(html, tableMatch.index + table.length);
+      users.push({
+        username,
+        fullName: fullName || username,
+        ...(dateLabel ? { dateLabel } : {}),
+      });
     }
+    tableMatch = tableRe.exec(html);
   }
 
   return users;
@@ -237,11 +254,38 @@ export function parseMetaUserList(input: string): MetaExportUser[] {
 
 export type MetaConnectionsKind = 'following' | 'followers' | 'other';
 
-export function classifyMetaConnectionsFile(fileName: string, text: string): MetaConnectionsKind {
-  const name = fileName.toLowerCase().replace(/\\/g, '/');
-  const base = name.split('/').pop() ?? name;
-  if (base.includes('pending') || base.includes('blocked') || base.includes('unfollowed')) {
-    return 'other';
+export type MetaListKind =
+  | 'following'
+  | 'followers'
+  | 'pending'
+  | 'recent_requests'
+  | 'unfollowed'
+  | 'blocked'
+  | 'other';
+
+function fileBaseName(fileName: string): string {
+  return fileName.toLowerCase().replace(/\\/g, '/').split('/').pop() ?? fileName.toLowerCase();
+}
+
+function metaPageTitle(text: string): string {
+  return `${text.match(/<title>([^<]+)<\/title>/i)?.[1] ?? ''} ${
+    text.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? ''
+  }`.toLowerCase();
+}
+
+export function classifyMetaListKind(fileName: string, text: string): MetaListKind {
+  const base = fileBaseName(fileName);
+  if (base.includes('pending')) {
+    return 'pending';
+  }
+  if (base.includes('unfollowed')) {
+    return 'unfollowed';
+  }
+  if (base.includes('blocked')) {
+    return 'blocked';
+  }
+  if (base.includes('recent') && (base.includes('request') || base.includes('solicitud'))) {
+    return 'recent_requests';
   }
   if (/^following\.(html|json)$/.test(base) || (base.includes('following') && !base.includes('followers'))) {
     return 'following';
@@ -250,9 +294,19 @@ export function classifyMetaConnectionsFile(fileName: string, text: string): Met
     return 'followers';
   }
 
-  const title = `${text.match(/<title>([^<]+)<\/title>/i)?.[1] ?? ''} ${
-    text.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? ''
-  }`.toLowerCase();
+  const title = metaPageTitle(text);
+  if (/pendiente|pending follow/.test(title) && /solicitud|request/.test(title)) {
+    return 'pending';
+  }
+  if (/dejado de seguir|unfollowed|recently unfollowed/.test(title)) {
+    return 'unfollowed';
+  }
+  if (/bloquead|blocked profiles/.test(title)) {
+    return 'blocked';
+  }
+  if (/recientes|recent follow/.test(title) && /solicitud|request/.test(title)) {
+    return 'recent_requests';
+  }
   if (/siguiendo|following|comptes suivis|seguidos/.test(title) && !/seguidores|followers/.test(title)) {
     return 'following';
   }
@@ -260,4 +314,9 @@ export function classifyMetaConnectionsFile(fileName: string, text: string): Met
     return 'followers';
   }
   return 'other';
+}
+
+export function classifyMetaConnectionsFile(fileName: string, text: string): MetaConnectionsKind {
+  const kind = classifyMetaListKind(fileName, text);
+  return kind === 'following' || kind === 'followers' ? kind : 'other';
 }

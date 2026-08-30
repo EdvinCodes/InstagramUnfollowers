@@ -1,6 +1,7 @@
 import { UserNode } from './user';
 import { ScanningTab } from './scanning-tab';
 import { ScanningFilter } from './scanning-filter';
+import type { MetaCommunityDiff } from '../utils/metaDiff';
 
 export interface ScanningState {
   readonly status: 'scanning';
@@ -13,4 +14,5 @@ export interface ScanningState {
   readonly whitelistedResults: readonly UserNode[];
   readonly selectedResults: readonly UserNode[];
   readonly filter: ScanningFilter;
+  readonly metaDiff?: MetaCommunityDiff | null;
 }

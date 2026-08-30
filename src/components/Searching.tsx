@@ -9,6 +9,7 @@ import {
   getDynamicStorageKey,
 } from '../utils/utils';
 import { calculateGhostScore, getGhostLabel, getGhostColor } from '../utils/ghostScore';
+import { communityDiffCount, listDiffPeople, paginateDiffPeople, type MetaDiffKind } from '../utils/metaDiff';
 import { State } from '../model/state';
 import { UserNode } from '../model/user';
 import { ScanningFilter } from '../model/scanning-filter';
@@ -73,6 +74,9 @@ const FiltersSidebar = ({
     <menu className='flex column m-clear p-clear'>
       {!isMeta && <p style={{ fontWeight: 'bold' }}>{t('filterResults')}</p>}
       {isMeta && <p className='meta-offline-note'>{t('metaOfflineBanner')}</p>}
+      {isMeta && state.status === 'scanning' && !state.metaDiff && (
+        <p className='meta-offline-note'>{t('metaDiffBaseline')}</p>
+      )}
       {filters.map(filter => (
         <label key={filter.name} className='badge m-small' style={{ cursor: 'pointer' }}>
           <input
@@ -89,6 +93,23 @@ const FiltersSidebar = ({
 };
 
 const EMPTY_LIST: readonly UserNode[] = [];
+
+const diffKindLabel = (kind: MetaDiffKind): string => {
+  switch (kind) {
+    case 'they_unfollowed':
+      return t('metaDiffTheyLeft');
+    case 'you_unfollowed':
+      return t('metaDiffYouUnfollowed');
+    case 'you_followed':
+      return t('metaDiffYouFollowed');
+    case 'new_follower':
+      return t('metaDiffNewFollower');
+    case 'now_mutual':
+      return t('metaDiffNowMutual');
+    default:
+      return kind;
+  }
+};
 
 export const Searching = ({
   state,
@@ -115,20 +136,29 @@ export const Searching = ({
   const searchTerm = state.status === 'scanning' ? state.searchTerm : '';
   const filter = state.status === 'scanning' ? state.filter : undefined;
 
+  const metaDiff = state.status === 'scanning' ? state.metaDiff : null;
+  const isChangesTab = currentTab === 'changes';
+  const changePeople = useMemo(
+    () => (isChangesTab && metaDiff ? listDiffPeople(metaDiff, searchTerm) : []),
+    [isChangesTab, metaDiff, searchTerm],
+  );
+
   const usersForDisplay = useMemo(() => {
-    if (!filter) {
+    if (isChangesTab || !filter) {
       return EMPTY_LIST;
     }
     return getUsersForDisplay(scanResults, whitelistedResults, currentTab, searchTerm, filter, t);
-  }, [scanResults, whitelistedResults, currentTab, searchTerm, filter]);
+  }, [isChangesTab, scanResults, whitelistedResults, currentTab, searchTerm, filter]);
 
   const scanningPage = state.status === 'scanning' ? state.page : 1;
-  const maxPage = getMaxPage(usersForDisplay);
-  const safePage = getSafePage(usersForDisplay, scanningPage);
+  const changePage = paginateDiffPeople(changePeople, scanningPage);
+  const maxPage = isChangesTab ? changePage.maxPage : getMaxPage(usersForDisplay);
+  const safePage = isChangesTab ? changePage.safePage : getSafePage(usersForDisplay, scanningPage);
   const pageUsers = useMemo(
-    () => getCurrentPageUnfollowers(usersForDisplay, safePage),
-    [usersForDisplay, safePage],
+    () => (isChangesTab ? EMPTY_LIST : getCurrentPageUnfollowers(usersForDisplay, safePage)),
+    [isChangesTab, usersForDisplay, safePage],
   );
+  const pageChangePeople = isChangesTab ? changePage.pagePeople : [];
 
   useEffect(() => {
     if (state.status !== 'scanning') {
@@ -174,8 +204,10 @@ export const Searching = ({
         newWhitelisted = state.whitelistedResults.filter(u => u.id !== user.id);
         HistoryService.addEvent('UNWHITELISTED', user);
         break;
+      case 'changes':
+        return;
       default:
-        assertUnreachable(state.currentTab);
+        return assertUnreachable(state);
     }
 
     const dynamicWhitelistKey = getDynamicStorageKey(WHITELISTED_RESULTS_STORAGE_KEY);
@@ -245,11 +277,27 @@ export const Searching = ({
         <FiltersSidebar state={state} handleScanFilter={handleScanFilter} />
         <div className='grow stats-box'>
           <p>
-            {t('displayed')}: {usersForDisplay.length}
+            {t('displayed')}: {isChangesTab ? changePeople.length : usersForDisplay.length}
           </p>
           <p>
             {t('total')}: {state.results.length}
           </p>
+          {metaDiff && (
+            <>
+              <p>
+                {t('metaDiffTheyLeft')}: {metaDiff.theyUnfollowed.length}
+              </p>
+              <p>
+                {t('metaDiffYouUnfollowed')}: {metaDiff.youUnfollowed.length}
+              </p>
+              <p>
+                {t('metaDiffYouFollowed')}: {metaDiff.youFollowed.length}
+              </p>
+              <p>
+                {t('metaDiffNewFollower')}: {metaDiff.newFollowers.length}
+              </p>
+            </>
+          )}
         </div>
         {/* Solo mostramos los controles si el escaneo está en curso */}
         {state.percentage > 0 && state.percentage < 100 && (
@@ -361,9 +409,54 @@ export const Searching = ({
           >
             {t('whitelisted')}
           </div>
+          {state.source === 'meta' && metaDiff && communityDiffCount(metaDiff) > 0 && (
+            <div
+              className={`tab ${state.currentTab === 'changes' ? 'tab-active' : ''}`}
+              onClick={() =>
+                setState({ ...state, currentTab: 'changes', selectedResults: [], page: 1 })
+              }
+            >
+              {t('metaDiffTab')} ({communityDiffCount(metaDiff)})
+            </div>
+          )}
         </nav>
 
-        {pageUsers.length === 0 ? (
+        {isChangesTab ? (
+          pageChangePeople.length === 0 ? (
+            <div className='results-empty-hint'>
+              <p className='results-empty-title'>{state.searchTerm ? t('noSearchResults') : t('metaDiffEmpty')}</p>
+            </div>
+          ) : (
+            pageChangePeople.map((person, index) => {
+              const letter = (person.username[0] || '#').toUpperCase();
+              const prevLetter =
+                index > 0 ? (pageChangePeople[index - 1].username[0] || '#').toUpperCase() : '';
+              return (
+                <React.Fragment key={person.username}>
+                  {letter !== prevLetter && <div className='alphabet-character'>{letter}</div>}
+                  <div className='result-item pending-result-item'>
+                    <div className='pending-avatar' aria-hidden='true'>
+                      {letter}
+                    </div>
+                    <div className='pending-user-meta'>
+                      <a href={`https://www.instagram.com/${person.username}/`} target='_blank' rel='noreferrer'>
+                        @{person.username}
+                      </a>
+                      {person.fullName && person.fullName !== person.username && <span>{person.fullName}</span>}
+                      <span className='meta-diff-kinds'>
+                        {person.kinds.map(kind => (
+                          <span key={kind} className={`meta-diff-badge meta-diff-badge--${kind}`}>
+                            {diffKindLabel(kind)}
+                          </span>
+                        ))}
+                      </span>
+                    </div>
+                  </div>
+                </React.Fragment>
+              );
+            })
+          )
+        ) : pageUsers.length === 0 ? (
           <div className='results-empty-hint'>
             <p className='results-empty-title'>
               {state.percentage < 100 && state.results.length === 0

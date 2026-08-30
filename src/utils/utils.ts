@@ -97,6 +97,8 @@ export function getUsersForDisplay(
           return false;
         }
         break;
+      case 'changes':
+        return false;
       default:
         return false;
     }

@@ -12,13 +12,13 @@ import {
   copyListToClipboard,
   getUsersForDisplay,
 } from '../utils/utils';
+import { listDiffPeople } from '../utils/metaDiff';
 import { CopyIcon } from './icons/CopyIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
 
 import { generateHealthReportPDF } from '../utils/pdfGenerator';
 import { PdfIcon } from './icons/PdfIcon';
 
-import { HistoryView } from './HistoryView';
 import { HistoryIcon } from './icons/HistoryIcon';
 
 // Icono simple de Minimizar
@@ -65,6 +65,7 @@ interface ToolBarProps {
   activatePro: (key: string) => Promise<boolean>;
   deactivatePro: () => void;
   isLicenseLoading: boolean;
+  onOpenHistory: () => void;
 }
 
 export const Toolbar = ({
@@ -86,9 +87,9 @@ export const Toolbar = ({
   activatePro,
   deactivatePro,
   isLicenseLoading,
+  onOpenHistory,
 }: ToolBarProps) => {
   const [settingMenu, setSettingMenu] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
 
   const handleLogoClick = () => {
     if (isActiveProcess) {
@@ -103,6 +104,7 @@ export const Toolbar = ({
       case 'growth':
       case 'pending_requests':
       case 'meta_import':
+      case 'clean_lists':
         setState({ status: 'initial' });
         break;
       case 'scanning':
@@ -115,19 +117,26 @@ export const Toolbar = ({
   };
 
   const handleCopyClick = async () => {
-    if (state.status === 'scanning') {
-      const usersToCopy = getUsersForDisplay(
-        state.results,
-        state.whitelistedResults,
-        state.currentTab,
-        state.searchTerm,
-        state.filter,
-        t,
-      );
-
-      await copyListToClipboard(usersToCopy);
-      onShowToast(t('copiedToClipboard')(usersToCopy.length));
+    if (state.status !== 'scanning') {
+      return;
     }
+    if (state.currentTab === 'changes' && state.metaDiff) {
+      const people = listDiffPeople(state.metaDiff, state.searchTerm);
+      await navigator.clipboard.writeText(people.map(person => person.username).join('\n'));
+      onShowToast(t('copiedToClipboard')(people.length));
+      return;
+    }
+    const usersToCopy = getUsersForDisplay(
+      state.results,
+      state.whitelistedResults,
+      state.currentTab,
+      state.searchTerm,
+      state.filter,
+      t,
+    );
+
+    await copyListToClipboard(usersToCopy);
+    onShowToast(t('copiedToClipboard')(usersToCopy.length));
   };
 
   const handleExportClick = () => {
@@ -163,6 +172,7 @@ export const Toolbar = ({
       case 'initial':
       case 'growth':
       case 'meta_import':
+      case 'clean_lists':
         return;
       case 'pending_requests':
         if (state.phase !== 'running') {
@@ -307,7 +317,7 @@ export const Toolbar = ({
                 ariaLabel={t('kofiAriaLabel')}
                 text={t('support')}
               />
-              <HistoryIcon title={t('history')} onClick={() => setHistoryOpen(true)} />
+              <HistoryIcon title={t('history')} onClick={onOpenHistory} />
               <SettingIcon title={t('settingsTooltip')} onClickLogo={() => setSettingMenu(true)} />
             </>
           )}
@@ -342,7 +352,6 @@ export const Toolbar = ({
         />
       )}
 
-      {historyOpen && <HistoryView onClose={() => setHistoryOpen(false)} isPro={isPro} />}
     </header>
   );
 };

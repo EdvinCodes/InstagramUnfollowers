@@ -33,6 +33,17 @@ export interface MetaTranslationSlice {
   metaOfflineBanner: string;
   metaUnfollowDisabled: string;
   metaBack: string;
+  metaDiffTab: string;
+  metaDiffBaseline: string;
+  metaDiffBaselineSaved: (following: number, followers: number) => string;
+  metaDiffReady: (date: string) => string;
+  metaDiffImported: (theyLeft: number, youUnfollowed: number, youFollowed: number, newFollowers: number) => string;
+  metaDiffEmpty: string;
+  metaDiffTheyLeft: string;
+  metaDiffYouUnfollowed: string;
+  metaDiffYouFollowed: string;
+  metaDiffNewFollower: string;
+  metaDiffNowMutual: string;
 }
 
 const en: MetaTranslationSlice = {
@@ -55,6 +66,19 @@ const en: MetaTranslationSlice = {
   metaOfflineBanner: 'Offline Meta export — no Instagram requests',
   metaUnfollowDisabled: 'To unfollow, run a live scan. This export has no user IDs.',
   metaBack: 'Back',
+  metaDiffTab: 'Since last export',
+  metaDiffBaseline: 'This export is saved as your baseline. The next Meta download will show who left and who you followed.',
+  metaDiffBaselineSaved: (following, followers) =>
+    `Saved baseline: ${following} following · ${followers} followers. Import a newer export to see the diff.`,
+  metaDiffReady: date => `Last export saved on ${date}. Upload a newer download to see the changes.`,
+  metaDiffImported: (theyLeft, youUnfollowed, youFollowed, newFollowers) =>
+    `Since last export: ${theyLeft} left you · ${youUnfollowed} you unfollowed · ${youFollowed} new follows · ${newFollowers} new followers`,
+  metaDiffEmpty: 'No changes since the last export.',
+  metaDiffTheyLeft: 'Unfollowed you',
+  metaDiffYouUnfollowed: 'You unfollowed',
+  metaDiffYouFollowed: 'You followed',
+  metaDiffNewFollower: 'New follower',
+  metaDiffNowMutual: 'Now mutual',
 };
 
 const es: MetaTranslationSlice = {
@@ -78,6 +102,20 @@ const es: MetaTranslationSlice = {
   metaOfflineBanner: 'Export de Meta offline — cero peticiones a Instagram',
   metaUnfollowDisabled: 'Para dejar de seguir, lanza un escaneo en vivo. Este export no trae IDs.',
   metaBack: 'Volver',
+  metaDiffTab: 'Desde el último export',
+  metaDiffBaseline:
+    'Este export queda como base. La próxima descarga de Meta dirá quién se fue y a quién seguiste.',
+  metaDiffBaselineSaved: (following, followers) =>
+    `Base guardada: ${following} following · ${followers} followers. Sube un export más nuevo para ver el diff.`,
+  metaDiffReady: date => `Último export guardado el ${date}. Sube una descarga más nueva para ver los cambios.`,
+  metaDiffImported: (theyLeft, youUnfollowed, youFollowed, newFollowers) =>
+    `Desde el último export: ${theyLeft} te dejaron · ${youUnfollowed} dejaste de seguir · ${youFollowed} follows nuevos · ${newFollowers} followers nuevos`,
+  metaDiffEmpty: 'Sin cambios respecto al último export.',
+  metaDiffTheyLeft: 'Te dejó de seguir',
+  metaDiffYouUnfollowed: 'Tú dejaste de seguir',
+  metaDiffYouFollowed: 'Empezaste a seguir',
+  metaDiffNewFollower: 'Nuevo follower',
+  metaDiffNowMutual: 'Ahora mutual',
 };
 
 export const META_STRINGS: Record<MetaLocale, MetaTranslationSlice> = {

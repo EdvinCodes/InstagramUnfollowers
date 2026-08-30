@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Built with](https://img.shields.io/badge/Built%20with-Preact%20%26%20TypeScript-blueviolet)](https://preactjs.com/)
 [![Works with](https://img.shields.io/badge/Instagram-Compatible-E1306C.svg)](https://www.instagram.com/)
-[![Version](https://img.shields.io/badge/version-8.7.0-brightgreen.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
+[![Version](https://img.shields.io/badge/version-8.8.0-brightgreen.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
 
 [🇺🇸 English](#-english-version) | [🇪🇸 Español](#-versión-en-español) | [🇹🇷 Türkçe](#-türkçe-sürüm)
 
@@ -16,7 +16,13 @@
 
 **The safest, most advanced Instagram Unfollowers tracker.** See who doesn't follow you back, detect ghost accounts with a 0-100 Ghost Score, export PDF health reports, and grow your audience — **100% locally in your browser**, no password required.
 
-> **🚀 v8.7.0:** Offline scan from a Meta export — compare `following.html` and `followers_*.html` locally, with zero Instagram requests.
+> **🚀 v8.8.0:** A suite home — Analyze, Clean, Grow, History — plus Meta clean lists and a community diff between two exports.
+
+### ✨ What's New in v8.8.0
+
+- **🏠 Home hub:** Four modules instead of a stack of buttons: live/Meta scan, pending + other lists, Growth, and History.
+- **🧹 Clean lists:** Import recently unfollowed, blocked, and recent follow requests from a Meta export (read-only).
+- **↔️ Community diff:** A second following/followers export shows who left, who you followed, and new mutuals.
 
 ### ✨ What's New in v8.7.0
 
@@ -107,7 +113,13 @@
 
 **El rastreador de Instagram Unfollowers más seguro y avanzado.** Descubre quién no te sigue de vuelta, detecta cuentas fantasma con una Ghost Score de 0-100, exporta reportes PDF y haz crecer tu audiencia — **100% en local en tu navegador**, sin contraseña.
 
-> **🚀 v8.7.0:** Escaneo offline con el export de Meta — cruza `following.html` y `followers_*.html` en local, sin peticiones a Instagram.
+> **🚀 v8.8.0:** Home de suite — Analizar, Limpiar, Crecer, Historial — más listas Meta y un diff entre dos exports.
+
+### ✨ Novedades de la v8.8.0
+
+- **🏠 Hub de home:** Cuatro módulos en vez de una pila de botones: scan en vivo/Meta, pendientes + otras listas, Growth e Historial.
+- **🧹 Listas de limpieza:** Importa recently unfollowed, bloqueados y recent follow requests del export (solo lectura).
+- **↔️ Diff de comunidad:** Un segundo export de following/followers muestra quién se fue, a quién seguiste y nuevos mutuals.
 
 ### ✨ Novedades de la v8.7.0
 

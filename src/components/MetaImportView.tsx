@@ -2,6 +2,8 @@ import React, { useRef } from 'react';
 import { t } from '../i18n/i18n';
 import type { MetaExportUser } from '../utils/metaExportParser';
 import { classifyMetaConnectionsFile, dedupeMetaUsers, parseMetaUserList } from '../utils/metaExportParser';
+import { formatSnapshotDate } from '../utils/metaDiff';
+import { loadMetaScanSnapshot } from '../utils/metaScan';
 
 interface MetaImportViewProps {
   onImported: (following: MetaExportUser[], followers: MetaExportUser[]) => void;
@@ -11,6 +13,8 @@ interface MetaImportViewProps {
 
 export const MetaImportView = ({ onImported, onBack, onShowToast }: MetaImportViewProps) => {
   const fileRef = useRef<HTMLInputElement>(null);
+  const saved = loadMetaScanSnapshot();
+  const hasBaseline = !!saved && (saved.following.length > 0 || saved.followers.length > 0);
 
   const handleFiles = async (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) {
@@ -59,6 +63,11 @@ export const MetaImportView = ({ onImported, onBack, onShowToast }: MetaImportVi
           <li>{t('metaHow4')}</li>
         </ol>
         <p className='pending-how-note'>{t('metaHowNote')}</p>
+        <p className='pending-how-note'>
+          {hasBaseline && saved
+            ? t('metaDiffReady')(formatSnapshotDate(saved.timestamp))
+            : t('metaDiffBaseline')}
+        </p>
       </div>
       <input
         ref={fileRef}

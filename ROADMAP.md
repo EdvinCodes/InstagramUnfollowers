@@ -2,7 +2,7 @@
 
 > Visión: ser **la app de gestión de Instagram más completa** — no solo “quién no me sigue”, sino el centro local para **analizar, limpiar, proteger y hacer crecer** una cuenta, superando a [davidarroyo1234/InstagramUnfollowers](https://github.com/davidarroyo1234/InstagramUnfollowers) en producto, no solo en estrellas.
 
-**Versión actual:** v8.7.0  
+**Versión actual:** v8.8.0  
 **Rama:** `main`  
 **Última actualización:** 2026-08-30
 
@@ -36,7 +36,7 @@ Instagram mata eso. Nosotros somos **limpieza + inteligencia local + export de M
 
 ---
 
-## 2. Estado actual (v8.7.0)
+## 2. Estado actual (v8.8.0)
 
 ### Hecho
 
@@ -47,6 +47,9 @@ Instagram mata eso. Nosotros somos **limpieza + inteligencia local + export de M
 - [x] Growth Engine (beta): follow a comentaristas de un nicho
 - [x] Cancelar solicitudes **salientes** desde `pending_follow_requests.html`
 - [x] Scan **offline** following vs followers desde el export de Meta (sin API)
+- [x] Hub de home: Analizar / Limpiar / Crecer / Historial
+- [x] Listas Meta de solo lectura (unfollowed, blocked, recent requests)
+- [x] Diff entre dos exports de following/followers
 - [x] Bookmarklet / Copy Script + extensión + CI → GitHub Pages
 - [x] i18n 16 idiomas (EN/ES completos en la feature nueva; resto con fallback)
 - [x] PRO temporalmente gratis (`PRO_PROMO_FREE`)
@@ -107,10 +110,10 @@ Parser compartido: `pendingRequestsParser.ts` se generaliza a `metaExportParser.
 | v8.5.0 | Bookmarklet + SEO | ✅ |
 | v8.6.0 | Cancelar solicitudes salientes (Meta) | ✅ |
 | **v8.7.0** | Scan offline from Meta export | ✅ |
-| **v8.7.x** | Diff de dos exports | 📋 Siguiente |
-| **v8.8** | Hub Limpiar: entrantes, bloqueados, recent requests | 📋 |
+| **v8.7.x** | Diff de dos exports | ✅ |
+| **v8.8.0** | Home hub + listas Limpiar (unfollowed / blocked / recent) | ✅ |
 | **v8.9** | Inactivos + mute/restrict + cola por antigüedad | 📋 |
-| **v9.0** | Dashboard de salud + PDF antes/después + home por módulos | 📋 |
+| **v9.0** | Dashboard de salud + PDF antes/después | 📋 |
 | **v9.1** | Growth atado a higiene (revisión 14 días, denylist) | 📋 |
 | **v9.2** | Cloud sync real + UI multi-cuenta | 📋 |
 | **v9.3** | Licencias reales + Chrome Web Store live | 📋 |
@@ -127,7 +130,7 @@ El scan en vivo sigue existiendo. El export es el camino **rápido y seguro**.
 - [x] Mismas pestañas que hoy: no-followers, mutuals, whitelist
 - [ ] Ghost Score heurístico aunque no haya foto en vivo (username + nombre)
 - [ ] Botón “Actualizar en vivo” opcional (GraphQL) para fotos y `follows_viewer` fresco
-- [ ] **Diff de dos exports:** subes enero y agosto → nuevos unfollowers, nuevos follows, solicitudes que siguen
+- [x] **Diff de dos exports:** el último following/followers se guarda; el próximo ZIP muestra quién se fue y a quién seguiste
 - [x] Guardar snapshots del export en localStorage (como el scan actual)
 - [x] Guía in-app: cómo pedir el ZIP a Meta (ya empezada en solicitudes)
 
@@ -140,11 +143,11 @@ El scan en vivo sigue existiendo. El export es el camino **rápido y seguro**.
 Mismo UX que solicitudes pendientes: lista A–Z, seleccionar, log a pantalla completa.
 
 - [ ] **Solicitudes entrantes** — denegar inbox (cuenta privada)
-- [ ] **Recent follow requests** — ver resueltas; no cancelar por error a quien ya aceptó
-- [ ] **Bloqueados** — listar; desbloquear en cola lenta (opcional, con confirmación fuerte)
-- [ ] **Recently unfollowed** — cruzar con `YOU_UNFOLLOWED` del historial
-- [ ] Home: tarjeta “Limpiar cuenta” con cada lista y recuento
-- [ ] i18n completo EN/ES; resto de locales con las claves nuevas (no solo fallback)
+- [x] **Recent follow requests** — listar en solo lectura (sin cancelar por error a quien ya aceptó)
+- [x] **Bloqueados** — listar (desbloquear en cola: pendiente)
+- [x] **Recently unfollowed** — listar con fecha del export (cruce historial: pendiente)
+- [x] Home: tarjeta “Limpiar” con solicitudes y otras listas + recuentos
+- [x] i18n completo EN/ES; resto de locales con las claves nuevas (no solo fallback)
 
 ---
 
@@ -166,7 +169,7 @@ Cada verbo = 1 endpoint + `useUnfollowerQueue` / `usePendingRequests` generaliza
 
 ## 9. Fase 9.0 — La app se siente completa
 
-- [ ] Home por módulos: **Analizar / Limpiar / Crecer / Historial**
+- [x] Home por módulos: **Analizar / Limpiar / Crecer / Historial**
 - [ ] Dashboard: following, followers, no-followers, solicitudes abiertas, ghosts, tendencia
 - [ ] PDF “antes / después” de una limpieza
 - [ ] Ghost Score también en following y en pendientes
@@ -276,9 +279,7 @@ Esto es v10: no se empieza hasta que 8.7–9.0 estén en producción y estables.
 
 ## 17. Próximo paso concreto
 
-**Diff de dos exports (cierre 8.7)** o, si solo hay un ZIP, **hub Limpiar 8.8** con las listas que ya vienen en el dump (`recently_unfollowed`, `blocked`, `recent_follow_requests`) en modo lectura.
-
-El scan offline ya está en producción. El siguiente valor es retención (volver con un 2º ZIP) o usar el resto de archivos del mismo dump sin tocar Instagram.
+El diff automático ya está. Siguiente valor: cruzar **recently unfollowed** con el historial de la app, o el hub visual Analizar / Limpiar.
 
 Owner / humano en paralelo: Store, analytics, QA Growth, payment.
 

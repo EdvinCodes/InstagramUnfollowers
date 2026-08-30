@@ -51,8 +51,12 @@ import { createInitialGrowthState } from './model/growth-state';
 import { PendingRequestsView } from './components/PendingRequestsView';
 import { createInitialPendingState } from './model/pending-requests-state';
 import { MetaImportView } from './components/MetaImportView';
-import { buildMetaScanResults, markNewMetaUnfollowers, saveMetaSnapshot } from './utils/metaScan';
+import { CleanListsView } from './components/CleanListsView';
+import { createInitialCleanListsState } from './model/clean-lists-state';
+import { buildCommunityDiff, communityDiffCount } from './utils/metaDiff';
+import { buildMetaScanResults, loadMetaScanSnapshot, markNewMetaUnfollowers, saveMetaCommunitySnapshot } from './utils/metaScan';
 
+import { HistoryView } from './components/HistoryView';
 import { subscribeLocale, t } from './i18n/i18n';
 
 type ToastStyle = 'success' | 'error' | 'warning' | 'info';
@@ -70,6 +74,7 @@ function App() {
   });
 
   const [isMinimized, setIsMinimized] = useState(true);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [, setLocaleTick] = useState(0);
 
   const { isPro, isLoading, activatePro, deactivatePro } = useLicense();
@@ -128,6 +133,10 @@ function App() {
       break;
     }
     case 'meta_import': {
+      isActiveProcess = false;
+      break;
+    }
+    case 'clean_lists': {
       isActiveProcess = false;
       break;
     }
@@ -425,17 +434,20 @@ function App() {
       }
     }
 
+    const previous = loadMetaScanSnapshot();
     const built = buildMetaScanResults(following, followers);
     const processed = markNewMetaUnfollowers(built);
-    saveMetaSnapshot(processed);
+    const metaDiff = buildCommunityDiff(previous, following, followers);
+    saveMetaCommunitySnapshot(following, followers);
 
     const nonFollowers = processed.filter(user => !user.follows_viewer).length;
+    const hasChanges = !!metaDiff && communityDiffCount(metaDiff) > 0;
     setState({
       status: 'scanning',
       source: 'meta',
       page: 1,
       searchTerm: '',
-      currentTab: 'non_whitelisted',
+      currentTab: hasChanges ? 'changes' : 'non_whitelisted',
       percentage: 100,
       results: processed,
       selectedResults: [],
@@ -446,8 +458,23 @@ function App() {
         showWithOutProfilePicture: false,
         showGhostsOnly: false,
       },
+      metaDiff,
     });
-    showToast(t('metaImported')(following.length, followers.length, nonFollowers), 'success');
+    if (hasChanges && metaDiff) {
+      showToast(
+        t('metaDiffImported')(
+          metaDiff.theyUnfollowed.length,
+          metaDiff.youUnfollowed.length,
+          metaDiff.youFollowed.length,
+          metaDiff.newFollowers.length,
+        ),
+        'success',
+      );
+    } else if (previous && previous.following.length + previous.followers.length > 0) {
+      showToast(t('metaImported')(following.length, followers.length, nonFollowers), 'success');
+    } else {
+      showToast(t('metaDiffBaselineSaved')(following.length, followers.length), 'success');
+    }
   };
 
   const onStartUnfollowing = (actionType: 'unfollow' | 'remove_follower' = 'unfollow') => {
@@ -512,6 +539,8 @@ function App() {
           onGrowth={() => setState(createInitialGrowthState())}
           onPendingRequests={() => setState(createInitialPendingState())}
           onMetaImport={() => setState({ status: 'meta_import' })}
+          onCleanLists={() => setState(createInitialCleanListsState())}
+          onHistory={() => setHistoryOpen(true)}
           isPro={isPro}
         />
       );
@@ -579,6 +608,10 @@ function App() {
       );
       break;
     }
+    case 'clean_lists': {
+      markup = <CleanListsView state={state} setState={setState} onShowToast={showToast} />;
+      break;
+    }
     default: {
       assertUnreachable(state);
     }
@@ -593,7 +626,9 @@ function App() {
         ? unfollowerState.statusMessage
         : state.status === 'pending_requests'
           ? state.statusMessage
-          : '';
+          : state.status === 'clean_lists' && state.phase === 'lists'
+            ? t('cleanReadOnlyBanner')
+            : '';
 
   return (
     <main
@@ -645,9 +680,12 @@ function App() {
             activatePro={activatePro}
             deactivatePro={deactivatePro}
             isLicenseLoading={isLoading}
+            onOpenHistory={() => setHistoryOpen(true)}
           />
 
           {markup}
+
+          {historyOpen && <HistoryView onClose={() => setHistoryOpen(false)} isPro={isPro} />}
 
           {processStatus && <div className='process-status-bar'>{processStatus}</div>}
         </section>
