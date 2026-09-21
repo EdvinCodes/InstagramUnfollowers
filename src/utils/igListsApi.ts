@@ -130,6 +130,22 @@ export function parseNextMaxId(json: RestListResponse, lastPk: string | null): s
   return null;
 }
 
+/**
+ * Instagram sometimes answers a private-API call with `200 OK` (or another 2xx) but
+ * hands back an HTML "please wait a few minutes" / challenge page instead of JSON —
+ * calling `.json()` directly then throws a raw `SyntaxError` ("Unexpected token '<'")
+ * that has nothing to do with rate limiting or pagination, yet aborts the entire scan
+ * if left uncaught. Parse defensively so callers can treat it as a soft failure.
+ */
+async function safeJsonParse<T>(response: Response): Promise<T | null> {
+  try {
+    const text = await response.text();
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}
+
 export function normalizeRestUser(raw: RawRestUser): RestUser | null {
   const ids = collectRawUserIds(raw);
   if (ids.length === 0 || !raw.username) {
@@ -177,7 +193,12 @@ async function fetchListPage(
     return { users: [], nextMaxId: null, rankToken: null, status: response.status };
   }
 
-  const json = (await response.json()) as RestListResponse;
+  const json = await safeJsonParse<RestListResponse>(response);
+  if (json === null) {
+    // 2xx status but not JSON — treat like a soft rate limit (status 0) so callers
+    // back off and retry instead of an uncaught SyntaxError killing the whole scan.
+    return { users: [], nextMaxId: null, rankToken: null, status: 0 };
+  }
   const users = (json.users ?? [])
     .map(normalizeRestUser)
     .filter((user): user is RestUser => user !== null);
@@ -315,6 +336,13 @@ interface ShowManyResponse {
  * Bulk follow-back check. Used when the followers list came back empty / IDs
  * didn't match, so we would otherwise mark the entire following list as
  * non-followers.
+ *
+ * Best-effort by design: a single bad chunk (429, any other error status, or a
+ * non-JSON "challenge page" body) only skips THAT chunk — it never throws and
+ * never discards whatever earlier chunks already resolved. Only a 429 is
+ * reported back via `status` so the caller can decide to slow down; every other
+ * hiccup is silent since this is already a safety net for a handful of stragglers,
+ * not the primary classification path.
  */
 export async function fetchFollowedByMany(
   userIds: readonly string[],
@@ -322,6 +350,7 @@ export async function fetchFollowedByMany(
   const followedByIds = new Set<string>();
   const csrfToken = getCookie('csrftoken') ?? '';
   const chunkSize = 20;
+  let sawRateLimit = false;
 
   for (let i = 0; i < userIds.length; i += chunkSize) {
     const chunk = userIds.slice(i, i + chunkSize);
@@ -335,22 +364,27 @@ export async function fetchFollowedByMany(
       credentials: 'include',
       body: `user_ids=${chunk.join(',')}`,
     });
+
     if (res.status === 429) {
-      return { followedByIds, status: 429 };
-    }
-    if (!res.ok) {
-      return { followedByIds, status: res.status };
-    }
-    const json = (await res.json()) as ShowManyResponse;
-    for (const [id, status] of Object.entries(json.friendship_statuses ?? {})) {
-      if (status.followed_by) {
-        followedByIds.add(id);
+      sawRateLimit = true;
+    } else if (res.ok) {
+      const json = await safeJsonParse<ShowManyResponse>(res);
+      // json === null means 2xx but non-JSON (challenge page) — skip this chunk only.
+      if (json !== null) {
+        for (const [id, status] of Object.entries(json.friendship_statuses ?? {})) {
+          if (status.followed_by) {
+            followedByIds.add(id);
+          }
+        }
       }
     }
+    // Any other status: skip this chunk, keep going — a handful of unresolved
+    // stragglers is fine, aborting the whole safety net is not.
+
     if (i + chunkSize < userIds.length) {
       await sleep(300);
     }
   }
 
-  return { followedByIds, status: 200 };
+  return { followedByIds, status: sawRateLimit ? 429 : 200 };
 }

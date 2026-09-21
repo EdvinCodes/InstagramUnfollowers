@@ -34,7 +34,9 @@ async function silentScan(): Promise<UserNode[]> {
     return [];
   }
 
-  const followingUsers: RestUser[] = [];
+  // Keyed by pk so a following account that shifts position between pages never
+  // shows up twice in the silent-scan snapshot (same fix as useScanner.ts).
+  const followingByPk = new Map<string, RestUser>();
   const followerIds = new Set<string>();
   const followerNames = new Set<string>();
 
@@ -69,7 +71,9 @@ async function silentScan(): Promise<UserNode[]> {
       if (page.status !== 200) {
         break;
       }
-      followingUsers.push(...page.users);
+      for (const user of page.users) {
+        followingByPk.set(user.pk, user);
+      }
       followingRankToken = page.rankToken ?? followingRankToken;
       if (!page.nextMaxId) {
         break;
@@ -82,20 +86,22 @@ async function silentScan(): Promise<UserNode[]> {
     // Safety net: whatever the followers pass couldn't resolve (friendship_status
     // omitted + id/username mismatch) gets a bulk show_many check, so we don't fire
     // a false "new unfollower" notification for someone who actually follows back.
-    if (followingUsers.length > 0) {
-      const unclassifiedIds = findUnclassifiedUserIds(followingUsers, followerIds, followerNames);
+    if (followingByPk.size > 0) {
+      const unclassifiedIds = findUnclassifiedUserIds(
+        Array.from(followingByPk.values()),
+        followerIds,
+        followerNames,
+      );
       if (unclassifiedIds.length > 0) {
         const many = await fetchFollowedByMany(unclassifiedIds);
-        if (many.status !== 429) {
-          many.followedByIds.forEach(id => followerIds.add(id));
-        }
+        many.followedByIds.forEach(id => followerIds.add(id));
       }
     }
   } catch {
     // Fail silently — don't disturb the user's browsing
   }
 
-  return followingUsers.map(user =>
+  return Array.from(followingByPk.values()).map(user =>
     mapRestUserToNode(user, restUserFollowsViewer(user, followerIds, followerNames)),
   );
 }
