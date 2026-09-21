@@ -2,6 +2,10 @@ export const INSTAGRAM_HOSTNAME = 'www.instagram.com';
 export const UNFOLLOWERS_PER_PAGE = 50;
 export const WHITELISTED_RESULTS_STORAGE_KEY = 'ig_unfollower_whitelisted_results';
 export const HISTORY_RESULTS_STORAGE_KEY = 'ig_unfollower_history_snapshot';
+// Like davidarroyo1234's fork, scan/unfollow timing settings persist automatically
+// instead of resetting to defaults every time the content script reloads (see
+// loadTimings/saveTimings in utils.ts and their use in main.tsx).
+export const TIMINGS_STORAGE_KEY = 'ig_unfollower_timings';
 
 /** Must match keys read by public/background.js */
 export const CHROME_SCAN_FREQUENCY_KEY = 'ig_scan_frequency';

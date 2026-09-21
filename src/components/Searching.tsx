@@ -377,6 +377,12 @@ export const Searching = ({
 
       {/* Lista de Resultados */}
       <article className='results-container'>
+        {state.source === 'live' && state.percentage < 100 && (
+          <div className='scan-progress-banner' role='status'>
+            <strong>{t('scanProgressBannerTitle')}</strong>
+            <p>{t('scanProgressBannerBody')}</p>
+          </div>
+        )}
         <input
           type='search'
           className='search-bar results-search'

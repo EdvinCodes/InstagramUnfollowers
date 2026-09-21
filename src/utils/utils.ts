@@ -1,7 +1,8 @@
 import { UserNode } from '../model/user';
-import { UNFOLLOWERS_PER_PAGE, WITHOUT_PROFILE_PICTURE_URL_IDS } from '../constants/constants';
+import { TIMINGS_STORAGE_KEY, UNFOLLOWERS_PER_PAGE, WITHOUT_PROFILE_PICTURE_URL_IDS } from '../constants/constants';
 import { ScanningTab } from '../model/scanning-tab';
 import { ScanningFilter } from '../model/scanning-filter';
+import { Timings } from '../model/timings';
 import { UnfollowLogEntry } from '../model/unfollow-log-entry';
 import { UnfollowFilter } from '../model/unfollow-filter';
 import { getTranslations } from '../i18n/i18n';
@@ -299,4 +300,42 @@ export function isChromeStorageAvailable(): boolean {
 
 export function removeFollowerUrlGenerator(idToRemove: string): string {
   return `https://www.instagram.com/web/friendships/${idToRemove}/remove_follower/`;
+}
+
+// Like davidarroyo1234's fork: scan/unfollow timing settings persist across
+// page reloads instead of silently resetting to defaults every time (the
+// content script re-runs its whole app on every Instagram page load). Scoped
+// per-account via getDynamicStorageKey, same as the whitelist/history keys.
+function isTimings(value: unknown): value is Timings {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate.timeBetweenSearchCycles === 'number' &&
+    typeof candidate.timeToWaitAfterFiveSearchCycles === 'number' &&
+    typeof candidate.timeBetweenUnfollows === 'number' &&
+    typeof candidate.timeToWaitAfterFiveUnfollows === 'number'
+  );
+}
+
+export function loadTimings(): Timings | null {
+  try {
+    const raw = localStorage.getItem(getDynamicStorageKey(TIMINGS_STORAGE_KEY));
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw);
+    return isTimings(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveTimings(timings: Timings): void {
+  try {
+    localStorage.setItem(getDynamicStorageKey(TIMINGS_STORAGE_KEY), JSON.stringify(timings));
+  } catch {
+    // storage full or unavailable — ignore, defaults will be used next time
+  }
 }

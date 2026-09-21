@@ -25,6 +25,8 @@ import {
   getUsersForDisplay,
   getDynamicStorageKey,
   isChromeStorageAvailable,
+  loadTimings,
+  saveTimings,
   viewerFollowsBack,
 } from './utils/utils';
 import { identifyNewUnfollowers, saveScanSnapshot } from './utils/history';
@@ -81,12 +83,21 @@ function App() {
 
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
-  const [timings, setTimings] = useState<Timings>({
-    timeBetweenSearchCycles: DEFAULT_TIME_BETWEEN_SEARCH_CYCLES,
-    timeToWaitAfterFiveSearchCycles: DEFAULT_TIME_TO_WAIT_AFTER_FIVE_SEARCH_CYCLES,
-    timeBetweenUnfollows: DEFAULT_TIME_BETWEEN_UNFOLLOWS,
-    timeToWaitAfterFiveUnfollows: DEFAULT_TIME_TO_WAIT_AFTER_FIVE_UNFOLLOWS,
-  });
+  const [timings, setTimings] = useState<Timings>(
+    () =>
+      loadTimings() ?? {
+        timeBetweenSearchCycles: DEFAULT_TIME_BETWEEN_SEARCH_CYCLES,
+        timeToWaitAfterFiveSearchCycles: DEFAULT_TIME_TO_WAIT_AFTER_FIVE_SEARCH_CYCLES,
+        timeBetweenUnfollows: DEFAULT_TIME_BETWEEN_UNFOLLOWS,
+        timeToWaitAfterFiveUnfollows: DEFAULT_TIME_TO_WAIT_AFTER_FIVE_UNFOLLOWS,
+      },
+  );
+
+  // Persist timing settings on every change so they survive a page reload —
+  // previously they only survived via a manual settings export/import.
+  useEffect(() => {
+    saveTimings(timings);
+  }, [timings]);
 
   const {
     scannerState,
@@ -212,6 +223,13 @@ function App() {
           break;
         case 'no_session':
           showToast(t('statusNoSession'), 'error');
+          break;
+        case 'partial':
+          // Following list loaded fine, but the followers list (or the final
+          // show_many sweep) didn't fully resolve — results are shown, just
+          // without the "new unfollower" history/notification treatment below,
+          // since that needs fully-trustworthy data to avoid a false positive.
+          showToast(t('scanPartialFollowersToast'), 'warning');
           break;
         case 'completed': {
           const totalNew = newTraitors.length;

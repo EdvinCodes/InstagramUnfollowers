@@ -236,6 +236,35 @@
   margin: 0 0 0.75rem;
 }
 
+// Top-of-results disclaimer while a live scan is running: nothing is
+// classified into Mutuals/Non-followers until BOTH the following and
+// followers lists are fully in, so this stays visible for the whole scan
+// (see useScanner.ts for why, and Searching.tsx for where this renders).
+.scan-progress-banner {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0 0 0.75rem;
+  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  animation: fadeIn 0.3s ease-out;
+
+  strong {
+    font-size: 0.85rem;
+    color: #38bdf8;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    color: variables.$text-muted;
+  }
+}
+
 .stats-box {
   display: flex;
   flex-direction: column;
@@ -378,6 +407,21 @@
     &:hover .avatar-icon-overlay-container {
       opacity: 1;
     }
+  }
+
+  // `position: fixed` (set here, not inline) so it escapes `.avatar-container`'s
+  // `overflow: hidden` circular crop instead of being clipped to a 50px circle.
+  .avatar-hover-preview {
+    position: fixed;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    border: 3px solid rgba(255, 255, 255, 0.15);
+    z-index: 100000;
+    pointer-events: none;
+    animation: fadeIn 0.12s ease-out;
   }
 
   .user-info {
@@ -2354,6 +2398,15 @@ input[type='checkbox'] {
 
   .meta-offline-note {
     color: #047857;
+  }
+
+  .scan-progress-banner {
+    background: rgba(6, 182, 212, 0.08);
+    border-color: rgba(6, 182, 212, 0.3);
+
+    strong {
+      color: #0369a1;
+    }
   }
 
   .avatar-container .avatar-letter {
