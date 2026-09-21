@@ -14,6 +14,8 @@ export interface IgUserBrief {
   isPrivate: boolean;
   isGhost: boolean;
   mediaCount: number;
+  followingCount: number;
+  followerCount: number;
 }
 
 export interface FriendshipStatus {
@@ -21,7 +23,7 @@ export interface FriendshipStatus {
   outgoingRequest: boolean;
 }
 
-function getHeaders(): HeadersInit {
+export function getHeaders(): HeadersInit {
   const csrfToken = getCookie('csrftoken') ?? '';
   return {
     'x-ig-app-id': IG_APP_ID,
@@ -86,6 +88,8 @@ interface UserInfoResponse {
     media_count?: number;
     profile_pic_url?: string;
     profile_pic_url_hd?: string;
+    follower_count?: number;
+    following_count?: number;
   };
 }
 
@@ -246,6 +250,8 @@ export async function getUserBrief(userId: string): Promise<IgUserBrief | null> 
       isPrivate: Boolean(user.is_private),
       isGhost,
       mediaCount,
+      followingCount: user.following_count ?? 0,
+      followerCount: user.follower_count ?? 0,
     };
   } catch {
     return null;

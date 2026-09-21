@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   canFollowToday,
+  computeBackoffMs,
   computeFollowDelayMs,
   getGrowthSkipReason,
   getTodayKey,
@@ -102,6 +103,27 @@ describe('isRateLimitResponse', () => {
 
   it('detects feedback_required payloads', () => {
     expect(isRateLimitResponse(400, '{"message":"feedback_required"}')).toBe(true);
+  });
+});
+
+describe('computeBackoffMs', () => {
+  it('grows exponentially with each attempt, capped at maxMs', () => {
+    const base = 1000;
+    const max = 8000;
+    // attempt 1 ~= base, attempt 2 ~= 2x, attempt 3 ~= 4x, attempt 4 clamps to max
+    expect(computeBackoffMs(1, base, max)).toBeGreaterThanOrEqual(base);
+    expect(computeBackoffMs(1, base, max)).toBeLessThan(base * 1.2 + 1);
+
+    expect(computeBackoffMs(2, base, max)).toBeGreaterThanOrEqual(base * 2);
+    expect(computeBackoffMs(2, base, max)).toBeLessThan(base * 2 * 1.2 + 1);
+
+    expect(computeBackoffMs(4, base, max)).toBeGreaterThanOrEqual(max);
+    expect(computeBackoffMs(4, base, max)).toBeLessThan(max * 1.2 + 1);
+  });
+
+  it('treats attempt <= 0 as attempt 1', () => {
+    expect(computeBackoffMs(0, 1000, 8000)).toBeGreaterThanOrEqual(1000);
+    expect(computeBackoffMs(-5, 1000, 8000)).toBeGreaterThanOrEqual(1000);
   });
 });
 

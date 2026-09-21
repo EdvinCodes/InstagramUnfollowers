@@ -244,7 +244,7 @@ Esto es v10: no se empieza hasta que 8.7–9.0 estén en producción y estables.
 | Extraer `useActionQueue` (unfollow + pending + futuras) | Alta | Evitar copiar colas |
 | Generalizar parser Meta | ✅ | `metaExportParser.ts` |
 | `useLicense` / `PRO_PROMO_FREE` | Alta | Antes de cobrar |
-| Query hash GraphQL puede caducar | Media | El scan Meta reduce la dependencia |
+| ~~Query hash GraphQL puede caducar~~ | ~~Media~~ | **Pasó en agosto 2026 (issue #5).** Arreglado en 8.8.2: scan en vivo migrado a REST `/api/v1/friendships/.../following` + `/followers`, con guardia anti "éxito falso" (`igListsApi.ts`). Sigue existiendo el riesgo de que Instagram limite/cambie también el REST — el scan Meta sigue siendo el fallback sin API |
 | Tests: parsers y colas, no la API de IG | Media | Ya hay tests de pending + friendship |
 | i18n: no dejar features nuevas solo en EN/ES | Media | Cada módulo nuevo llena 16 locales |
 | `GrowthView` inline styles | Baja | Cuando se toque el hub |

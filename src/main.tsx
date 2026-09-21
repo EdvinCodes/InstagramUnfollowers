@@ -207,6 +207,9 @@ function App() {
         case 'stopped':
           showToast(t('scanErrorToast'), 'warning');
           break;
+        case 'blocked':
+          showToast(t('scanBlockedToast'), 'error');
+          break;
         case 'no_session':
           showToast(t('statusNoSession'), 'error');
           break;

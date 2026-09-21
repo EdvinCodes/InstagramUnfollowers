@@ -1,13 +1,3 @@
-export interface User {
-  readonly count: number;
-  readonly page_info: PageInfo;
-  readonly edges: UserEdge[];
-}
-
-export interface UserEdge {
-  readonly node: UserNode;
-}
-
 export interface UserNode {
   readonly id: string;
   readonly username: string;
@@ -41,9 +31,4 @@ export interface Owner {
 
 export enum Typename {
   GraphUser = 'GraphUser',
-}
-
-export interface PageInfo {
-  readonly has_next_page: boolean;
-  readonly end_cursor: string;
 }

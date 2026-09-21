@@ -204,26 +204,6 @@ export function getCookie(name: string): string | null {
   return null;
 }
 
-export function urlGenerator(nextCode?: string): string {
-  const ds_user_id = getCookie('ds_user_id');
-  if (!ds_user_id) {
-    throw new Error('No active Instagram session found');
-  }
-
-  // NOTE: This query_hash is specific to Instagram's API version.
-  // If IG updates their API, this hash might need to be updated.
-  const QUERY_HASH = '3dec7e2c57367ef3da3d987d89f9dbc8';
-  const variables: Record<string, string> = {
-    id: ds_user_id,
-    include_reel: 'true',
-    fetch_mutual: 'false',
-    first: '24',
-    ...(nextCode ? { after: nextCode } : {}),
-  };
-
-  return `https://www.instagram.com/graphql/query/?query_hash=${QUERY_HASH}&variables=${encodeURIComponent(JSON.stringify(variables))}`;
-}
-
 export function unfollowUserUrlGenerator(idToUnfollow: string): string {
   return `https://www.instagram.com/web/friendships/${idToUnfollow}/unfollow/`;
 }

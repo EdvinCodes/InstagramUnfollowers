@@ -1,12 +1,22 @@
 import { useCallback, useRef } from 'preact/hooks';
+import {
+  cancelFollowRequest,
+  fetchFriendshipStatus,
+  lookupUserByUsername,
+  type FriendshipStatus,
+} from '../utils/growthApi';
 import type { PendingLogEntry, PendingRequestUser } from '../model/pending-request';
 import type { PendingRequestsState } from '../model/pending-requests-state';
 import type { State } from '../model/state';
 import { Timings } from '../model/timings';
 import { HistoryService } from '../services/historyService';
 import { t } from '../i18n/i18n';
-import { cancelFollowRequest, fetchFriendshipStatus, lookupUserByUsername } from '../utils/growthApi';
-import { isRateLimitResponse } from '../utils/growthHelpers';
+import { computeBackoffMs, isRateLimitResponse } from '../utils/growthHelpers';
+import {
+  GROWTH_RATE_LIMIT_BACKOFF_MAX_MS,
+  GROWTH_RATE_LIMIT_BACKOFF_MS,
+  RATE_LIMIT_MAX_RETRIES,
+} from '../constants/growth';
 import { toPendingHistoryUser } from '../utils/pendingHelpers';
 import { addCancelledUsernames } from '../utils/pendingStorage';
 import { getCookie, sleep } from '../utils/utils';
@@ -118,79 +128,148 @@ export function usePendingRequests(
         }
       };
 
+      // Instagram rate-limits this endpoint hard (GET web_profile_info especially) once a queue
+      // gets into the thousands. Instead of dying on the very first 429 like before, back off
+      // with growing delays and retry automatically — only give up for good after several
+      // consecutive failures in a row.
+      let consecutiveRateLimitHits = 0;
+
+      const backoffAndRetry = async (): Promise<boolean> => {
+        consecutiveRateLimitHits += 1;
+        if (consecutiveRateLimitHits > RATE_LIMIT_MAX_RETRIES) {
+          abortedByRateLimit = true;
+          return false;
+        }
+
+        const waitMs = computeBackoffMs(
+          consecutiveRateLimitHits,
+          GROWTH_RATE_LIMIT_BACKOFF_MS,
+          GROWTH_RATE_LIMIT_BACKOFF_MAX_MS,
+        );
+        const endAt = Date.now() + waitMs;
+        while (Date.now() < endAt && !isStopped()) {
+          await waitIfPaused();
+          if (isStopped()) {
+            break;
+          }
+          const remainingSeconds = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+          setStatus(t('pendingRetryingIn')(remainingSeconds));
+          await sleep(Math.min(1000, Math.max(0, endAt - Date.now())) || 1);
+        }
+        return !isStopped();
+      };
+
       for (const user of usersToCancel) {
         await waitIfPaused();
         if (isStopped()) {
           break;
         }
 
-        setStatus(t('pendingLookingUp')(user.username));
-        const lookup = await lookupUserByUsername(user.username);
-        if (isRateLimitResponse(lookup.status)) {
-          abortedByRateLimit = true;
-          break;
-        }
-        if (!lookup.id) {
-          const transient = lookup.status === 0 || lookup.status === 401 || lookup.status === 403 || lookup.status >= 500;
-          failed += 1;
-          processed += 1;
-          if (!transient) {
+        let lookupId: string | null = null;
+        let friendship: FriendshipStatus | null = null;
+        let friendshipChecked = false;
+        let handled = false;
+        let aborted = false;
+
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        while (!handled) {
+          if (isStopped()) {
+            aborted = true;
+            break;
+          }
+
+          if (lookupId === null) {
+            setStatus(t('pendingLookingUp')(user.username));
+            const lookup = await lookupUserByUsername(user.username);
+
+            if (isRateLimitResponse(lookup.status)) {
+              if (!(await backoffAndRetry())) {
+                aborted = true;
+                break;
+              }
+              continue;
+            }
+            consecutiveRateLimitHits = 0;
+
+            if (!lookup.id) {
+              const transient =
+                lookup.status === 0 || lookup.status === 401 || lookup.status === 403 || lookup.status >= 500;
+              failed += 1;
+              processed += 1;
+              if (!transient) {
+                addCancelledUsernames([user.username]);
+                addResult('skip', user.username, t('pendingSkipNotFound')(user.username));
+              } else {
+                addResult('fail', user.username, t('pendingFailed')(user.username));
+              }
+              patch({
+                processedCount: processed,
+                failedCount: failed,
+                percentage: Math.floor((processed / usersToCancel.length) * 100),
+              });
+              handled = true;
+              break;
+            }
+
+            lookupId = lookup.id;
+            friendship = lookup.friendship;
+          }
+
+          await waitIfPaused();
+          if (isStopped()) {
+            aborted = true;
+            break;
+          }
+
+          if (!friendship && !friendshipChecked) {
+            setStatus(t('pendingChecking')(user.username));
+            const friendshipResult = await fetchFriendshipStatus(lookupId);
+
+            if (isRateLimitResponse(friendshipResult.status)) {
+              if (!(await backoffAndRetry())) {
+                aborted = true;
+                break;
+              }
+              continue;
+            }
+            consecutiveRateLimitHits = 0;
+            friendship = friendshipResult.friendship;
+            friendshipChecked = true;
+          }
+
+          if (friendship?.following) {
+            skipped += 1;
+            processed += 1;
             addCancelledUsernames([user.username]);
-            addResult('skip', user.username, t('pendingSkipNotFound')(user.username));
-          } else {
-            addResult('fail', user.username, t('pendingFailed')(user.username));
-          }
-          patch({
-            processedCount: processed,
-            failedCount: failed,
-            percentage: Math.floor((processed / usersToCancel.length) * 100),
-          });
-          if (processed < usersToCancel.length && !isStopped()) {
-            await interruptibleSleep(timings.timeBetweenUnfollows);
-          }
-          continue;
-        }
-
-        await waitIfPaused();
-        if (isStopped()) {
-          break;
-        }
-
-        let friendship = lookup.friendship;
-        if (!friendship) {
-          setStatus(t('pendingChecking')(user.username));
-          const friendshipResult = await fetchFriendshipStatus(lookup.id);
-          if (isRateLimitResponse(friendshipResult.status)) {
-            abortedByRateLimit = true;
+            addResult('skip', user.username, t('pendingSkipAccepted')(user.username));
+            patch({
+              processedCount: processed,
+              skippedCount: skipped,
+              percentage: Math.floor((processed / usersToCancel.length) * 100),
+            });
+            handled = true;
             break;
           }
-          friendship = friendshipResult.friendship;
-        }
 
-        if (friendship?.following) {
-          skipped += 1;
-          processed += 1;
-          addCancelledUsernames([user.username]);
-          addResult('skip', user.username, t('pendingSkipAccepted')(user.username));
-          patch({
-            processedCount: processed,
-            skippedCount: skipped,
-            percentage: Math.floor((processed / usersToCancel.length) * 100),
-          });
-        } else {
           setStatus(t('pendingCancelling')(user.username));
-          const result = await cancelFollowRequest(lookup.id);
+          const result = await cancelFollowRequest(lookupId);
+
           if (isRateLimitResponse(result.status, result.body)) {
-            abortedByRateLimit = true;
-            break;
+            if (!(await backoffAndRetry())) {
+              aborted = true;
+              break;
+            }
+            continue;
           }
+          consecutiveRateLimitHits = 0;
+
           processed += 1;
           if (result.ok) {
             cancelled += 1;
             addCancelledUsernames([user.username]);
             HistoryService.addEvent(
               'REQUEST_CANCELLED',
-              toPendingHistoryUser(user.username, lookup.id, user.fullName),
+              toPendingHistoryUser(user.username, lookupId, user.fullName),
             );
             addResult('success', user.username, t('pendingSuccess')(user.username));
           } else {
@@ -203,8 +282,14 @@ export function usePendingRequests(
             failedCount: failed,
             percentage: Math.floor((processed / usersToCancel.length) * 100),
           });
+          handled = true;
         }
 
+        if (aborted) {
+          break;
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- abortedByRateLimit is set inside the backoffAndRetry closure
         if (processed < usersToCancel.length && !isStopped() && !abortedByRateLimit) {
           if (processed % 5 === 0) {
             setStatus(t('pendingCooldown'));
@@ -216,11 +301,13 @@ export function usePendingRequests(
         }
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- abortedByRateLimit is set inside the backoffAndRetry closure
       const finishedAll = processed >= usersToCancel.length && !abortedByRateLimit && !isStopped();
       patch({
         isRunning: false,
         isPaused: false,
         percentage: finishedAll ? 100 : Math.floor((processed / usersToCancel.length) * 100),
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- abortedByRateLimit is set inside the backoffAndRetry closure
         statusMessage: abortedByRateLimit
           ? t('pendingRateLimited')
           : isStopped()

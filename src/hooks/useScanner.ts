@@ -1,10 +1,14 @@
 import { useState, useRef, useCallback } from 'preact/hooks';
-import { UserNode, User } from '../model/user';
-import { urlGenerator, sleep } from '../utils/utils';
+import { UserNode } from '../model/user';
+import { getCookie, sleep } from '../utils/utils';
+import { fetchFollowersPage, fetchFollowingPage, isSuspiciousEmptyFirstPage, mapRestUserToNode, RestUser } from '../utils/igListsApi';
+import { getUserBrief } from '../utils/growthApi';
+import { computeBackoffMs } from '../utils/growthHelpers';
+import { GROWTH_RATE_LIMIT_BACKOFF_MAX_MS, GROWTH_RATE_LIMIT_BACKOFF_MS, RATE_LIMIT_MAX_RETRIES } from '../constants/growth';
 import { Timings } from '../model/timings';
 import { t } from '../i18n/i18n';
 
-export type ScanFinishReason = 'completed' | 'rate_limit' | 'error' | 'no_session' | 'stopped';
+export type ScanFinishReason = 'completed' | 'rate_limit' | 'error' | 'no_session' | 'stopped' | 'blocked';
 
 interface ScannerState {
   isScanning: boolean;
@@ -49,13 +53,8 @@ export const useScanner = (timings: Timings) => {
       finishReason: null,
     });
 
-    const results: UserNode[] = [];
-    const seenIds = new Set<string>();
-
-    let url: string;
-    try {
-      url = urlGenerator();
-    } catch {
+    const dsUserId = getCookie('ds_user_id');
+    if (!dsUserId) {
       setScannerState(prev => ({
         ...prev,
         isScanning: false,
@@ -65,83 +64,162 @@ export const useScanner = (timings: Timings) => {
       return;
     }
 
-    let hasNext = true;
-    let totalFollowed = -1;
-    let currentCount = 0;
-    let scrollCycle = 0;
+    const followingUsers: RestUser[] = [];
+    const followerIds = new Set<string>();
     let finishReason: ScanFinishReason = 'completed';
 
-    try {
+    const waitWhilePaused = async () => {
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      while (hasNext && !shouldStopRef.current) {
+      while (isPausedRef.current) {
+        setScannerState(prev => ({ ...prev, statusMessage: t('statusPaused') }));
+        await sleep(1000);
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        while (isPausedRef.current) {
-          setScannerState(prev => ({ ...prev, statusMessage: t('statusPaused') }));
-          await sleep(1000);
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-          if (shouldStopRef.current) {
-            break;
-          }
+        if (shouldStopRef.current) {
+          break;
         }
+      }
+    };
+
+    // Anti-ban pacing between pages, with a longer cooldown every 5 pages — same cadence the old
+    // GraphQL loop used, just decoupled from the (now dead) query_hash pagination.
+    const pacingSleep = async (pageIndex: number) => {
+      const randomSleep =
+        Math.floor(Math.random() * timings.timeBetweenSearchCycles * 0.3) + timings.timeBetweenSearchCycles;
+      await sleep(randomSleep);
+
+      if (pageIndex > 0 && pageIndex % 5 === 0) {
+        setScannerState(prev => ({ ...prev, statusMessage: t('statusCoolingDown') }));
+        await sleep(timings.timeToWaitAfterFiveSearchCycles);
+      }
+    };
+
+    try {
+      // Best-effort totals from a separate endpoint. Used only for progress % and to tell a
+      // genuinely-empty list apart from Instagram silently failing to return one (see below).
+      const brief = await getUserBrief(dsUserId);
+      const totalFollowing = brief?.followingCount ?? -1;
+      const totalFollowers = brief?.followerCount ?? -1;
+
+      // ── Phase 1: following ────────────────────────────────────────────────
+      let maxId: string | null = null;
+      let page = 0;
+      let retries = 0;
+
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      while (!shouldStopRef.current) {
+        await waitWhilePaused();
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (shouldStopRef.current) {
           break;
         }
 
         setScannerState(prev => ({ ...prev, statusMessage: t('statusFetching') }));
-        const response = await fetch(url);
+        const pageResult = await fetchFollowingPage(dsUserId, maxId);
 
-        if (response.status === 429) {
-          finishReason = 'rate_limit';
+        if (pageResult.status === 429) {
+          retries++;
+          if (retries > RATE_LIMIT_MAX_RETRIES) {
+            finishReason = 'rate_limit';
+            shouldStopRef.current = true;
+            break;
+          }
+          await sleep(computeBackoffMs(retries, GROWTH_RATE_LIMIT_BACKOFF_MS, GROWTH_RATE_LIMIT_BACKOFF_MAX_MS));
+          continue;
+        }
+
+        if (pageResult.status !== 200) {
+          throw new Error(`API Error ${pageResult.status}`);
+        }
+        retries = 0;
+
+        if (page === 0 && isSuspiciousEmptyFirstPage(pageResult.users, totalFollowing)) {
+          // Instagram says we follow `totalFollowing` accounts but handed back zero of them.
+          // Reporting "0 results / completed" here is exactly the bug from issue #5 — bail out
+          // loudly instead.
+          finishReason = 'blocked';
           shouldStopRef.current = true;
           break;
         }
 
-        if (!response.ok) {
-          throw new Error(`API Error ${response.status}`);
-        }
+        followingUsers.push(...pageResult.users);
 
-        const json = await response.json();
-        const data: User | undefined = json?.data?.user?.edge_follow;
-        if (!data) {
-          throw new Error('Unexpected Instagram response');
-        }
-
-        if (totalFollowed === -1) {
-          totalFollowed = data.count;
-        }
-
-        hasNext = data.page_info.has_next_page;
-        url = urlGenerator(data.page_info.end_cursor);
-        data.edges.forEach(edge => {
-          if (!seenIds.has(edge.node.id)) {
-            seenIds.add(edge.node.id);
-            results.push(edge.node);
-          }
-        });
-        currentCount = results.length;
-
+        const currentCount = followingUsers.length;
         const progress =
-          totalFollowed > 0 ? Math.min(99, Math.floor((currentCount / totalFollowed) * 100)) : 0;
+          totalFollowing > 0
+            ? Math.min(49, Math.floor((currentCount / totalFollowing) * 49))
+            : Math.min(45, page * 5);
 
         setScannerState({
           isScanning: true,
-          results: [...results],
+          results: followingUsers.map(user => mapRestUserToNode(user, false)),
           progress,
-          statusMessage: t('statusAnalyzed')(currentCount, Math.max(totalFollowed, currentCount)),
+          statusMessage: t('statusAnalyzed')(currentCount, Math.max(totalFollowing, currentCount)),
           finishReason: null,
         });
 
-        const randomSleep =
-          Math.floor(Math.random() * timings.timeBetweenSearchCycles * 0.3) +
-          timings.timeBetweenSearchCycles;
-        await sleep(randomSleep);
+        if (!pageResult.nextMaxId) {
+          break;
+        }
+        maxId = pageResult.nextMaxId;
+        page++;
+        await pacingSleep(page);
+      }
 
-        scrollCycle++;
-        if (scrollCycle >= 5) {
-          scrollCycle = 0;
-          setScannerState(prev => ({ ...prev, statusMessage: t('statusCoolingDown') }));
-          await sleep(timings.timeToWaitAfterFiveSearchCycles);
+      // ── Phase 2: followers (only to know who follows back) ──────────────────
+      if (!shouldStopRef.current && followingUsers.length > 0) {
+        let followersMaxId: string | null = null;
+        let followerPage = 0;
+        let followerRetries = 0;
+
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        while (!shouldStopRef.current) {
+          await waitWhilePaused();
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          if (shouldStopRef.current) {
+            break;
+          }
+
+          setScannerState(prev => ({ ...prev, statusMessage: t('statusFetching') }));
+          const pageResult = await fetchFollowersPage(dsUserId, followersMaxId);
+
+          if (pageResult.status === 429) {
+            followerRetries++;
+            if (followerRetries > RATE_LIMIT_MAX_RETRIES) {
+              finishReason = 'rate_limit';
+              shouldStopRef.current = true;
+              break;
+            }
+            await sleep(
+              computeBackoffMs(followerRetries, GROWTH_RATE_LIMIT_BACKOFF_MS, GROWTH_RATE_LIMIT_BACKOFF_MAX_MS),
+            );
+            continue;
+          }
+
+          if (pageResult.status !== 200) {
+            throw new Error(`API Error ${pageResult.status}`);
+          }
+          followerRetries = 0;
+
+          pageResult.users.forEach(user => followerIds.add(user.pk));
+
+          const fetchedFollowers = followerIds.size;
+          const progress =
+            totalFollowers > 0
+              ? 50 + Math.min(49, Math.floor((fetchedFollowers / totalFollowers) * 49))
+              : Math.min(95, 50 + followerPage * 5);
+
+          setScannerState(prev => ({
+            ...prev,
+            progress,
+            statusMessage: t('statusAnalyzed')(fetchedFollowers, Math.max(totalFollowers, fetchedFollowers)),
+          }));
+
+          if (!pageResult.nextMaxId) {
+            break;
+          }
+          followersMaxId = pageResult.nextMaxId;
+          followerPage++;
+          await pacingSleep(followerPage);
         }
       }
 
@@ -152,10 +230,13 @@ export const useScanner = (timings: Timings) => {
       console.error('Scan error:', error);
       finishReason = 'error';
     } finally {
+      const finalResults = followingUsers.map(user => mapRestUserToNode(user, followerIds.has(user.pk)));
+
       const statusByReason: Record<ScanFinishReason, string> = {
         completed: t('statusCompleted'),
         rate_limit: t('statusRateLimited'),
         error: t('statusScanError'),
+        blocked: t('statusScanError'),
         no_session: t('statusNoSession'),
         stopped: t('statusStopped'),
       };
@@ -164,7 +245,7 @@ export const useScanner = (timings: Timings) => {
         ...prev,
         isScanning: false,
         progress: finishReason === 'completed' ? 100 : prev.progress,
-        results: results.length > 0 ? [...results] : prev.results,
+        results: finalResults.length > 0 ? finalResults : prev.results,
         statusMessage: statusByReason[finishReason],
         finishReason,
       }));

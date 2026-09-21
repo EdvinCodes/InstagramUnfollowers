@@ -118,6 +118,18 @@ export function getGrowthSkipReason(ctx: GrowthSkipContext): GrowthSkipReason | 
   return null;
 }
 
+/**
+ * Exponential backoff with jitter, capped at maxMs.
+ * attempt=1 -> ~baseMs, attempt=2 -> ~2x baseMs, attempt=3 -> ~4x baseMs, etc.
+ */
+export function computeBackoffMs(attempt: number, baseMs: number, maxMs: number): number {
+  const safeAttempt = Math.max(1, attempt);
+  const exponential = baseMs * Math.pow(2, safeAttempt - 1);
+  const capped = Math.min(exponential, maxMs);
+  const jitter = Math.floor(Math.random() * capped * 0.2);
+  return capped + jitter;
+}
+
 export function isRateLimitResponse(status: number, body?: string): boolean {
   if (status === 429) {
     return true;

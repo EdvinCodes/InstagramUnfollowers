@@ -53,6 +53,7 @@ export interface PendingTranslationSlice {
   pendingSkipAccepted: (u: string) => string;
   pendingSkipGone: (u: string) => string;
   pendingSkipNotFound: (u: string) => string;
+  pendingRetryingIn: (seconds: number) => string;
   pendingRateLimited: string;
   pendingCompleted: string;
   pendingStopped: string;
@@ -116,7 +117,9 @@ const en: PendingTranslationSlice = {
   pendingSkipAccepted: u => `Skipped @${u} — they already accepted (not unfollowed)`,
   pendingSkipGone: u => `Skipped @${u} — request is no longer pending`,
   pendingSkipNotFound: u => `Skipped @${u} — account not found`,
-  pendingRateLimited: 'Instagram rate-limited the queue. Pause and continue later.',
+  pendingRetryingIn: seconds => `Instagram rate-limited the request. Retrying automatically in ${seconds}s…`,
+  pendingRateLimited:
+    'Instagram kept rate-limiting the queue after several automatic retries. Pause and continue later.',
   pendingCompleted: 'Finished this batch.',
   pendingStopped: 'Stopped.',
   pendingCooldown: 'Cooling down to avoid an action block...',
@@ -182,7 +185,9 @@ const es: PendingTranslationSlice = {
   pendingSkipAccepted: u => `Omitida @${u} — ya te aceptó (no se deja de seguir)`,
   pendingSkipGone: u => `Omitida @${u} — ya no está pendiente`,
   pendingSkipNotFound: u => `Omitida @${u} — cuenta no encontrada`,
-  pendingRateLimited: 'Instagram limitó la cola. Para y continúa más tarde.',
+  pendingRetryingIn: seconds => `Instagram limitó la petición. Reintentando automáticamente en ${seconds}s…`,
+  pendingRateLimited:
+    'Instagram sigue limitando la cola tras varios reintentos automáticos. Para y continúa más tarde.',
   pendingCompleted: 'Lote terminado.',
   pendingStopped: 'Detenido.',
   pendingCooldown: 'Pausa larga para evitar un bloqueo de acciones...',

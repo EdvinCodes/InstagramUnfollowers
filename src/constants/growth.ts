@@ -10,7 +10,11 @@ export const GROWTH_DAILY_LIMIT_PRO = 50;
 export const GROWTH_SCRAPE_DELAY_MS = 1500;
 export const GROWTH_ACCOUNT_DELAY_MS = 2000;
 export const GROWTH_RATE_LIMIT_BACKOFF_MS = 120_000;
+export const GROWTH_RATE_LIMIT_BACKOFF_MAX_MS = GROWTH_RATE_LIMIT_BACKOFF_MS * 4;
 export const GROWTH_FOLLOWS_BEFORE_COOLDOWN = 5;
+
+/** After this many consecutive 429s (even with backoff+retry in between), give up and let the user resume manually. */
+export const RATE_LIMIT_MAX_RETRIES = 3;
 
 export type GrowthSpeed = 'tortoise' | 'human' | 'kamikaze';
 

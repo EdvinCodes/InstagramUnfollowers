@@ -5,8 +5,9 @@
  * snapshot. When new unfollowers are detected it sends a message to
  * background.js which fires a Chrome notification.
  */
-import { UserNode, User } from '../model/user';
-import { urlGenerator, sleep, getCookie, getDynamicStorageKey } from '../utils/utils';
+import { UserNode } from '../model/user';
+import { sleep, getCookie, getDynamicStorageKey } from '../utils/utils';
+import { fetchFollowersPage, fetchFollowingPage, mapRestUserToNode, RestUser } from '../utils/igListsApi';
 
 const MONITOR_ENABLED_KEY = 'ig-realtime-monitor-enabled';
 const PREV_NF_SNAPSHOT_KEY = 'ig-prev-nonfollower-ids';
@@ -33,29 +34,51 @@ async function silentScan(): Promise<UserNode[]> {
     return [];
   }
 
-  const results: UserNode[] = [];
-  let url = urlGenerator();
-  let hasNext = true;
-  let cycles = 0;
+  const followingUsers: RestUser[] = [];
+  const followerIds = new Set<string>();
 
   try {
-    while (hasNext && cycles < 60) {
-      const response = await fetch(url);
-      if (!response.ok) {
+    // Following list — same private REST endpoint the Instagram web app uses.
+    // (The old GraphQL query_hash this used to call stopped returning edges in 2026.)
+    let maxId: string | null = null;
+    let cycles = 0;
+    while (cycles < 60) {
+      const page = await fetchFollowingPage(userId, maxId);
+      if (page.status !== 200) {
         break;
       }
-      const json = (await response.json()) as { data: { user: { edge_follow: User } } };
-      const data = json.data.user.edge_follow;
-      hasNext = data.page_info.has_next_page;
-      url = urlGenerator(data.page_info.end_cursor);
-      data.edges.forEach(edge => results.push(edge.node));
-      await sleep(1500 + Math.floor(Math.random() * 500));
+      followingUsers.push(...page.users);
+      if (!page.nextMaxId) {
+        break;
+      }
+      maxId = page.nextMaxId;
       cycles++;
+      await sleep(1500 + Math.floor(Math.random() * 500));
+    }
+
+    // Followers list — needed to know who still follows back.
+    if (followingUsers.length > 0) {
+      let followersMaxId: string | null = null;
+      let followerCycles = 0;
+      while (followerCycles < 60) {
+        const page = await fetchFollowersPage(userId, followersMaxId);
+        if (page.status !== 200) {
+          break;
+        }
+        page.users.forEach(user => followerIds.add(user.pk));
+        if (!page.nextMaxId) {
+          break;
+        }
+        followersMaxId = page.nextMaxId;
+        followerCycles++;
+        await sleep(1500 + Math.floor(Math.random() * 500));
+      }
     }
   } catch {
     // Fail silently — don't disturb the user's browsing
   }
-  return results;
+
+  return followingUsers.map(user => mapRestUserToNode(user, followerIds.has(user.pk)));
 }
 
 // Core check

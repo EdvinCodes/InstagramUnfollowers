@@ -12,7 +12,7 @@ export interface MetaScanSnapshot {
   readonly names: Readonly<Record<string, string>>;
 }
 
-function emptyReel(username: string): UserNode['reel'] {
+export function emptyReel(username: string): UserNode['reel'] {
   return {
     id: username,
     expiring_at: 0,
