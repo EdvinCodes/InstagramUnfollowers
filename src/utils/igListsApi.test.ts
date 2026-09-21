@@ -185,6 +185,15 @@ describe('findUnclassifiedUserIds', () => {
     const b = { ...baseUser, pk: '2', ids: ['2'], username: 'omega', followedBy: null };
     expect(findUnclassifiedUserIds([a, b], new Set(), new Set())).toEqual(['1', '2']);
   });
+
+  it('does not re-check accounts Instagram already said definitively do NOT follow back', () => {
+    // followedBy === false is just as trustworthy a signal as true — re-querying it
+    // via show_many would only waste a request (this matters a lot now that the
+    // scanner calls this once per page instead of once for the whole scan).
+    const confirmedNo = { ...baseUser, pk: '1', ids: ['1'], username: 'alpha', followedBy: false };
+    const unknown = { ...baseUser, pk: '2', ids: ['2'], username: 'beta', followedBy: null };
+    expect(findUnclassifiedUserIds([confirmedNo, unknown], new Set(), new Set())).toEqual(['2']);
+  });
 });
 
 describe('isSuspiciousEmptyFirstPage', () => {

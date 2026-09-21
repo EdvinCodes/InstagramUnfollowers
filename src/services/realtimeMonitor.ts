@@ -7,7 +7,7 @@
  */
 import { UserNode } from '../model/user';
 import { sleep, getCookie, getDynamicStorageKey } from '../utils/utils';
-import { fetchFollowersPage, fetchFollowingPage, fetchFollowedByMany, findUnclassifiedUserIds, mapRestUserToNode, addRestUserToFollowerIndex, restUserFollowsViewer, RestUser } from '../utils/igListsApi';
+import { fetchFollowingPage, fetchFollowedByMany, findUnclassifiedUserIds, mapRestUserToNode, restUserFollowsViewer, RestUser } from '../utils/igListsApi';
 
 const MONITOR_ENABLED_KEY = 'ig-realtime-monitor-enabled';
 const PREV_NF_SNAPSHOT_KEY = 'ig-prev-nonfollower-ids';
@@ -37,30 +37,15 @@ async function silentScan(): Promise<UserNode[]> {
   // Keyed by pk so a following account that shifts position between pages never
   // shows up twice in the silent-scan snapshot (same fix as useScanner.ts).
   const followingByPk = new Map<string, RestUser>();
+  // Populated from friendship_status/show_many, not a separate followers fetch —
+  // see the matching comment in useScanner.ts. Fetching followers in full here too
+  // would double this background monitor's request volume for no benefit: show_many
+  // is just as authoritative and only costs one extra call for the handful of
+  // accounts friendship_status didn't already resolve.
   const followerIds = new Set<string>();
   const followerNames = new Set<string>();
 
   try {
-    // Followers list first — needed to know who follows back BEFORE we classify
-    // the following list (same ordering fix as the main scanner, see useScanner.ts).
-    let followersMaxId: string | null = null;
-    let followersRankToken: string | null = null;
-    let followerCycles = 0;
-    while (followerCycles < 60) {
-      const page = await fetchFollowersPage(userId, followersMaxId, followersRankToken);
-      if (page.status !== 200) {
-        break;
-      }
-      page.users.forEach(user => addRestUserToFollowerIndex(user, followerIds, followerNames));
-      followersRankToken = page.rankToken ?? followersRankToken;
-      if (!page.nextMaxId) {
-        break;
-      }
-      followersMaxId = page.nextMaxId;
-      followerCycles++;
-      await sleep(1500 + Math.floor(Math.random() * 500));
-    }
-
     // Following list — same private REST endpoint the Instagram web app uses.
     // (The old GraphQL query_hash this used to call stopped returning edges in 2026.)
     let maxId: string | null = null;
@@ -83,9 +68,9 @@ async function silentScan(): Promise<UserNode[]> {
       await sleep(1500 + Math.floor(Math.random() * 500));
     }
 
-    // Safety net: whatever the followers pass couldn't resolve (friendship_status
-    // omitted + id/username mismatch) gets a bulk show_many check, so we don't fire
-    // a false "new unfollower" notification for someone who actually follows back.
+    // Bulk follow-back check for whatever friendship_status didn't already
+    // resolve, so we don't fire a false "new unfollower" notification for someone
+    // who actually follows back.
     if (followingByPk.size > 0) {
       const unclassifiedIds = findUnclassifiedUserIds(
         Array.from(followingByPk.values()),

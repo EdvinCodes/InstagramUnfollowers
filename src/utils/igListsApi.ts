@@ -312,11 +312,15 @@ export function isSuspiciousEmptyFirstPage(pageUsers: readonly RestUser[], known
 }
 
 /**
- * Following-list accounts we still can't classify after the followers pass —
- * Instagram omitted friendship_status AND the id/username didn't match anything
- * in the followers index (partial followers-list failure, id-scheme mismatch,
+ * Following-list accounts we still can't classify for sure — Instagram didn't send
+ * a definitive `friendship_status.followed_by` (true OR false) AND the id/username
+ * didn't match anything already known (followers index, an earlier show_many call,
  * etc.). These, and only these, need a `show_many` bulk check instead of being
  * silently defaulted to "does not follow back".
+ *
+ * Deliberately does NOT include accounts where `followedBy === false` — that's
+ * Instagram explicitly telling us "no", which is just as trustworthy as `true` and
+ * re-checking it via show_many would only waste a request.
  */
 export function findUnclassifiedUserIds(
   followingUsers: readonly RestUser[],
@@ -324,7 +328,7 @@ export function findUnclassifiedUserIds(
   followerNames: ReadonlySet<string>,
 ): string[] {
   return followingUsers
-    .filter(user => !restUserFollowsViewer(user, followerIds, followerNames))
+    .filter(user => user.followedBy !== false && !restUserFollowsViewer(user, followerIds, followerNames))
     .map(user => user.pk);
 }
 
