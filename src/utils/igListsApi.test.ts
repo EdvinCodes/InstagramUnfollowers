@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  findUnclassifiedUserIds,
   isSuspiciousEmptyFirstPage,
   mapRestUserToNode,
   normalizeRestUser,
   parseFollowedBy,
   parseNextMaxId,
+  parseRankToken,
   restUserFollowsViewer,
 } from './igListsApi';
 
@@ -144,6 +146,44 @@ describe('mapRestUserToNode', () => {
       false,
     );
     expect(node.has_anonymous_profile_picture).toBe(true);
+  });
+});
+
+describe('parseRankToken', () => {
+  it('reads follow_ranking_token when Instagram sent it', () => {
+    expect(parseRankToken({ follow_ranking_token: 'be11c209708f4fda|5537015771|osr' })).toBe(
+      'be11c209708f4fda|5537015771|osr',
+    );
+  });
+
+  it('returns null when Instagram omitted it', () => {
+    expect(parseRankToken({})).toBeNull();
+  });
+});
+
+describe('findUnclassifiedUserIds', () => {
+  it('skips accounts already resolved by friendship_status or the followers index', () => {
+    const knownByFlag = { ...baseUser, pk: '1', ids: ['1'], followedBy: true };
+    const knownByIndex = { ...baseUser, pk: '2', ids: ['2'], username: 'beta', followedBy: null };
+    const unresolved = { ...baseUser, pk: '3', ids: ['3'], username: 'gamma', followedBy: null };
+
+    expect(findUnclassifiedUserIds([knownByFlag, knownByIndex, unresolved], new Set(['2']), new Set())).toEqual([
+      '3',
+    ]);
+  });
+
+  it('returns an empty array once every account is resolved', () => {
+    const resolved = { ...baseUser, pk: '1', followedBy: true };
+    expect(findUnclassifiedUserIds([resolved], new Set(), new Set())).toEqual([]);
+  });
+
+  it('returns everyone when the followers index is empty and no flags were sent', () => {
+    // This is the exact "500/500 non-followers" scenario from the bug report: the
+    // following payload has no friendship_status at all, and phase 1 hasn't found a
+    // match yet (e.g. still mid-pagination) — show_many must catch all of them.
+    const a = { ...baseUser, pk: '1', ids: ['1'], username: 'alpha', followedBy: null };
+    const b = { ...baseUser, pk: '2', ids: ['2'], username: 'omega', followedBy: null };
+    expect(findUnclassifiedUserIds([a, b], new Set(), new Set())).toEqual(['1', '2']);
   });
 });
 

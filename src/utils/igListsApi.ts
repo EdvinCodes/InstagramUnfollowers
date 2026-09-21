@@ -58,11 +58,14 @@ interface RestListResponse {
   has_more?: boolean;
   big_list?: boolean;
   status?: string;
+  follow_ranking_token?: string;
 }
 
 export interface FetchListPageResult {
   readonly users: readonly RestUser[];
   readonly nextMaxId: string | null;
+  /** Ranking token Instagram echoes back; pass it into the next page of the SAME list. */
+  readonly rankToken: string | null;
   /** Raw HTTP status. Callers must branch on 429 (rate limit) vs other errors themselves. */
   readonly status: number;
 }
@@ -99,6 +102,14 @@ export function parseFollowedBy(raw: RawRestUser): boolean | null {
     return raw.followed_by;
   }
   return null;
+}
+
+/** Instagram's own clients echo this back on every following/followers page request
+ * after the first, to keep list ordering stable while it paginates. Optional — the
+ * endpoint still works without it — but omitting it can let entries shift between
+ * pages on large lists. */
+export function parseRankToken(json: RestListResponse): string | null {
+  return typeof json.follow_ranking_token === 'string' ? json.follow_ranking_token : null;
 }
 
 export function parseNextMaxId(json: RestListResponse, lastPk: string | null): string | null {
@@ -142,6 +153,7 @@ async function fetchListPage(
   kind: 'following' | 'followers',
   maxId: string | null,
   query?: string,
+  rankToken?: string | null,
 ): Promise<FetchListPageResult> {
   const url = new URL(`https://www.instagram.com/api/v1/friendships/${userId}/${kind}/`);
   url.searchParams.set('count', String(LIST_PAGE_SIZE));
@@ -152,6 +164,9 @@ async function fetchListPage(
   if (maxId) {
     url.searchParams.set('max_id', maxId);
   }
+  if (rankToken) {
+    url.searchParams.set('rank_token', rankToken);
+  }
 
   const response = await fetch(url.toString(), {
     headers: getHeaders(),
@@ -159,7 +174,7 @@ async function fetchListPage(
   });
 
   if (!response.ok) {
-    return { users: [], nextMaxId: null, status: response.status };
+    return { users: [], nextMaxId: null, rankToken: null, status: response.status };
   }
 
   const json = (await response.json()) as RestListResponse;
@@ -171,16 +186,25 @@ async function fetchListPage(
   return {
     users,
     nextMaxId: parseNextMaxId(json, lastPk),
+    rankToken: parseRankToken(json),
     status: response.status,
   };
 }
 
-export function fetchFollowingPage(userId: string, maxId: string | null): Promise<FetchListPageResult> {
-  return fetchListPage(userId, 'following', maxId);
+export function fetchFollowingPage(
+  userId: string,
+  maxId: string | null,
+  rankToken?: string | null,
+): Promise<FetchListPageResult> {
+  return fetchListPage(userId, 'following', maxId, undefined, rankToken);
 }
 
-export function fetchFollowersPage(userId: string, maxId: string | null): Promise<FetchListPageResult> {
-  return fetchListPage(userId, 'followers', maxId);
+export function fetchFollowersPage(
+  userId: string,
+  maxId: string | null,
+  rankToken?: string | null,
+): Promise<FetchListPageResult> {
+  return fetchListPage(userId, 'followers', maxId, undefined, rankToken);
 }
 
 export function searchOwnFollowing(userId: string, username: string): Promise<FetchListPageResult> {
@@ -264,6 +288,23 @@ export function mapRestUserToNode(user: RestUser, followsViewer: boolean): UserN
  */
 export function isSuspiciousEmptyFirstPage(pageUsers: readonly RestUser[], knownTotal: number): boolean {
   return pageUsers.length === 0 && knownTotal > 0;
+}
+
+/**
+ * Following-list accounts we still can't classify after the followers pass —
+ * Instagram omitted friendship_status AND the id/username didn't match anything
+ * in the followers index (partial followers-list failure, id-scheme mismatch,
+ * etc.). These, and only these, need a `show_many` bulk check instead of being
+ * silently defaulted to "does not follow back".
+ */
+export function findUnclassifiedUserIds(
+  followingUsers: readonly RestUser[],
+  followerIds: ReadonlySet<string>,
+  followerNames: ReadonlySet<string>,
+): string[] {
+  return followingUsers
+    .filter(user => !restUserFollowsViewer(user, followerIds, followerNames))
+    .map(user => user.pk);
 }
 
 interface ShowManyResponse {

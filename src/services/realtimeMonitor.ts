@@ -7,7 +7,7 @@
  */
 import { UserNode } from '../model/user';
 import { sleep, getCookie, getDynamicStorageKey } from '../utils/utils';
-import { fetchFollowersPage, fetchFollowingPage, mapRestUserToNode, addRestUserToFollowerIndex, restUserFollowsViewer, RestUser } from '../utils/igListsApi';
+import { fetchFollowersPage, fetchFollowingPage, fetchFollowedByMany, findUnclassifiedUserIds, mapRestUserToNode, addRestUserToFollowerIndex, restUserFollowsViewer, RestUser } from '../utils/igListsApi';
 
 const MONITOR_ENABLED_KEY = 'ig-realtime-monitor-enabled';
 const PREV_NF_SNAPSHOT_KEY = 'ig-prev-nonfollower-ids';
@@ -39,16 +39,38 @@ async function silentScan(): Promise<UserNode[]> {
   const followerNames = new Set<string>();
 
   try {
+    // Followers list first — needed to know who follows back BEFORE we classify
+    // the following list (same ordering fix as the main scanner, see useScanner.ts).
+    let followersMaxId: string | null = null;
+    let followersRankToken: string | null = null;
+    let followerCycles = 0;
+    while (followerCycles < 60) {
+      const page = await fetchFollowersPage(userId, followersMaxId, followersRankToken);
+      if (page.status !== 200) {
+        break;
+      }
+      page.users.forEach(user => addRestUserToFollowerIndex(user, followerIds, followerNames));
+      followersRankToken = page.rankToken ?? followersRankToken;
+      if (!page.nextMaxId) {
+        break;
+      }
+      followersMaxId = page.nextMaxId;
+      followerCycles++;
+      await sleep(1500 + Math.floor(Math.random() * 500));
+    }
+
     // Following list — same private REST endpoint the Instagram web app uses.
     // (The old GraphQL query_hash this used to call stopped returning edges in 2026.)
     let maxId: string | null = null;
+    let followingRankToken: string | null = null;
     let cycles = 0;
     while (cycles < 60) {
-      const page = await fetchFollowingPage(userId, maxId);
+      const page = await fetchFollowingPage(userId, maxId, followingRankToken);
       if (page.status !== 200) {
         break;
       }
       followingUsers.push(...page.users);
+      followingRankToken = page.rankToken ?? followingRankToken;
       if (!page.nextMaxId) {
         break;
       }
@@ -57,22 +79,16 @@ async function silentScan(): Promise<UserNode[]> {
       await sleep(1500 + Math.floor(Math.random() * 500));
     }
 
-    // Followers list — needed to know who still follows back.
+    // Safety net: whatever the followers pass couldn't resolve (friendship_status
+    // omitted + id/username mismatch) gets a bulk show_many check, so we don't fire
+    // a false "new unfollower" notification for someone who actually follows back.
     if (followingUsers.length > 0) {
-      let followersMaxId: string | null = null;
-      let followerCycles = 0;
-      while (followerCycles < 60) {
-        const page = await fetchFollowersPage(userId, followersMaxId);
-        if (page.status !== 200) {
-          break;
+      const unclassifiedIds = findUnclassifiedUserIds(followingUsers, followerIds, followerNames);
+      if (unclassifiedIds.length > 0) {
+        const many = await fetchFollowedByMany(unclassifiedIds);
+        if (many.status !== 429) {
+          many.followedByIds.forEach(id => followerIds.add(id));
         }
-        page.users.forEach(user => addRestUserToFollowerIndex(user, followerIds, followerNames));
-        if (!page.nextMaxId) {
-          break;
-        }
-        followersMaxId = page.nextMaxId;
-        followerCycles++;
-        await sleep(1500 + Math.floor(Math.random() * 500));
       }
     }
   } catch {
