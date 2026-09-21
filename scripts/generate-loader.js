@@ -13,4 +13,18 @@ const loader = `(function(){if(!location.hostname.includes('instagram.com')){ale
 
 const outPath = path.join(__dirname, '../public/loader.js');
 fs.writeFileSync(outPath, loader, 'utf8');
+
+const indexPath = path.join(__dirname, '../public/index.html');
+let html = fs.readFileSync(indexPath, 'utf8');
+const startTag = 'id="script-version">';
+const start = html.indexOf(startTag);
+if (start === -1) {
+  console.warn('Did not find #script-version in index.html — landing badge was not updated');
+} else {
+  const valueStart = start + startTag.length;
+  const valueEnd = html.indexOf('<', valueStart);
+  const stamped = `${html.slice(0, valueStart)}v${version}${html.slice(valueEnd)}`;
+  fs.writeFileSync(indexPath, stamped, 'utf8');
+}
+
 console.log(`Generated ${outPath} (${loader.length} bytes, v${version})`);
