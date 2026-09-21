@@ -312,15 +312,19 @@ export function isSuspiciousEmptyFirstPage(pageUsers: readonly RestUser[], known
 }
 
 /**
- * Following-list accounts we still can't classify for sure — Instagram didn't send
- * a definitive `friendship_status.followed_by` (true OR false) AND the id/username
- * didn't match anything already known (followers index, an earlier show_many call,
- * etc.). These, and only these, need a `show_many` bulk check instead of being
- * silently defaulted to "does not follow back".
+ * Following-list accounts we still can't classify as "follows back" for sure —
+ * nothing already confirms it (no `friendship_status.followed_by === true`, no match
+ * in the followers index, no earlier show_many call). These need a `show_many` bulk
+ * check instead of being silently defaulted to "does not follow back".
  *
- * Deliberately does NOT include accounts where `followedBy === false` — that's
- * Instagram explicitly telling us "no", which is just as trustworthy as `true` and
- * re-checking it via show_many would only waste a request.
+ * IMPORTANT: this intentionally does NOT special-case `followedBy === false` as
+ * "already resolved, skip it". An earlier version of this function did that (treating
+ * `false` as just as trustworthy as `true`), and it caused real, confirmed mutuals to
+ * get stuck permanently in "non-follower" — Instagram's `friendship_status` on the
+ * *following* list is not reliable in the false/negative direction (it looks like it
+ * can be stale or simply wrong), only in the positive one. `show_many` is the
+ * authoritative check either way, so anyone not already confirmed `true` gets
+ * verified, regardless of what the list said.
  */
 export function findUnclassifiedUserIds(
   followingUsers: readonly RestUser[],
@@ -328,7 +332,7 @@ export function findUnclassifiedUserIds(
   followerNames: ReadonlySet<string>,
 ): string[] {
   return followingUsers
-    .filter(user => user.followedBy !== false && !restUserFollowsViewer(user, followerIds, followerNames))
+    .filter(user => !restUserFollowsViewer(user, followerIds, followerNames))
     .map(user => user.pk);
 }
 

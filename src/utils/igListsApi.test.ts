@@ -186,13 +186,16 @@ describe('findUnclassifiedUserIds', () => {
     expect(findUnclassifiedUserIds([a, b], new Set(), new Set())).toEqual(['1', '2']);
   });
 
-  it('does not re-check accounts Instagram already said definitively do NOT follow back', () => {
-    // followedBy === false is just as trustworthy a signal as true — re-querying it
-    // via show_many would only waste a request (this matters a lot now that the
-    // scanner calls this once per page instead of once for the whole scan).
-    const confirmedNo = { ...baseUser, pk: '1', ids: ['1'], username: 'alpha', followedBy: false };
+  it('still re-checks accounts Instagram marked followedBy: false via show_many', () => {
+    // Regression test: an earlier version trusted followedBy === false as much as
+    // true and skipped it here, which meant a wrong/stale "false" from the following
+    // list's friendship_status could never be corrected — real mutuals got stuck
+    // permanently in "non-follower". followedBy: false must NOT be treated as
+    // already-resolved; only a confirmed `true` (or a followers-index/show_many
+    // match) should short-circuit the show_many check.
+    const claimedNo = { ...baseUser, pk: '1', ids: ['1'], username: 'alpha', followedBy: false };
     const unknown = { ...baseUser, pk: '2', ids: ['2'], username: 'beta', followedBy: null };
-    expect(findUnclassifiedUserIds([confirmedNo, unknown], new Set(), new Set())).toEqual(['2']);
+    expect(findUnclassifiedUserIds([claimedNo, unknown], new Set(), new Set())).toEqual(['1', '2']);
   });
 });
 
