@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'preact/hooks';
 import { UserNode } from '../model/user';
 import { getCookie, sleep } from '../utils/utils';
-import { fetchFollowersPage, fetchFollowingPage, isSuspiciousEmptyFirstPage, mapRestUserToNode, RestUser } from '../utils/igListsApi';
+import { fetchFollowersPage, fetchFollowingPage, fetchFollowedByMany, isSuspiciousEmptyFirstPage, mapRestUserToNode, addRestUserToFollowerIndex, restUserFollowsViewer, RestUser } from '../utils/igListsApi';
 import { getUserBrief } from '../utils/growthApi';
 import { computeBackoffMs } from '../utils/growthHelpers';
 import { GROWTH_RATE_LIMIT_BACKOFF_MAX_MS, GROWTH_RATE_LIMIT_BACKOFF_MS, RATE_LIMIT_MAX_RETRIES } from '../constants/growth';
@@ -66,6 +66,7 @@ export const useScanner = (timings: Timings) => {
 
     const followingUsers: RestUser[] = [];
     const followerIds = new Set<string>();
+    const followerNames = new Set<string>();
     let finishReason: ScanFinishReason = 'completed';
 
     const waitWhilePaused = async () => {
@@ -151,13 +152,15 @@ export const useScanner = (timings: Timings) => {
 
         setScannerState({
           isScanning: true,
-          results: followingUsers.map(user => mapRestUserToNode(user, false)),
+          results: followingUsers.map(user =>
+            mapRestUserToNode(user, restUserFollowsViewer(user, followerIds, followerNames)),
+          ),
           progress,
           statusMessage: t('statusAnalyzed')(currentCount, Math.max(totalFollowing, currentCount)),
           finishReason: null,
         });
 
-        if (!pageResult.nextMaxId) {
+        if (!pageResult.nextMaxId || pageResult.nextMaxId === maxId) {
           break;
         }
         maxId = pageResult.nextMaxId;
@@ -200,7 +203,7 @@ export const useScanner = (timings: Timings) => {
           }
           followerRetries = 0;
 
-          pageResult.users.forEach(user => followerIds.add(user.pk));
+          pageResult.users.forEach(user => addRestUserToFollowerIndex(user, followerIds, followerNames));
 
           const fetchedFollowers = followerIds.size;
           const progress =
@@ -214,12 +217,31 @@ export const useScanner = (timings: Timings) => {
             statusMessage: t('statusAnalyzed')(fetchedFollowers, Math.max(totalFollowers, fetchedFollowers)),
           }));
 
-          if (!pageResult.nextMaxId) {
+          if (!pageResult.nextMaxId || pageResult.nextMaxId === followersMaxId) {
             break;
           }
           followersMaxId = pageResult.nextMaxId;
           followerPage++;
           await pacingSleep(followerPage);
+        }
+      }
+
+      // ── Phase 3: bulk follow-back if the followers list didn't match anyone ─
+      // This is the "500/500 all non-followers" case: following loaded, but
+      // Instagram omitted friendship_status and/or returned follower ids we
+      // could not join. show_many is the same check Instagram uses internally.
+      if (!shouldStopRef.current && followingUsers.length > 0) {
+        const anyMutual = followingUsers.some(user =>
+          restUserFollowsViewer(user, followerIds, followerNames),
+        );
+        if (!anyMutual) {
+          setScannerState(prev => ({ ...prev, statusMessage: t('statusFetching') }));
+          const many = await fetchFollowedByMany(followingUsers.map(user => user.pk));
+          if (many.status === 429) {
+            finishReason = 'rate_limit';
+          } else {
+            many.followedByIds.forEach(id => followerIds.add(id));
+          }
         }
       }
 
@@ -230,7 +252,9 @@ export const useScanner = (timings: Timings) => {
       console.error('Scan error:', error);
       finishReason = 'error';
     } finally {
-      const finalResults = followingUsers.map(user => mapRestUserToNode(user, followerIds.has(user.pk)));
+      const finalResults = followingUsers.map(user =>
+        mapRestUserToNode(user, restUserFollowsViewer(user, followerIds, followerNames)),
+      );
 
       const statusByReason: Record<ScanFinishReason, string> = {
         completed: t('statusCompleted'),

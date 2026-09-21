@@ -7,7 +7,7 @@
  */
 import { UserNode } from '../model/user';
 import { sleep, getCookie, getDynamicStorageKey } from '../utils/utils';
-import { fetchFollowersPage, fetchFollowingPage, mapRestUserToNode, RestUser } from '../utils/igListsApi';
+import { fetchFollowersPage, fetchFollowingPage, mapRestUserToNode, addRestUserToFollowerIndex, restUserFollowsViewer, RestUser } from '../utils/igListsApi';
 
 const MONITOR_ENABLED_KEY = 'ig-realtime-monitor-enabled';
 const PREV_NF_SNAPSHOT_KEY = 'ig-prev-nonfollower-ids';
@@ -36,6 +36,7 @@ async function silentScan(): Promise<UserNode[]> {
 
   const followingUsers: RestUser[] = [];
   const followerIds = new Set<string>();
+  const followerNames = new Set<string>();
 
   try {
     // Following list — same private REST endpoint the Instagram web app uses.
@@ -65,7 +66,7 @@ async function silentScan(): Promise<UserNode[]> {
         if (page.status !== 200) {
           break;
         }
-        page.users.forEach(user => followerIds.add(user.pk));
+        page.users.forEach(user => addRestUserToFollowerIndex(user, followerIds, followerNames));
         if (!page.nextMaxId) {
           break;
         }
@@ -78,7 +79,9 @@ async function silentScan(): Promise<UserNode[]> {
     // Fail silently — don't disturb the user's browsing
   }
 
-  return followingUsers.map(user => mapRestUserToNode(user, followerIds.has(user.pk)));
+  return followingUsers.map(user =>
+    mapRestUserToNode(user, restUserFollowsViewer(user, followerIds, followerNames)),
+  );
 }
 
 // Core check

@@ -4,6 +4,7 @@ import { normalizePendingUsername } from './pendingRequestsParser';
 
 export const PENDING_CANCELLED_STORAGE_KEY = 'ig_pending_cancelled';
 export const PENDING_IMPORTED_STORAGE_KEY = 'ig_pending_imported';
+export const PENDING_ID_CACHE_KEY = 'ig_pending_id_cache';
 
 export function readCancelledUsernames(storage: Storage = localStorage): Set<string> {
   try {
@@ -82,4 +83,49 @@ export function saveImportedPendingList(
     // Ignore persistence failures.
   }
   return payload;
+}
+
+function readIdCache(storage: Storage): Record<string, string> {
+  try {
+    const raw = storage.getItem(getDynamicStorageKey(PENDING_ID_CACHE_KEY));
+    if (!raw) {
+      return {};
+    }
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== 'object') {
+      return {};
+    }
+    const cache: Record<string, string> = {};
+    for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+      if (typeof value === 'string' && value.length > 0) {
+        cache[key] = value;
+      }
+    }
+    return cache;
+  } catch {
+    return {};
+  }
+}
+
+export function readCachedUserId(username: string, storage: Storage = localStorage): string | null {
+  const cache = readIdCache(storage);
+  const id = cache[normalizePendingUsername(username)];
+  return id ? id : null;
+}
+
+export function writeCachedUserId(
+  username: string,
+  id: string,
+  storage: Storage = localStorage,
+): void {
+  if (!id) {
+    return;
+  }
+  const cache = readIdCache(storage);
+  cache[normalizePendingUsername(username)] = id;
+  try {
+    storage.setItem(getDynamicStorageKey(PENDING_ID_CACHE_KEY), JSON.stringify(cache));
+  } catch {
+    // Quota — ignore.
+  }
 }

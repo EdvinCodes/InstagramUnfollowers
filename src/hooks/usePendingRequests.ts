@@ -1,10 +1,9 @@
 import { useCallback, useRef } from 'preact/hooks';
 import {
   cancelFollowRequest,
-  fetchFriendshipStatus,
-  lookupUserByUsername,
   type FriendshipStatus,
 } from '../utils/growthApi';
+import { lookupUserByUsername } from '../utils/igUserLookup';
 import type { PendingLogEntry, PendingRequestUser } from '../model/pending-request';
 import type { PendingRequestsState } from '../model/pending-requests-state';
 import type { State } from '../model/state';
@@ -167,7 +166,6 @@ export function usePendingRequests(
 
         let lookupId: string | null = null;
         let friendship: FriendshipStatus | null = null;
-        let friendshipChecked = false;
         let handled = false;
         let aborted = false;
 
@@ -219,22 +217,6 @@ export function usePendingRequests(
           if (isStopped()) {
             aborted = true;
             break;
-          }
-
-          if (!friendship && !friendshipChecked) {
-            setStatus(t('pendingChecking')(user.username));
-            const friendshipResult = await fetchFriendshipStatus(lookupId);
-
-            if (isRateLimitResponse(friendshipResult.status)) {
-              if (!(await backoffAndRetry())) {
-                aborted = true;
-                break;
-              }
-              continue;
-            }
-            consecutiveRateLimitHits = 0;
-            friendship = friendshipResult.friendship;
-            friendshipChecked = true;
           }
 
           if (friendship?.following) {

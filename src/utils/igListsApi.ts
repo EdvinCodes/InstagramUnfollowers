@@ -15,17 +15,27 @@
  */
 import { getHeaders } from './growthApi';
 import { Typename, UserNode } from '../model/user';
-import { isProfilePicAnonymous } from './utils';
+import { getCookie, isProfilePicAnonymous, sleep } from './utils';
 
 const LIST_PAGE_SIZE = 50;
 
 export interface RestUser {
   readonly pk: string;
+  readonly ids: readonly string[];
   readonly username: string;
   readonly fullName: string;
   readonly profilePicUrl: string;
   readonly isPrivate: boolean;
   readonly isVerified: boolean;
+  /** true/false when Instagram sent friendship_status.followed_by; null if unknown. */
+  readonly followedBy: boolean | null;
+  readonly outgoingRequest: boolean | null;
+}
+
+interface RawFriendship {
+  followed_by?: boolean;
+  following?: boolean;
+  outgoing_request?: boolean;
 }
 
 interface RawRestUser {
@@ -38,11 +48,14 @@ interface RawRestUser {
   profile_pic_url_hd?: string;
   is_private?: boolean;
   is_verified?: boolean;
+  followed_by?: boolean;
+  friendship_status?: RawFriendship;
 }
 
 interface RestListResponse {
   users?: RawRestUser[];
-  next_max_id?: string;
+  next_max_id?: string | number | Record<string, unknown> | null;
+  has_more?: boolean;
   big_list?: boolean;
   status?: string;
 }
@@ -54,18 +67,73 @@ export interface FetchListPageResult {
   readonly status: number;
 }
 
+export function collectRawUserIds(raw: RawRestUser): string[] {
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  for (const value of [raw.pk, raw.pk_id, raw.id]) {
+    if (value === undefined || value === '') {
+      continue;
+    }
+    const id = String(value);
+    if (seen.has(id)) {
+      continue;
+    }
+    seen.add(id);
+    ids.push(id);
+  }
+  return ids;
+}
+
+export function parseOutgoingRequest(raw: RawRestUser): boolean | null {
+  if (typeof raw.friendship_status?.outgoing_request === 'boolean') {
+    return raw.friendship_status.outgoing_request;
+  }
+  return null;
+}
+
+export function parseFollowedBy(raw: RawRestUser): boolean | null {
+  if (typeof raw.friendship_status?.followed_by === 'boolean') {
+    return raw.friendship_status.followed_by;
+  }
+  if (typeof raw.followed_by === 'boolean') {
+    return raw.followed_by;
+  }
+  return null;
+}
+
+export function parseNextMaxId(json: RestListResponse, lastPk: string | null): string | null {
+  const raw = json.next_max_id;
+  if (raw !== undefined && raw !== null) {
+    if (typeof raw === 'object') {
+      try {
+        return JSON.stringify(raw);
+      } catch {
+        return lastPk;
+      }
+    }
+    return String(raw);
+  }
+  if (json.has_more === true) {
+    return lastPk;
+  }
+  return null;
+}
+
 export function normalizeRestUser(raw: RawRestUser): RestUser | null {
-  const pk = raw.pk ?? raw.pk_id ?? raw.id;
-  if (pk === undefined || !raw.username) {
+  const ids = collectRawUserIds(raw);
+  if (ids.length === 0 || !raw.username) {
     return null;
   }
   return {
-    pk: String(pk),
+    pk: ids[0],
+    ids,
     username: raw.username,
     fullName: raw.full_name ?? '',
     profilePicUrl: raw.profile_pic_url_hd ?? raw.profile_pic_url ?? '',
     isPrivate: Boolean(raw.is_private),
     isVerified: Boolean(raw.is_verified),
+    followedBy: parseFollowedBy(raw),
+    outgoingRequest: parseOutgoingRequest(raw),
   };
 }
 
@@ -73,9 +141,14 @@ async function fetchListPage(
   userId: string,
   kind: 'following' | 'followers',
   maxId: string | null,
+  query?: string,
 ): Promise<FetchListPageResult> {
   const url = new URL(`https://www.instagram.com/api/v1/friendships/${userId}/${kind}/`);
   url.searchParams.set('count', String(LIST_PAGE_SIZE));
+  url.searchParams.set('search_surface', 'follow_list_page');
+  if (query) {
+    url.searchParams.set('query', query);
+  }
   if (maxId) {
     url.searchParams.set('max_id', maxId);
   }
@@ -93,10 +166,11 @@ async function fetchListPage(
   const users = (json.users ?? [])
     .map(normalizeRestUser)
     .filter((user): user is RestUser => user !== null);
+  const lastPk = users.length > 0 ? users[users.length - 1].pk : null;
 
   return {
     users,
-    nextMaxId: json.next_max_id ?? null,
+    nextMaxId: parseNextMaxId(json, lastPk),
     status: response.status,
   };
 }
@@ -107,6 +181,45 @@ export function fetchFollowingPage(userId: string, maxId: string | null): Promis
 
 export function fetchFollowersPage(userId: string, maxId: string | null): Promise<FetchListPageResult> {
   return fetchListPage(userId, 'followers', maxId);
+}
+
+export function searchOwnFollowing(userId: string, username: string): Promise<FetchListPageResult> {
+  return fetchListPage(userId, 'following', null, username);
+}
+
+export function addRestUserToFollowerIndex(
+  user: RestUser,
+  followerIds: Set<string>,
+  followerNames: Set<string>,
+): void {
+  for (const id of user.ids) {
+    followerIds.add(id);
+  }
+  followerNames.add(user.username.toLowerCase());
+}
+
+/**
+ * Old GraphQL nodes had `follows_viewer` on each following edge. REST following
+ * lists often include `friendship_status.followed_by`; when they don't, we fall
+ * back to membership in the followers list (by any id variant or username).
+ */
+export function restUserFollowsViewer(
+  user: RestUser,
+  followerIds: ReadonlySet<string>,
+  followerNames: ReadonlySet<string>,
+): boolean {
+  if (user.followedBy === true) {
+    return true;
+  }
+  for (const id of user.ids) {
+    if (followerIds.has(id)) {
+      return true;
+    }
+  }
+  if (followerNames.has(user.username.toLowerCase())) {
+    return true;
+  }
+  return false;
 }
 
 function emptyReel(id: string): UserNode['reel'] {
@@ -151,4 +264,52 @@ export function mapRestUserToNode(user: RestUser, followsViewer: boolean): UserN
  */
 export function isSuspiciousEmptyFirstPage(pageUsers: readonly RestUser[], knownTotal: number): boolean {
   return pageUsers.length === 0 && knownTotal > 0;
+}
+
+interface ShowManyResponse {
+  friendship_statuses?: Record<string, { followed_by?: boolean }>;
+}
+
+/**
+ * Bulk follow-back check. Used when the followers list came back empty / IDs
+ * didn't match, so we would otherwise mark the entire following list as
+ * non-followers.
+ */
+export async function fetchFollowedByMany(
+  userIds: readonly string[],
+): Promise<{ followedByIds: Set<string>; status: number }> {
+  const followedByIds = new Set<string>();
+  const csrfToken = getCookie('csrftoken') ?? '';
+  const chunkSize = 20;
+
+  for (let i = 0; i < userIds.length; i += chunkSize) {
+    const chunk = userIds.slice(i, i + chunkSize);
+    const res = await fetch('https://www.instagram.com/api/v1/friendships/show_many/', {
+      method: 'POST',
+      headers: {
+        ...getHeaders(),
+        'content-type': 'application/x-www-form-urlencoded',
+        'x-csrftoken': csrfToken,
+      },
+      credentials: 'include',
+      body: `user_ids=${chunk.join(',')}`,
+    });
+    if (res.status === 429) {
+      return { followedByIds, status: 429 };
+    }
+    if (!res.ok) {
+      return { followedByIds, status: res.status };
+    }
+    const json = (await res.json()) as ShowManyResponse;
+    for (const [id, status] of Object.entries(json.friendship_statuses ?? {})) {
+      if (status.followed_by) {
+        followedByIds.add(id);
+      }
+    }
+    if (i + chunkSize < userIds.length) {
+      await sleep(300);
+    }
+  }
+
+  return { followedByIds, status: 200 };
 }
