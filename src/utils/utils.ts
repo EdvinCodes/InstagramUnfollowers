@@ -318,7 +318,10 @@ export function removeFollowerUrlGenerator(idToRemove: string): string {
 // page reloads instead of silently resetting to defaults every time (the
 // content script re-runs its whole app on every Instagram page load). Scoped
 // per-account via getDynamicStorageKey, same as the whitelist/history keys.
-function isTimings(value: unknown): value is Timings {
+/** Saved timings from before usersPerSearchCycle existed. loadTimings fills that field. */
+type StoredTimings = Omit<Timings, 'usersPerSearchCycle'> & { usersPerSearchCycle?: number };
+
+function isStoredTimings(value: unknown): value is StoredTimings {
   if (!value || typeof value !== 'object') {
     return false;
   }
@@ -327,7 +330,8 @@ function isTimings(value: unknown): value is Timings {
     typeof candidate.timeBetweenSearchCycles === 'number' &&
     typeof candidate.timeToWaitAfterFiveSearchCycles === 'number' &&
     typeof candidate.timeBetweenUnfollows === 'number' &&
-    typeof candidate.timeToWaitAfterFiveUnfollows === 'number'
+    typeof candidate.timeToWaitAfterFiveUnfollows === 'number' &&
+    (candidate.usersPerSearchCycle === undefined || typeof candidate.usersPerSearchCycle === 'number')
   );
 }
 
@@ -347,14 +351,14 @@ export function loadTimings(): Timings | null {
       return null;
     }
     const parsed = JSON.parse(raw);
-    if (!isTimings(parsed)) {
+    if (!isStoredTimings(parsed)) {
       return null;
     }
     // Older stored timings (saved before usersPerSearchCycle existed) won't have this
     // field — backfill the default instead of discarding the rest of the saved settings.
     return {
       ...parsed,
-      usersPerSearchCycle: clampUsersPerSearchCycle((parsed as Partial<Timings>).usersPerSearchCycle),
+      usersPerSearchCycle: clampUsersPerSearchCycle(parsed.usersPerSearchCycle),
     };
   } catch {
     return null;

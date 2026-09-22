@@ -7,9 +7,7 @@ import {
   fetchFollowedByMany,
   findUnclassifiedUserIds,
   isSuspiciousEmptyFirstPage,
-  mapRestUserToNode,
   addRestUserToFollowerIndex,
-  restUserFollowsViewer,
   RestUser,
 } from '../utils/igListsApi';
 import { getUserBrief } from '../utils/growthApi';
@@ -17,8 +15,15 @@ import { computeBackoffMs } from '../utils/growthHelpers';
 import { GROWTH_RATE_LIMIT_BACKOFF_MAX_MS, GROWTH_RATE_LIMIT_BACKOFF_MS, RATE_LIMIT_MAX_RETRIES } from '../constants/growth';
 import { Timings } from '../model/timings';
 import { t } from '../i18n/i18n';
+import {
+  absorbFollowingUsers,
+  classifyFollowing,
+  followersPassFailure,
+  shouldPublishScanResults,
+  type ScanFinishReason,
+} from '../utils/scanOutcome';
 
-export type ScanFinishReason = 'completed' | 'partial' | 'rate_limit' | 'error' | 'no_session' | 'stopped' | 'blocked';
+export type { ScanFinishReason };
 
 interface ScannerState {
   isScanning: boolean;
@@ -213,9 +218,7 @@ export const useScanner = (timings: Timings) => {
           break;
         }
 
-        for (const user of pageResult.users) {
-          followingByPk.set(user.pk, user);
-        }
+        absorbFollowingUsers(followingByPk, pageResult.users);
         followingRankToken = pageResult.rankToken ?? followingRankToken;
 
         const analyzed = followingByPk.size;
@@ -312,7 +315,8 @@ export const useScanner = (timings: Timings) => {
 
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!shouldStopRef.current && finishReason === 'completed' && !followersCompletedOk) {
-          if (followerIds.size === 0) {
+          const failure = followersPassFailure(followerIds.size);
+          if (failure === 'blocked') {
             // Never resolved a single follower despite following succeeding —
             // showing "0 followers" would flag EVERY following account as a
             // non-follower, exactly the bug this rewrite exists to fix. Don't
@@ -352,9 +356,7 @@ export const useScanner = (timings: Timings) => {
       console.error('Scan error:', error);
       finishReason = 'error';
     } finally {
-      const finalResults = Array.from(followingByPk.values()).map(user =>
-        mapRestUserToNode(user, restUserFollowsViewer(user, followerIds, followerNames)),
-      );
+      const finalResults = classifyFollowing(followingByPk.values(), followerIds, followerNames);
 
       const statusByReason: Record<ScanFinishReason, string> = {
         completed: t('statusCompleted'),
@@ -370,7 +372,7 @@ export const useScanner = (timings: Timings) => {
         ...prev,
         isScanning: false,
         progress: finishReason === 'completed' || finishReason === 'partial' ? 100 : prev.progress,
-        results: finalResults.length > 0 ? finalResults : prev.results,
+        results: shouldPublishScanResults(finishReason, finalResults.length) ? finalResults : prev.results,
         statusMessage: statusByReason[finishReason],
         finishReason,
       }));

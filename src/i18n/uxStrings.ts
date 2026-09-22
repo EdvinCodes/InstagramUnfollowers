@@ -54,6 +54,7 @@ export interface UxTranslationSlice {
   unprotectSelected: string;
   scanSummaryTitle: string;
   selectGhosts: string;
+  selectNoPic: string;
 }
 
 const en: UxTranslationSlice = {
@@ -96,6 +97,7 @@ const en: UxTranslationSlice = {
   unprotectSelected: 'Remove from Whitelist',
   scanSummaryTitle: 'Scan Summary',
   selectGhosts: 'Ghosts',
+  selectNoPic: 'No photo',
 };
 
 const es: UxTranslationSlice = {
@@ -139,6 +141,7 @@ const es: UxTranslationSlice = {
   unprotectSelected: 'Quitar de la Whitelist',
   scanSummaryTitle: 'Resumen del Escaneo',
   selectGhosts: 'Fantasmas',
+  selectNoPic: 'Sin foto',
 };
 
 const ptBR: UxTranslationSlice = {
@@ -181,6 +184,7 @@ const ptBR: UxTranslationSlice = {
   unprotectSelected: 'Remover da Whitelist',
   scanSummaryTitle: 'Resumo da Varredura',
   selectGhosts: 'Fantasmas',
+  selectNoPic: 'Sem foto',
 };
 
 const fr: UxTranslationSlice = {
@@ -223,6 +227,7 @@ const fr: UxTranslationSlice = {
   unprotectSelected: 'Retirer de la Whitelist',
   scanSummaryTitle: 'Résumé de l’Analyse',
   selectGhosts: 'Fantômes',
+  selectNoPic: 'Sans photo',
 };
 
 const it: UxTranslationSlice = {
@@ -265,6 +270,7 @@ const it: UxTranslationSlice = {
   unprotectSelected: 'Rimuovi dalla Whitelist',
   scanSummaryTitle: 'Riepilogo Scansione',
   selectGhosts: 'Fantasmi',
+  selectNoPic: 'Senza foto',
 };
 
 const de: UxTranslationSlice = {
@@ -307,6 +313,7 @@ const de: UxTranslationSlice = {
   unprotectSelected: 'Von Whitelist entfernen',
   scanSummaryTitle: 'Scan-Zusammenfassung',
   selectGhosts: 'Geister',
+  selectNoPic: 'Kein Foto',
 };
 
 const tr: UxTranslationSlice = {
@@ -349,6 +356,7 @@ const tr: UxTranslationSlice = {
   unprotectSelected: 'Beyaz Listeden Çıkar',
   scanSummaryTitle: 'Tarama Özeti',
   selectGhosts: 'Hayaletler',
+  selectNoPic: 'Fotosuz',
 };
 
 const hi: UxTranslationSlice = {
@@ -391,6 +399,7 @@ const hi: UxTranslationSlice = {
   unprotectSelected: 'सुरक्षित सूची से हटाएँ',
   scanSummaryTitle: 'स्कैन सारांश',
   selectGhosts: 'घोस्ट',
+  selectNoPic: 'बिना फ़ोटो',
 };
 
 const id: UxTranslationSlice = {
@@ -433,6 +442,7 @@ const id: UxTranslationSlice = {
   unprotectSelected: 'Hapus dari Whitelist',
   scanSummaryTitle: 'Ringkasan Pemindaian',
   selectGhosts: 'Hantu',
+  selectNoPic: 'Tanpa foto',
 };
 
 const ar: UxTranslationSlice = {
@@ -475,6 +485,7 @@ const ar: UxTranslationSlice = {
   unprotectSelected: 'إزالة من القائمة البيضاء',
   scanSummaryTitle: 'ملخص الفحص',
   selectGhosts: 'أشباح',
+  selectNoPic: 'بلا صورة',
 };
 
 const ja: UxTranslationSlice = {
@@ -517,6 +528,7 @@ const ja: UxTranslationSlice = {
   unprotectSelected: 'ホワイトリストから削除',
   scanSummaryTitle: 'スキャン概要',
   selectGhosts: 'ゴースト',
+  selectNoPic: '写真なし',
 };
 
 const ko: UxTranslationSlice = {
@@ -559,6 +571,7 @@ const ko: UxTranslationSlice = {
   unprotectSelected: '화이트리스트에서 제거',
   scanSummaryTitle: '스캔 요약',
   selectGhosts: '고스트',
+  selectNoPic: '사진 없음',
 };
 
 const ru: UxTranslationSlice = {
@@ -601,6 +614,7 @@ const ru: UxTranslationSlice = {
   unprotectSelected: 'Убрать из белого списка',
   scanSummaryTitle: 'Итоги сканирования',
   selectGhosts: 'Призраки',
+  selectNoPic: 'Без фото',
 };
 
 const pl: UxTranslationSlice = {
@@ -643,6 +657,7 @@ const pl: UxTranslationSlice = {
   unprotectSelected: 'Usuń z białej listy',
   scanSummaryTitle: 'Podsumowanie skanu',
   selectGhosts: 'Duchy',
+  selectNoPic: 'Bez zdjęcia',
 };
 
 const nl: UxTranslationSlice = {
@@ -685,6 +700,7 @@ const nl: UxTranslationSlice = {
   unprotectSelected: 'Van Whitelist Verwijderen',
   scanSummaryTitle: 'Scanoverzicht',
   selectGhosts: 'Geesten',
+  selectNoPic: 'Geen foto',
 };
 
 const vi: UxTranslationSlice = {
@@ -727,6 +743,7 @@ const vi: UxTranslationSlice = {
   unprotectSelected: 'Xóa Khỏi Danh Sách Trắng',
   scanSummaryTitle: 'Tóm Tắt Quét',
   selectGhosts: 'Ma',
+  selectNoPic: 'Không ảnh',
 };
 
 export const UX_STRINGS: Record<UxLocale, UxTranslationSlice> = {

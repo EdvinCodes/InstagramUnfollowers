@@ -255,6 +255,16 @@ describe('fetchFollowingPage / fetchFollowersPage page size', () => {
     expect(new URL(followers.getUrl()!).searchParams.get('count')).toBe('10');
   });
 
+  it('clamps a count outside 10-100 before it hits Instagram', async () => {
+    const tooHigh = stubFetchCapturingUrl();
+    await fetchFollowingPage('123', null, null, 500);
+    expect(new URL(tooHigh.getUrl()!).searchParams.get('count')).toBe('100');
+
+    const tooLow = stubFetchCapturingUrl();
+    await fetchFollowersPage('123', null, null, 1);
+    expect(new URL(tooLow.getUrl()!).searchParams.get('count')).toBe('10');
+  });
+
   it('falls back to 50 when no count is passed (background/legacy callers)', async () => {
     const following = stubFetchCapturingUrl();
     await fetchFollowingPage('123', null, null);

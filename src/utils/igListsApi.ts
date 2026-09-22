@@ -21,7 +21,7 @@
  */
 import { getHeaders } from './growthApi';
 import { Typename, UserNode } from '../model/user';
-import { getCookie, isProfilePicAnonymous, sleep } from './utils';
+import { clampUsersPerSearchCycle, getCookie, isProfilePicAnonymous, sleep } from './utils';
 
 const LIST_PAGE_SIZE = 50;
 
@@ -178,8 +178,9 @@ async function fetchListPage(
   rankToken?: string | null,
   count: number = LIST_PAGE_SIZE,
 ): Promise<FetchListPageResult> {
+  const pageSize = clampUsersPerSearchCycle(count);
   const url = new URL(`https://www.instagram.com/api/v1/friendships/${userId}/${kind}/`);
-  url.searchParams.set('count', String(count));
+  url.searchParams.set('count', String(pageSize));
   url.searchParams.set('search_surface', 'follow_list_page');
   if (query) {
     url.searchParams.set('query', query);

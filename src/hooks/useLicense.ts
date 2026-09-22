@@ -5,30 +5,40 @@ import { validateLicenseKey } from '../utils/licenseManager';
 export const PRO_PROMO_FREE = true;
 
 export const useLicense = () => {
-  const [isPro, setIsPro] = useState<boolean>(PRO_PROMO_FREE);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isPro, setIsPro] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(!PRO_PROMO_FREE);
 
   useEffect(() => {
-    // Al cargar la extensión, miramos si ya compró la licencia antes
+    // Promo: every feature stays open. A saved key must not flip the UI back to
+    // "upgrade" while the settings banner says PRO is free.
+    if (PRO_PROMO_FREE) {
+      setIsPro(true);
+      setIsLoading(false);
+      return;
+    }
+
     const checkSavedLicense = async () => {
       const savedKey = localStorage.getItem('ig_pro_license_key');
       if (savedKey) {
-        // const isValid = await validateLicenseKey(savedKey);
         const isValid = await validateLicenseKey();
         setIsPro(isValid);
-        // Si por alguna razón guardó una clave inválida, la limpiamos
         if (!isValid) {
           localStorage.removeItem('ig_pro_license_key');
         }
+      } else {
+        setIsPro(false);
       }
       setIsLoading(false);
     };
 
-    checkSavedLicense();
+    void checkSavedLicense();
   }, []);
 
   const activatePro = async (key: string): Promise<boolean> => {
-    // const isValid = await validateLicenseKey(key);
+    if (PRO_PROMO_FREE) {
+      setIsPro(true);
+      return true;
+    }
     const isValid = await validateLicenseKey();
     if (isValid) {
       localStorage.setItem('ig_pro_license_key', key.trim().toUpperCase());
@@ -38,9 +48,12 @@ export const useLicense = () => {
   };
 
   const deactivatePro = () => {
+    if (PRO_PROMO_FREE) {
+      return;
+    }
     localStorage.removeItem('ig_pro_license_key');
     setIsPro(false);
   };
 
-  return { isPro, isLoading, activatePro, deactivatePro };
+  return { isPro: PRO_PROMO_FREE || isPro, isLoading, activatePro, deactivatePro };
 };

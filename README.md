@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Built with](https://img.shields.io/badge/Built%20with-Preact%20%26%20TypeScript-blueviolet)](https://preactjs.com/)
 [![Works with](https://img.shields.io/badge/Instagram-Compatible-E1306C.svg)](https://www.instagram.com/)
-[![Version](https://img.shields.io/badge/version-8.8.9-brightgreen.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
+[![Version](https://img.shields.io/badge/version-8.8.10-brightgreen.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
 
 [🇺🇸 English](#-english-version) | [🇪🇸 Español](#-versión-en-español) | [🇹🇷 Türkçe](#-türkçe-sürüm)
 
@@ -15,6 +15,8 @@
 ## 🇺🇸 English Version
 
 **The safest, most advanced Instagram Unfollowers tracker.** See who doesn't follow you back, detect ghost accounts with a 0-100 Ghost Score, export PDF health reports, and grow your audience — **100% locally in your browser**, no password required.
+
+> **🚀 v8.8.10:** The silent monitor follows your page size. PRO stays open while payments are migrating, and a blocked scan no longer paints everyone as a non-follower.
 
 > **🚀 v8.8.9:** Live results show up once both lists are cross-referenced. Smart Select, a sticky unfollow bar, and a summary that matches the tabs.
 
@@ -124,6 +126,8 @@
 ## 🇪🇸 Versión en Español
 
 **El rastreador de Instagram Unfollowers más seguro y avanzado.** Descubre quién no te sigue de vuelta, detecta cuentas fantasma con una Ghost Score de 0-100, exporta reportes PDF y haz crecer tu audiencia — **100% en local en tu navegador**, sin contraseña.
+
+> **🚀 v8.8.10:** El monitor silencioso usa el mismo tamaño de página. PRO sigue abierto mientras migramos el pago, y un scan bloqueado ya no marca a todo el mundo como no seguidor.
 
 > **🚀 v8.8.9:** Los resultados del scan en vivo aparecen cuando las dos listas ya están cruzadas. Selección inteligente, barra de unfollow fija y un resumen que coincide con las pestañas.
 
@@ -356,6 +360,6 @@ Esta herramienta es un proyecto independiente y no está afiliada, asociada, aut
 
 ## ❤️ Credits
 
-Developed with ❤️ by **Edvin**. **v8.8.9 — Live scan, Smart Select & summary.**
+Developed with ❤️ by **Edvin**. **v8.8.10 — Safer scan edges.**
 
 Licensed under the [MIT License](https://www.google.com/search?q=LICENSE).

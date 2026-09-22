@@ -6,7 +6,8 @@
  * background.js which fires a Chrome notification.
  */
 import { UserNode } from '../model/user';
-import { sleep, getCookie, getDynamicStorageKey } from '../utils/utils';
+import { DEFAULT_USERS_PER_SEARCH_CYCLE } from '../constants/constants';
+import { sleep, getCookie, getDynamicStorageKey, loadTimings } from '../utils/utils';
 import {
   fetchFollowersPage,
   fetchFollowingPage,
@@ -53,6 +54,9 @@ async function silentScan(): Promise<UserNode[]> {
   // or it risks firing a false "new unfollower" notification.
   const followerIds = new Set<string>();
   const followerNames = new Set<string>();
+  // Same page size the user set for the live scan. A lower cycle is there to be
+  // gentler; the silent check must not ignore it and keep asking for 50.
+  const pageSize = loadTimings()?.usersPerSearchCycle ?? DEFAULT_USERS_PER_SEARCH_CYCLE;
 
   try {
     // Following list — same private REST endpoint the Instagram web app uses.
@@ -61,7 +65,7 @@ async function silentScan(): Promise<UserNode[]> {
     let followingRankToken: string | null = null;
     let cycles = 0;
     while (cycles < 60) {
-      const page = await fetchFollowingPage(userId, maxId, followingRankToken);
+      const page = await fetchFollowingPage(userId, maxId, followingRankToken, pageSize);
       if (page.status !== 200) {
         break;
       }
@@ -83,7 +87,7 @@ async function silentScan(): Promise<UserNode[]> {
     let followersRankToken: string | null = null;
     let followerCycles = 0;
     while (followerCycles < 60) {
-      const page = await fetchFollowersPage(userId, followersMaxId, followersRankToken);
+      const page = await fetchFollowersPage(userId, followersMaxId, followersRankToken, pageSize);
       if (page.status !== 200) {
         break;
       }

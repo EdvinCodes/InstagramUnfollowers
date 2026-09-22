@@ -583,6 +583,7 @@ function App() {
           UserCheckIcon={UserCheckIcon}
           UserUncheckIcon={UserUncheckIcon}
           onStartUnfollowing={onStartUnfollowing}
+          onShowToast={showToast}
           isPro={isPro}
         />
       );

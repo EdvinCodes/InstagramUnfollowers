@@ -16,10 +16,12 @@ import { calculateGhostScore, getGhostLabel, getGhostColor } from '../utils/ghos
 import { communityDiffCount, listDiffPeople, paginateDiffPeople, type MetaDiffKind } from '../utils/metaDiff';
 import { State } from '../model/state';
 import { UserNode } from '../model/user';
-import { ScanningFilter } from '../model/scanning-filter';
 import { WHITELISTED_RESULTS_STORAGE_KEY } from '../constants/constants';
 
 import { HistoryService } from '../services/historyService';
+import { FilterIcon, FiltersSidebar } from './FiltersSidebar';
+import { ScanSummary } from './ScanSummary';
+import { SmartSelect } from './SmartSelect';
 
 export interface SearchingProps {
   state: State;
@@ -31,70 +33,9 @@ export interface SearchingProps {
   UserCheckIcon: React.FC;
   UserUncheckIcon: React.FC;
   onStartUnfollowing: (actionType: 'unfollow' | 'remove_follower') => void;
+  onShowToast: (message: string, style?: 'success' | 'error' | 'warning' | 'info') => void;
   isPro: boolean;
 }
-
-const FilterIcon = () => (
-  <svg
-    width='24'
-    height='24'
-    viewBox='0 0 24 24'
-    fill='none'
-    stroke='currentColor'
-    strokeWidth='2'
-    strokeLinecap='round'
-    strokeLinejoin='round'
-  >
-    <line x1='4' y1='21' x2='4' y2='14' />
-    <line x1='4' y1='10' x2='4' y2='3' />
-    <line x1='12' y1='21' x2='12' y2='12' />
-    <line x1='12' y1='8' x2='12' y2='3' />
-    <line x1='20' y1='21' x2='20' y2='16' />
-    <line x1='20' y1='12' x2='20' y2='3' />
-    <line x1='1' y1='14' x2='7' y2='14' />
-    <line x1='9' y1='8' x2='15' y2='8' />
-    <line x1='17' y1='16' x2='23' y2='16' />
-  </svg>
-);
-
-const FiltersSidebar = ({
-  state,
-  handleScanFilter,
-}: {
-  state: State;
-  handleScanFilter: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}) => {
-  const isMeta = state.status === 'scanning' && state.source === 'meta';
-  const filters = isMeta
-    ? []
-    : [
-        { name: 'showVerified', label: t('verified') },
-        { name: 'showPrivate', label: t('private') },
-        { name: 'showWithOutProfilePicture', label: t('noProfilePic') },
-        { name: 'showGhostsOnly', label: t('ghostsBotsOnly') },
-      ];
-
-  return (
-    <menu className='flex column m-clear p-clear'>
-      {!isMeta && <p style={{ fontWeight: 'bold' }}>{t('filterResults')}</p>}
-      {isMeta && <p className='meta-offline-note'>{t('metaOfflineBanner')}</p>}
-      {isMeta && state.status === 'scanning' && !state.metaDiff && (
-        <p className='meta-offline-note'>{t('metaDiffBaseline')}</p>
-      )}
-      {filters.map(filter => (
-        <label key={filter.name} className='badge m-small' style={{ cursor: 'pointer' }}>
-          <input
-            type='checkbox'
-            name={filter.name}
-            checked={state.status === 'scanning' ? state.filter[filter.name as keyof ScanningFilter] : false}
-            onChange={handleScanFilter}
-          />
-          &nbsp;{filter.label}
-        </label>
-      ))}
-    </menu>
-  );
-};
 
 const EMPTY_LIST: readonly UserNode[] = [];
 
@@ -125,6 +66,7 @@ export const Searching = ({
   UserCheckIcon,
   UserUncheckIcon,
   onStartUnfollowing,
+  onShowToast,
   isPro,
 }: SearchingProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -332,7 +274,7 @@ export const Searching = ({
 
     // EL PAYWALL
     if (!isPro && state.selectedResults.length > 1) {
-      alert(t('proFeatureMultiUnfollow'));
+      onShowToast(t('proFeatureMultiUnfollow'), 'warning');
       return;
     }
 
@@ -380,43 +322,17 @@ export const Searching = ({
         </div>
         <FiltersSidebar state={state} handleScanFilter={handleScanFilter} />
         {state.source !== 'meta' && (
-          <div className='smart-select'>
-            <p style={{ fontWeight: 'bold' }}>{t('smartSelectTitle')}</p>
-            <div className='smart-select-grid'>
-              <button type='button' className='smart-select-btn' onClick={selectVerified}>
-                {t('verified')}
-              </button>
-              <button type='button' className='smart-select-btn' onClick={selectPrivate}>
-                {t('private')}
-              </button>
-              <button type='button' className='smart-select-btn' onClick={selectNoProfilePic}>
-                {t('noProfilePic')}
-              </button>
-              <button type='button' className='smart-select-btn' onClick={selectGhosts}>
-                {t('selectGhosts')}
-              </button>
-            </div>
-            <button
-              type='button'
-              className='smart-select-btn smart-select-btn--wide'
-              onClick={clearSelection}
-              disabled={state.selectedResults.length === 0}
-            >
-              {t('clearSelection')}
-              {state.selectedResults.length > 0 ? ` (${state.selectedResults.length})` : ''}
-            </button>
-            {state.currentTab !== 'changes' && (
-              <button
-                type='button'
-                className='smart-select-btn smart-select-btn--wide smart-select-btn--protect'
-                onClick={handleBulkWhitelist}
-                disabled={state.selectedResults.length === 0}
-              >
-                {state.currentTab === 'whitelisted' ? t('unprotectSelected') : t('protectSelected')}
-                {state.selectedResults.length > 0 ? ` (${state.selectedResults.length})` : ''}
-              </button>
-            )}
-          </div>
+          <SmartSelect
+            selectedCount={state.selectedResults.length}
+            showWhitelist={state.currentTab !== 'changes'}
+            whitelistLabel={state.currentTab === 'whitelisted' ? t('unprotectSelected') : t('protectSelected')}
+            onSelectVerified={selectVerified}
+            onSelectPrivate={selectPrivate}
+            onSelectNoPic={selectNoProfilePic}
+            onSelectGhosts={selectGhosts}
+            onClear={clearSelection}
+            onBulkWhitelist={handleBulkWhitelist}
+          />
         )}
         <div className='grow stats-box'>
           <p>
@@ -447,29 +363,7 @@ export const Searching = ({
             extended with Mutuals + Ghosts instead of just Verified. Meta imports skip
             this: Ghost Score isn't validated yet for accounts without a live profile
             picture (see ROADMAP.md §6), so the count would be misleading. */}
-        {scanSummary && (
-          <div className='scan-summary'>
-            <p style={{ fontWeight: 'bold' }}>{t('scanSummaryTitle')}</p>
-            <div className='scan-summary-grid'>
-              <div className='scan-summary-cell'>
-                <span className='scan-summary-value'>{scanSummary.nonFollowers}</span>
-                <span className='scan-summary-label'>{t('nonFollowers')}</span>
-              </div>
-              <div className='scan-summary-cell'>
-                <span className='scan-summary-value'>{scanSummary.mutuals}</span>
-                <span className='scan-summary-label'>{t('mutuals')}</span>
-              </div>
-              <div className='scan-summary-cell'>
-                <span className='scan-summary-value'>{scanSummary.privateAccounts}</span>
-                <span className='scan-summary-label'>{t('private')}</span>
-              </div>
-              <div className='scan-summary-cell'>
-                <span className='scan-summary-value'>{scanSummary.ghosts}</span>
-                <span className='scan-summary-label'>{t('selectGhosts')}</span>
-              </div>
-            </div>
-          </div>
-        )}
+        {scanSummary && <ScanSummary {...scanSummary} />}
         {/* Sticky like davidarroyo1234's fixed Unfollow button: pause + pagination +
             the unfollow/remove-follower actions stay reachable at the bottom of the
             sidebar instead of scrolling away once Filters/Smart Select/Summary grow
