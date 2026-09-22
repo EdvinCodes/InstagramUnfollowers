@@ -26,6 +26,7 @@ import {
   getUsersForDisplay,
   getDynamicStorageKey,
   isChromeStorageAvailable,
+  isExactDisplayedSelection,
   loadTimings,
   saveTimings,
   viewerFollowsBack,
@@ -551,8 +552,7 @@ function App() {
     isPageSelected =
       usersOnCurrentPage.length > 0 &&
       usersOnCurrentPage.every(u => state.selectedResults.some(s => s.id === u.id));
-    isAllSelected =
-      usersDisplayed.length > 0 && usersDisplayed.length === state.selectedResults.length;
+    isAllSelected = isExactDisplayedSelection(usersDisplayed, state.selectedResults);
   }
 
   let markup: React.JSX.Element;

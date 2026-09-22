@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { t } from '../i18n/i18n';
 import {
   assertUnreachable,
+  dropAccountsFromSelection,
   getCurrentPageUnfollowers,
   getMaxPage,
   getSafePage,
@@ -217,7 +218,15 @@ export const Searching = ({
       return;
     }
     persistWhitelist(newWhitelisted);
-    setState(prev => (prev.status === 'scanning' ? { ...prev, whitelistedResults: newWhitelisted } : prev));
+    setState(prev =>
+      prev.status === 'scanning'
+        ? {
+            ...prev,
+            whitelistedResults: newWhitelisted,
+            selectedResults: dropAccountsFromSelection(prev.selectedResults, [user]),
+          }
+        : prev,
+    );
   };
 
   // Smart Select — bulk-whitelist whatever is currently checked, then clear the

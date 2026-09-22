@@ -20,9 +20,42 @@ export function followersPassFailure(resolvedFollowerCount: number): 'blocked' |
   return resolvedFollowerCount === 0 ? 'blocked' : 'partial';
 }
 
-/** A blocked scan must not publish a list we already know is misleading. */
+/**
+ * Only a finished cross-reference is safe to show.
+ * `completed` and `partial` already ran the followers pass.
+ * `rate_limit`, `error`, `stopped`, `no_session`, and `blocked` may have a
+ * following list and an empty follower index — publishing that marks everyone
+ * as a non-follower.
+ */
 export function shouldPublishScanResults(finishReason: ScanFinishReason, resultCount: number): boolean {
-  return finishReason !== 'blocked' && resultCount > 0;
+  const followersWereChecked = finishReason === 'completed' || finishReason === 'partial';
+  return followersWereChecked && resultCount > 0;
+}
+
+/**
+ * The silent monitor may notify and replace its snapshot only when both lists
+ * actually finished. A truncated or empty follower index would alert on mutuals
+ * and then save that bad list.
+ */
+export function monitorMayCommitSnapshot(input: {
+  followingComplete: boolean;
+  followersComplete: boolean;
+  resolvedFollowers: number;
+  /** From the profile brief. 0 means the account really has no followers. -1 means unknown. */
+  knownFollowerTotal: number;
+  showManyRateLimited: boolean;
+  followingCount: number;
+}): boolean {
+  if (!input.followingComplete || !input.followersComplete || input.showManyRateLimited) {
+    return false;
+  }
+  if (input.followingCount === 0) {
+    return false;
+  }
+  if (input.resolvedFollowers === 0 && input.knownFollowerTotal !== 0) {
+    return false;
+  }
+  return true;
 }
 
 /** Cross-reference following against the followers index. `followed_by: false` is not a yes. */

@@ -5,6 +5,7 @@ import {
   classifyFollowing,
   followersPassFailure,
   idsStillNeedingSweep,
+  monitorMayCommitSnapshot,
   shouldPublishScanResults,
 } from './scanOutcome';
 
@@ -64,10 +65,46 @@ describe('followersPassFailure', () => {
 });
 
 describe('shouldPublishScanResults', () => {
-  it('publishes a completed or partial list and keeps a blocked one off screen', () => {
+  it('publishes a completed or partial list and keeps every unfinished scan off screen', () => {
     expect(shouldPublishScanResults('completed', 3)).toBe(true);
     expect(shouldPublishScanResults('partial', 3)).toBe(true);
     expect(shouldPublishScanResults('completed', 0)).toBe(false);
     expect(shouldPublishScanResults('blocked', 3)).toBe(false);
+    // Following was already loaded, followers never ran. Publishing would mark
+    // every account a non-follower.
+    expect(shouldPublishScanResults('rate_limit', 500)).toBe(false);
+    expect(shouldPublishScanResults('error', 500)).toBe(false);
+    expect(shouldPublishScanResults('stopped', 500)).toBe(false);
+    expect(shouldPublishScanResults('no_session', 0)).toBe(false);
+  });
+});
+
+describe('monitorMayCommitSnapshot', () => {
+  const ready = {
+    followingComplete: true,
+    followersComplete: true,
+    resolvedFollowers: 12,
+    knownFollowerTotal: 12,
+    showManyRateLimited: false,
+    followingCount: 20,
+  };
+
+  it('commits a scan that finished both lists', () => {
+    expect(monitorMayCommitSnapshot(ready)).toBe(true);
+  });
+
+  it('commits a real zero-follower account', () => {
+    expect(
+      monitorMayCommitSnapshot({ ...ready, resolvedFollowers: 0, knownFollowerTotal: 0 }),
+    ).toBe(true);
+  });
+
+  it('refuses a truncated list, an empty follower index, or a rate-limited sweep', () => {
+    expect(monitorMayCommitSnapshot({ ...ready, followersComplete: false })).toBe(false);
+    expect(monitorMayCommitSnapshot({ ...ready, followingComplete: false })).toBe(false);
+    expect(monitorMayCommitSnapshot({ ...ready, resolvedFollowers: 0, knownFollowerTotal: -1 })).toBe(false);
+    expect(monitorMayCommitSnapshot({ ...ready, resolvedFollowers: 0, knownFollowerTotal: 400 })).toBe(false);
+    expect(monitorMayCommitSnapshot({ ...ready, showManyRateLimited: true })).toBe(false);
+    expect(monitorMayCommitSnapshot({ ...ready, followingCount: 0 })).toBe(false);
   });
 });

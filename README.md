@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Built with](https://img.shields.io/badge/Built%20with-Preact%20%26%20TypeScript-blueviolet)](https://preactjs.com/)
 [![Works with](https://img.shields.io/badge/Instagram-Compatible-E1306C.svg)](https://www.instagram.com/)
-[![Version](https://img.shields.io/badge/version-8.8.10-brightgreen.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
+[![Version](https://img.shields.io/badge/version-9.0.0-brightgreen.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
 
 [🇺🇸 English](#-english-version) | [🇪🇸 Español](#-versión-en-español) | [🇹🇷 Türkçe](#-türkçe-sürüm)
 
@@ -15,6 +15,8 @@
 ## 🇺🇸 English Version
 
 **The safest, most advanced Instagram Unfollowers tracker.** See who doesn't follow you back, detect ghost accounts with a 0-100 Ghost Score, export PDF health reports, and grow your audience — **100% locally in your browser**, no password required.
+
+> **🚀 v9.0.0:** An interrupted scan no longer lists everyone as a non-follower. The silent monitor only alerts when both lists actually finish, and protecting an account removes it from the unfollow selection.
 
 > **🚀 v8.8.10:** The silent monitor follows your page size. PRO stays open while payments are migrating, and a blocked scan no longer paints everyone as a non-follower.
 
@@ -126,6 +128,8 @@
 ## 🇪🇸 Versión en Español
 
 **El rastreador de Instagram Unfollowers más seguro y avanzado.** Descubre quién no te sigue de vuelta, detecta cuentas fantasma con una Ghost Score de 0-100, exporta reportes PDF y haz crecer tu audiencia — **100% en local en tu navegador**, sin contraseña.
+
+> **🚀 v9.0.0:** Un scan interrumpido ya no lista a todo el mundo como no seguidor. El monitor silencioso solo avisa cuando las dos listas terminan de verdad, y proteger una cuenta la saca de la selección de unfollow.
 
 > **🚀 v8.8.10:** El monitor silencioso usa el mismo tamaño de página. PRO sigue abierto mientras migramos el pago, y un scan bloqueado ya no marca a todo el mundo como no seguidor.
 
@@ -360,6 +364,6 @@ Esta herramienta es un proyecto independiente y no está afiliada, asociada, aut
 
 ## ❤️ Credits
 
-Developed with ❤️ by **Edvin**. **v8.8.10 — Safer scan edges.**
+Developed with ❤️ by **Edvin**. **v9.0.0 — Trustworthy scan results.**
 
 Licensed under the [MIT License](https://www.google.com/search?q=LICENSE).

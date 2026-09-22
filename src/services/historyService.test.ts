@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Typename, UserNode } from '../model/user';
 import { HistoryService } from './historyService';
 
@@ -61,11 +61,15 @@ describe('HistoryService.addEvents', () => {
   });
 
   it('writes the whole batch once, newest user first', () => {
+    // Same millisecond for the whole batch. Otherwise getHistory's timestamp
+    // sort moves whichever event the clock ticked on, and the order flakes.
+    vi.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000);
     HistoryService.addEvents('WHITELISTED', [node('a'), node('b'), node('c')]);
     expect(writes).toBe(1);
     const history = HistoryService.getHistory();
     expect(history.map(event => event.user.username)).toEqual(['c', 'b', 'a']);
     expect(history.every(event => event.type === 'WHITELISTED')).toBe(true);
+    vi.restoreAllMocks();
   });
 
   it('does not write when the batch is empty', () => {

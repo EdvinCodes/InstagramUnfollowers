@@ -23,6 +23,10 @@ export const DEFAULT_TIME_TO_WAIT_AFTER_FIVE_UNFOLLOWS = 300000;
 export const DEFAULT_USERS_PER_SEARCH_CYCLE = 50;
 export const MIN_USERS_PER_SEARCH_CYCLE = 10;
 export const MAX_USERS_PER_SEARCH_CYCLE = 100;
+// Last-resort stop if Instagram repeats a cursor forever. Hitting the cap means
+// the list is incomplete — callers must not treat it as a finished scan.
+export const FOLLOWING_PAGE_SAFETY_LIMIT = 1000;
+export const FOLLOWERS_PAGE_SAFETY_LIMIT = 2000;
 
 // FILTER CONSTANTS
 export const WITHOUT_PROFILE_PICTURE_URL_IDS = [

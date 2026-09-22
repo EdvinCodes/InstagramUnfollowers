@@ -6,8 +6,14 @@
  * background.js which fires a Chrome notification.
  */
 import { UserNode } from '../model/user';
-import { DEFAULT_USERS_PER_SEARCH_CYCLE } from '../constants/constants';
+import {
+  DEFAULT_USERS_PER_SEARCH_CYCLE,
+  FOLLOWERS_PAGE_SAFETY_LIMIT,
+  FOLLOWING_PAGE_SAFETY_LIMIT,
+} from '../constants/constants';
 import { sleep, getCookie, getDynamicStorageKey, loadTimings } from '../utils/utils';
+import { getUserBrief } from '../utils/growthApi';
+import { monitorMayCommitSnapshot } from '../utils/scanOutcome';
 import {
   fetchFollowersPage,
   fetchFollowingPage,
@@ -16,6 +22,7 @@ import {
   mapRestUserToNode,
   addRestUserToFollowerIndex,
   restUserFollowsViewer,
+  isSuspiciousEmptyFirstPage,
   RestUser,
 } from '../utils/igListsApi';
 
@@ -25,6 +32,7 @@ const CHECK_INTERVAL_MS = 30 * 60 * 1000; // 30 min
 const STARTUP_DELAY_MS = 5 * 60 * 1000; // 5 min after page load
 
 let _intervalId: ReturnType<typeof setInterval> | null = null;
+let scanInFlight = false;
 
 // Persistence helpers
 
@@ -59,52 +67,65 @@ async function silentScan(): Promise<UserNode[]> {
   const pageSize = loadTimings()?.usersPerSearchCycle ?? DEFAULT_USERS_PER_SEARCH_CYCLE;
 
   try {
-    // Following list — same private REST endpoint the Instagram web app uses.
-    // (The old GraphQL query_hash this used to call stopped returning edges in 2026.)
+    const brief = await getUserBrief(userId);
+    const totalFollowing = brief?.followingCount ?? -1;
+    const totalFollowers = brief?.followerCount ?? -1;
+
+    // An unfinished list must not be classified. Returning [] makes the caller
+    // leave the previous snapshot alone instead of alerting on mutuals.
+    let followingComplete = false;
+    let followersComplete = false;
+    let showManyRateLimited = false;
+
     let maxId: string | null = null;
     let followingRankToken: string | null = null;
-    let cycles = 0;
-    while (cycles < 60) {
-      const page = await fetchFollowingPage(userId, maxId, followingRankToken, pageSize);
-      if (page.status !== 200) {
+    let page = 0;
+    while (page < FOLLOWING_PAGE_SAFETY_LIMIT) {
+      const result = await fetchFollowingPage(userId, maxId, followingRankToken, pageSize);
+      if (result.status !== 200) {
         break;
       }
-      for (const user of page.users) {
+      if (page === 0 && isSuspiciousEmptyFirstPage(result.users, totalFollowing)) {
+        break;
+      }
+      for (const user of result.users) {
         followingByPk.set(user.pk, user);
       }
-      followingRankToken = page.rankToken ?? followingRankToken;
-      if (!page.nextMaxId) {
+      followingRankToken = result.rankToken ?? followingRankToken;
+      if (!result.nextMaxId || result.nextMaxId === maxId) {
+        followingComplete = true;
         break;
       }
-      maxId = page.nextMaxId;
-      cycles++;
+      maxId = result.nextMaxId;
+      page++;
       await sleep(1500 + Math.floor(Math.random() * 500));
     }
 
-    // Followers list — built into an id/username index, not just relied on via
-    // a per-account flag. See useScanner.ts for the full reasoning.
     let followersMaxId: string | null = null;
     let followersRankToken: string | null = null;
-    let followerCycles = 0;
-    while (followerCycles < 60) {
-      const page = await fetchFollowersPage(userId, followersMaxId, followersRankToken, pageSize);
-      if (page.status !== 200) {
+    let followerPage = 0;
+    while (followingComplete && followerPage < FOLLOWERS_PAGE_SAFETY_LIMIT) {
+      const result = await fetchFollowersPage(userId, followersMaxId, followersRankToken, pageSize);
+      if (result.status !== 200) {
         break;
       }
-      page.users.forEach(user => addRestUserToFollowerIndex(user, followerIds, followerNames));
-      followersRankToken = page.rankToken ?? followersRankToken;
-      if (!page.nextMaxId) {
+      if (followerPage === 0 && isSuspiciousEmptyFirstPage(result.users, totalFollowers)) {
         break;
       }
-      followersMaxId = page.nextMaxId;
-      followerCycles++;
+      result.users.forEach(user => addRestUserToFollowerIndex(user, followerIds, followerNames));
+      followersRankToken = result.rankToken ?? followersRankToken;
+      if (!result.nextMaxId || result.nextMaxId === followersMaxId) {
+        followersComplete = true;
+        break;
+      }
+      followersMaxId = result.nextMaxId;
+      followerPage++;
       await sleep(1500 + Math.floor(Math.random() * 500));
     }
 
-    // Last-resort bulk follow-back check for whatever the followers index still
-    // couldn't resolve, so we don't fire a false "new unfollower" notification
-    // for someone who actually follows back.
-    if (followingByPk.size > 0) {
+    const canSweep =
+      followingComplete && followersComplete && followingByPk.size > 0 && (followerIds.size > 0 || totalFollowers === 0);
+    if (canSweep) {
       const unclassifiedIds = findUnclassifiedUserIds(
         Array.from(followingByPk.values()),
         followerIds,
@@ -112,16 +133,33 @@ async function silentScan(): Promise<UserNode[]> {
       );
       if (unclassifiedIds.length > 0) {
         const many = await fetchFollowedByMany(unclassifiedIds);
-        many.followedByIds.forEach(id => followerIds.add(id));
+        if (many.status === 429) {
+          showManyRateLimited = true;
+        } else {
+          many.followedByIds.forEach(id => followerIds.add(id));
+        }
       }
     }
-  } catch {
-    // Fail silently — don't disturb the user's browsing
-  }
 
-  return Array.from(followingByPk.values()).map(user =>
-    mapRestUserToNode(user, restUserFollowsViewer(user, followerIds, followerNames)),
-  );
+    if (
+      !monitorMayCommitSnapshot({
+        followingComplete,
+        followersComplete,
+        resolvedFollowers: followerIds.size,
+        knownFollowerTotal: totalFollowers,
+        showManyRateLimited,
+        followingCount: followingByPk.size,
+      })
+    ) {
+      return [];
+    }
+
+    return Array.from(followingByPk.values()).map(user =>
+      mapRestUserToNode(user, restUserFollowsViewer(user, followerIds, followerNames)),
+    );
+  } catch {
+    return [];
+  }
 }
 
 // Core check
@@ -144,6 +182,18 @@ function writePrevNonFollowerIds(ids: readonly string[]): void {
 }
 
 async function checkForNewUnfollowers(): Promise<void> {
+  if (scanInFlight) {
+    return;
+  }
+  scanInFlight = true;
+  try {
+    await runUnfollowerCheck();
+  } finally {
+    scanInFlight = false;
+  }
+}
+
+async function runUnfollowerCheck(): Promise<void> {
   const currentFollowing = await silentScan();
   if (currentFollowing.length === 0) {
     return;

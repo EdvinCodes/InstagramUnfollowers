@@ -61,6 +61,26 @@ export function isSameAccount(
   return !!left && !!right && left === right;
 }
 
+/** Drop protected (or otherwise dismissed) accounts from the unfollow selection. */
+export function dropAccountsFromSelection<T extends { id?: string; username?: string }>(
+  selected: readonly T[],
+  dropped: readonly { id?: string; username?: string }[],
+): T[] {
+  return selected.filter(item => !dropped.some(user => isSameAccount(item, user)));
+}
+
+/** "Select all" is on only when the selection is exactly the rows on screen. */
+export function isExactDisplayedSelection(
+  displayed: readonly { id: string }[],
+  selected: readonly { id: string }[],
+): boolean {
+  if (displayed.length === 0 || displayed.length !== selected.length) {
+    return false;
+  }
+  const selectedIds = new Set(selected.map(user => user.id));
+  return displayed.every(user => selectedIds.has(user.id));
+}
+
 export function viewerFollowsBack(user: UserNode): boolean {
   const value = user.follows_viewer as unknown;
   return value === true || value === 'true' || value === 1;

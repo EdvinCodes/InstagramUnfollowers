@@ -13,6 +13,7 @@ import {
 import { getUserBrief } from '../utils/growthApi';
 import { computeBackoffMs } from '../utils/growthHelpers';
 import { GROWTH_RATE_LIMIT_BACKOFF_MAX_MS, GROWTH_RATE_LIMIT_BACKOFF_MS, RATE_LIMIT_MAX_RETRIES } from '../constants/growth';
+import { FOLLOWERS_PAGE_SAFETY_LIMIT, FOLLOWING_PAGE_SAFETY_LIMIT } from '../constants/constants';
 import { Timings } from '../model/timings';
 import { t } from '../i18n/i18n';
 import {
@@ -32,15 +33,6 @@ interface ScannerState {
   statusMessage: string;
   finishReason: ScanFinishReason | null;
 }
-
-// Generous hard caps against a genuinely runaway loop (Instagram repeating a
-// cursor forever, etc). The real loop-termination guard is "next_max_id didn't
-// change", checked on every page below — these are just a last-resort backstop,
-// sized well above any real personal account (davidarroyo1234's fork uses 60/250
-// pages at the same page size; we go much higher since issue #5 was reported by
-// someone following 5k+ accounts).
-const FOLLOWING_PAGE_SAFETY_LIMIT = 1000;
-const FOLLOWERS_PAGE_SAFETY_LIMIT = 2000;
 
 export const useScanner = (timings: Timings) => {
   const [scannerState, setScannerState] = useState<ScannerState>({
