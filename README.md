@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Built with](https://img.shields.io/badge/Built%20with-Preact%20%26%20TypeScript-blueviolet)](https://preactjs.com/)
 [![Works with](https://img.shields.io/badge/Instagram-Compatible-E1306C.svg)](https://www.instagram.com/)
-[![Version](https://img.shields.io/badge/version-8.8.1-brightgreen.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
+[![Version](https://img.shields.io/badge/version-8.8.9-brightgreen.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
 
 [🇺🇸 English](#-english-version) | [🇪🇸 Español](#-versión-en-español) | [🇹🇷 Türkçe](#-türkçe-sürüm)
 
@@ -16,7 +16,11 @@
 
 **The safest, most advanced Instagram Unfollowers tracker.** See who doesn't follow you back, detect ghost accounts with a 0-100 Ghost Score, export PDF health reports, and grow your audience — **100% locally in your browser**, no password required.
 
+> **🚀 v8.8.9:** Live results show up once both lists are cross-referenced. Smart Select, a sticky unfollow bar, and a summary that matches the tabs.
+
 > **🚀 v8.8.1:** Time Machine that survives a mass cleanup, plus Ghost/CSV/scan bugfixes. The landing now lists the full suite.
+
+> ⚠️ **Note on live scans:** accounts won't appear right away. The tool downloads your whole following list, then your whole followers list, and only cross-references them once both are fully in — that's what makes "follows you back" accurate instead of a guess. Watch the on-screen progress bar; on large accounts this can take a few minutes. Want an instant read instead? Use the offline **Meta scan** (Analyze → Meta import) with your `following.html` + `followers_1.html` export.
 
 ### ✨ What's New in v8.8.1
 
@@ -121,7 +125,11 @@
 
 **El rastreador de Instagram Unfollowers más seguro y avanzado.** Descubre quién no te sigue de vuelta, detecta cuentas fantasma con una Ghost Score de 0-100, exporta reportes PDF y haz crecer tu audiencia — **100% en local en tu navegador**, sin contraseña.
 
+> **🚀 v8.8.9:** Los resultados del scan en vivo aparecen cuando las dos listas ya están cruzadas. Selección inteligente, barra de unfollow fija y un resumen que coincide con las pestañas.
+
 > **🚀 v8.8.1:** Time Machine que aguanta una limpieza masiva, más arreglos de Ghost/CSV/scan. La landing ya lista la suite completa.
+
+> ⚠️ **Nota sobre el escaneo en vivo:** las cuentas no aparecen al instante. La herramienta descarga toda tu lista de seguidos y luego toda la de seguidores, y solo las cruza cuando ambas están completas — así es como "te sigue de vuelta" sale exacto y no a medias. Sigue la barra de progreso; en cuentas grandes puede tardar varios minutos. ¿Prefieres algo instantáneo? Usa el **scan offline de Meta** (Analizar → Importar Meta) con tu export `following.html` + `followers_1.html`.
 
 ### ✨ Novedades de la v8.8.1
 
@@ -348,6 +356,6 @@ Esta herramienta es un proyecto independiente y no está afiliada, asociada, aut
 
 ## ❤️ Credits
 
-Developed with ❤️ by **Edvin**. **v8.8.1 — Suite home, Meta tools & Time Machine.**
+Developed with ❤️ by **Edvin**. **v8.8.9 — Live scan, Smart Select & summary.**
 
 Licensed under the [MIT License](https://www.google.com/search?q=LICENSE).

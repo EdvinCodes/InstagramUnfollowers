@@ -33,6 +33,8 @@ export interface UxTranslationSlice {
   timingAfterFiveSearch: string;
   timingBetweenUnfollows: string;
   timingAfterFiveUnfollows: string;
+  timingUsersPerCycle: string;
+  timingUsersPerCycleUnit: string;
   statusRateLimited: string;
   statusNoSession: string;
   statusPhaseFollowing: (current: number, total: number) => string;
@@ -46,6 +48,12 @@ export interface UxTranslationSlice {
   prevPage: string;
   nextPage: string;
   searchAccounts: string;
+  smartSelectTitle: string;
+  clearSelection: string;
+  protectSelected: string;
+  unprotectSelected: string;
+  scanSummaryTitle: string;
+  selectGhosts: string;
 }
 
 const en: UxTranslationSlice = {
@@ -66,6 +74,8 @@ const en: UxTranslationSlice = {
   timingAfterFiveSearch: 'Wait after five search cycles',
   timingBetweenUnfollows: 'Time between unfollows',
   timingAfterFiveUnfollows: 'Wait after five unfollows',
+  timingUsersPerCycle: 'Accounts fetched per request',
+  timingUsersPerCycleUnit: 'accounts',
   statusRateLimited: 'Rate limited (429). Stopped to protect your account.',
   statusNoSession: 'No Instagram session found. Refresh the page and log in.',
   statusPhaseFollowing: (current, total) => `Following: ${current} / ${total}…`,
@@ -80,6 +90,12 @@ const en: UxTranslationSlice = {
   prevPage: 'Previous page',
   nextPage: 'Next page',
   searchAccounts: 'Search accounts',
+  smartSelectTitle: 'Smart Select',
+  clearSelection: 'Clear Selection',
+  protectSelected: 'Protect Selected',
+  unprotectSelected: 'Remove from Whitelist',
+  scanSummaryTitle: 'Scan Summary',
+  selectGhosts: 'Ghosts',
 };
 
 const es: UxTranslationSlice = {
@@ -101,6 +117,8 @@ const es: UxTranslationSlice = {
   timingAfterFiveSearch: 'Espera tras cinco ciclos de búsqueda',
   timingBetweenUnfollows: 'Tiempo entre unfollows',
   timingAfterFiveUnfollows: 'Espera tras cinco unfollows',
+  timingUsersPerCycle: 'Cuentas por petición',
+  timingUsersPerCycleUnit: 'cuentas',
   statusRateLimited: 'Límite de peticiones (429). Detenido para proteger tu cuenta.',
   statusNoSession: 'No hay sesión de Instagram. Recarga la página e inicia sesión.',
   statusPhaseFollowing: (current, total) => `Seguidos: ${current} / ${total}…`,
@@ -115,6 +133,12 @@ const es: UxTranslationSlice = {
   prevPage: 'Página anterior',
   nextPage: 'Página siguiente',
   searchAccounts: 'Buscar cuentas',
+  smartSelectTitle: 'Selección Inteligente',
+  clearSelection: 'Limpiar Selección',
+  protectSelected: 'Proteger Selección',
+  unprotectSelected: 'Quitar de la Whitelist',
+  scanSummaryTitle: 'Resumen del Escaneo',
+  selectGhosts: 'Fantasmas',
 };
 
 const ptBR: UxTranslationSlice = {
@@ -135,6 +159,8 @@ const ptBR: UxTranslationSlice = {
   timingAfterFiveSearch: 'Espera após cinco ciclos de busca',
   timingBetweenUnfollows: 'Tempo entre unfollows',
   timingAfterFiveUnfollows: 'Espera após cinco unfollows',
+  timingUsersPerCycle: 'Contas por requisição',
+  timingUsersPerCycleUnit: 'contas',
   statusRateLimited: 'Limite de requisições (429). Parado para proteger sua conta.',
   statusNoSession: 'Nenhuma sessão do Instagram. Atualize a página e entre.',
   statusPhaseFollowing: (current, total) => `Seguindo: ${current} / ${total}…`,
@@ -149,6 +175,12 @@ const ptBR: UxTranslationSlice = {
   prevPage: 'Página anterior',
   nextPage: 'Próxima página',
   searchAccounts: 'Buscar contas',
+  smartSelectTitle: 'Seleção Inteligente',
+  clearSelection: 'Limpar Seleção',
+  protectSelected: 'Proteger Selecionados',
+  unprotectSelected: 'Remover da Whitelist',
+  scanSummaryTitle: 'Resumo da Varredura',
+  selectGhosts: 'Fantasmas',
 };
 
 const fr: UxTranslationSlice = {
@@ -169,6 +201,8 @@ const fr: UxTranslationSlice = {
   timingAfterFiveSearch: 'Pause après cinq cycles de recherche',
   timingBetweenUnfollows: 'Délai entre les désabonnements',
   timingAfterFiveUnfollows: 'Pause après cinq désabonnements',
+  timingUsersPerCycle: 'Comptes par requête',
+  timingUsersPerCycleUnit: 'comptes',
   statusRateLimited: 'Limite atteinte (429). Arrêt pour protéger le compte.',
   statusNoSession: 'Aucune session Instagram. Rechargez la page et connectez-vous.',
   statusPhaseFollowing: (current, total) => `Abonnements : ${current} / ${total}…`,
@@ -183,6 +217,12 @@ const fr: UxTranslationSlice = {
   prevPage: 'Page précédente',
   nextPage: 'Page suivante',
   searchAccounts: 'Rechercher des comptes',
+  smartSelectTitle: 'Sélection Intelligente',
+  clearSelection: 'Effacer la Sélection',
+  protectSelected: 'Protéger la Sélection',
+  unprotectSelected: 'Retirer de la Whitelist',
+  scanSummaryTitle: 'Résumé de l’Analyse',
+  selectGhosts: 'Fantômes',
 };
 
 const it: UxTranslationSlice = {
@@ -203,6 +243,8 @@ const it: UxTranslationSlice = {
   timingAfterFiveSearch: 'Attesa dopo cinque cicli di ricerca',
   timingBetweenUnfollows: 'Tempo tra gli unfollow',
   timingAfterFiveUnfollows: 'Attesa dopo cinque unfollow',
+  timingUsersPerCycle: 'Account per richiesta',
+  timingUsersPerCycleUnit: 'account',
   statusRateLimited: 'Limite raggiunto (429). Fermato per proteggere l’account.',
   statusNoSession: 'Nessuna sessione Instagram. Ricarica la pagina e accedi.',
   statusPhaseFollowing: (current, total) => `Following: ${current} / ${total}…`,
@@ -217,6 +259,12 @@ const it: UxTranslationSlice = {
   prevPage: 'Pagina precedente',
   nextPage: 'Pagina successiva',
   searchAccounts: 'Cerca account',
+  smartSelectTitle: 'Selezione Intelligente',
+  clearSelection: 'Cancella Selezione',
+  protectSelected: 'Proteggi Selezionati',
+  unprotectSelected: 'Rimuovi dalla Whitelist',
+  scanSummaryTitle: 'Riepilogo Scansione',
+  selectGhosts: 'Fantasmi',
 };
 
 const de: UxTranslationSlice = {
@@ -237,6 +285,8 @@ const de: UxTranslationSlice = {
   timingAfterFiveSearch: 'Warten nach fünf Suchzyklen',
   timingBetweenUnfollows: 'Zeit zwischen Entfolgen',
   timingAfterFiveUnfollows: 'Warten nach fünf Entfolgen',
+  timingUsersPerCycle: 'Konten pro Anfrage',
+  timingUsersPerCycleUnit: 'Konten',
   statusRateLimited: 'Rate-Limit (429). Gestoppt, um dein Konto zu schützen.',
   statusNoSession: 'Keine Instagram-Sitzung. Seite neu laden und anmelden.',
   statusPhaseFollowing: (current, total) => `Following: ${current} / ${total}…`,
@@ -251,6 +301,12 @@ const de: UxTranslationSlice = {
   prevPage: 'Vorherige Seite',
   nextPage: 'Nächste Seite',
   searchAccounts: 'Konten suchen',
+  smartSelectTitle: 'Intelligente Auswahl',
+  clearSelection: 'Auswahl leeren',
+  protectSelected: 'Auswahl schützen',
+  unprotectSelected: 'Von Whitelist entfernen',
+  scanSummaryTitle: 'Scan-Zusammenfassung',
+  selectGhosts: 'Geister',
 };
 
 const tr: UxTranslationSlice = {
@@ -271,6 +327,8 @@ const tr: UxTranslationSlice = {
   timingAfterFiveSearch: 'Beş arama döngüsünden sonra bekleme',
   timingBetweenUnfollows: 'Takipten çıkmalar arası süre',
   timingAfterFiveUnfollows: 'Beş takipten çıkmadan sonra bekleme',
+  timingUsersPerCycle: 'İstek başına hesap',
+  timingUsersPerCycleUnit: 'hesap',
   statusRateLimited: 'İstek limiti (429). Hesabını korumak için durduruldu.',
   statusNoSession: 'Instagram oturumu yok. Sayfayı yenile ve giriş yap.',
   statusPhaseFollowing: (current, total) => `Takip edilen: ${current} / ${total}…`,
@@ -285,6 +343,12 @@ const tr: UxTranslationSlice = {
   prevPage: 'Önceki sayfa',
   nextPage: 'Sonraki sayfa',
   searchAccounts: 'Hesap ara',
+  smartSelectTitle: 'Akıllı Seçim',
+  clearSelection: 'Seçimi Temizle',
+  protectSelected: 'Seçilenleri Koru',
+  unprotectSelected: 'Beyaz Listeden Çıkar',
+  scanSummaryTitle: 'Tarama Özeti',
+  selectGhosts: 'Hayaletler',
 };
 
 const hi: UxTranslationSlice = {
@@ -305,6 +369,8 @@ const hi: UxTranslationSlice = {
   timingAfterFiveSearch: 'पाँच खोज चक्रों के बाद प्रतीक्षा',
   timingBetweenUnfollows: 'अनफॉलो के बीच समय',
   timingAfterFiveUnfollows: 'पाँच अनफॉलो के बाद प्रतीक्षा',
+  timingUsersPerCycle: 'हर अनुरोध में खाते',
+  timingUsersPerCycleUnit: 'खाते',
   statusRateLimited: 'रेट लिमिट (429)। खाते की सुरक्षा के लिए रोका गया।',
   statusNoSession: 'Instagram सत्र नहीं मिला। पेज रीफ़्रेश करें और लॉग इन करें।',
   statusPhaseFollowing: (current, total) => `फ़ॉलोइंग: ${current} / ${total}…`,
@@ -319,6 +385,12 @@ const hi: UxTranslationSlice = {
   prevPage: 'पिछला पृष्ठ',
   nextPage: 'अगला पृष्ठ',
   searchAccounts: 'खाते खोजें',
+  smartSelectTitle: 'स्मार्ट चयन',
+  clearSelection: 'चयन साफ़ करें',
+  protectSelected: 'चयनित सुरक्षित करें',
+  unprotectSelected: 'सुरक्षित सूची से हटाएँ',
+  scanSummaryTitle: 'स्कैन सारांश',
+  selectGhosts: 'घोस्ट',
 };
 
 const id: UxTranslationSlice = {
@@ -339,6 +411,8 @@ const id: UxTranslationSlice = {
   timingAfterFiveSearch: 'Tunggu setelah lima siklus pencarian',
   timingBetweenUnfollows: 'Waktu antar unfollow',
   timingAfterFiveUnfollows: 'Tunggu setelah lima unfollow',
+  timingUsersPerCycle: 'Akun per permintaan',
+  timingUsersPerCycleUnit: 'akun',
   statusRateLimited: 'Batas permintaan (429). Dihentikan untuk melindungi akun.',
   statusNoSession: 'Tidak ada sesi Instagram. Muat ulang halaman dan masuk.',
   statusPhaseFollowing: (current, total) => `Following: ${current} / ${total}…`,
@@ -353,6 +427,12 @@ const id: UxTranslationSlice = {
   prevPage: 'Halaman sebelumnya',
   nextPage: 'Halaman berikutnya',
   searchAccounts: 'Cari akun',
+  smartSelectTitle: 'Pilih Cerdas',
+  clearSelection: 'Hapus Pilihan',
+  protectSelected: 'Lindungi Terpilih',
+  unprotectSelected: 'Hapus dari Whitelist',
+  scanSummaryTitle: 'Ringkasan Pemindaian',
+  selectGhosts: 'Hantu',
 };
 
 const ar: UxTranslationSlice = {
@@ -373,6 +453,8 @@ const ar: UxTranslationSlice = {
   timingAfterFiveSearch: 'الانتظار بعد خمس دورات بحث',
   timingBetweenUnfollows: 'الوقت بين إلغاء المتابعة',
   timingAfterFiveUnfollows: 'الانتظار بعد خمس عمليات إلغاء متابعة',
+  timingUsersPerCycle: 'حسابات لكل طلب',
+  timingUsersPerCycleUnit: 'حسابات',
   statusRateLimited: 'تم تجاوز الحد (429). توقف لحماية حسابك.',
   statusNoSession: 'لا توجد جلسة إنستغرام. حدّث الصفحة وسجّل الدخول.',
   statusPhaseFollowing: (current, total) => `المتابَعون: ${current} / ${total}…`,
@@ -387,6 +469,12 @@ const ar: UxTranslationSlice = {
   prevPage: 'الصفحة السابقة',
   nextPage: 'الصفحة التالية',
   searchAccounts: 'البحث عن حسابات',
+  smartSelectTitle: 'اختيار ذكي',
+  clearSelection: 'مسح التحديد',
+  protectSelected: 'حماية المحدد',
+  unprotectSelected: 'إزالة من القائمة البيضاء',
+  scanSummaryTitle: 'ملخص الفحص',
+  selectGhosts: 'أشباح',
 };
 
 const ja: UxTranslationSlice = {
@@ -407,6 +495,8 @@ const ja: UxTranslationSlice = {
   timingAfterFiveSearch: '5回の検索後の待ち時間',
   timingBetweenUnfollows: 'アンフォロー間の待ち時間',
   timingAfterFiveUnfollows: '5回のアンフォロー後の待ち時間',
+  timingUsersPerCycle: 'リクエストごとのアカウント数',
+  timingUsersPerCycleUnit: 'アカウント',
   statusRateLimited: 'レート制限（429）。アカウント保護のため停止しました。',
   statusNoSession: 'Instagram のセッションがありません。再読み込みしてログインしてください。',
   statusPhaseFollowing: (current, total) => `フォロー中: ${current} / ${total}…`,
@@ -421,6 +511,12 @@ const ja: UxTranslationSlice = {
   prevPage: '前のページ',
   nextPage: '次のページ',
   searchAccounts: 'アカウントを検索',
+  smartSelectTitle: 'スマート選択',
+  clearSelection: '選択をクリア',
+  protectSelected: '選択を保護',
+  unprotectSelected: 'ホワイトリストから削除',
+  scanSummaryTitle: 'スキャン概要',
+  selectGhosts: 'ゴースト',
 };
 
 const ko: UxTranslationSlice = {
@@ -441,6 +537,8 @@ const ko: UxTranslationSlice = {
   timingAfterFiveSearch: '검색 5회 후 대기 시간',
   timingBetweenUnfollows: '언팔로우 사이 대기 시간',
   timingAfterFiveUnfollows: '언팔로우 5회 후 대기 시간',
+  timingUsersPerCycle: '요청당 계정 수',
+  timingUsersPerCycleUnit: '계정',
   statusRateLimited: '요청 한도(429). 계정 보호를 위해 중지했습니다.',
   statusNoSession: 'Instagram 세션이 없습니다. 새로고침 후 로그인하세요.',
   statusPhaseFollowing: (current, total) => `팔로잉: ${current} / ${total}…`,
@@ -455,6 +553,12 @@ const ko: UxTranslationSlice = {
   prevPage: '이전 페이지',
   nextPage: '다음 페이지',
   searchAccounts: '계정 검색',
+  smartSelectTitle: '스마트 선택',
+  clearSelection: '선택 지우기',
+  protectSelected: '선택 항목 보호',
+  unprotectSelected: '화이트리스트에서 제거',
+  scanSummaryTitle: '스캔 요약',
+  selectGhosts: '고스트',
 };
 
 const ru: UxTranslationSlice = {
@@ -475,6 +579,8 @@ const ru: UxTranslationSlice = {
   timingAfterFiveSearch: 'Ожидание после пяти циклов поиска',
   timingBetweenUnfollows: 'Пауза между отписками',
   timingAfterFiveUnfollows: 'Ожидание после пяти отписок',
+  timingUsersPerCycle: 'Аккаунтов за запрос',
+  timingUsersPerCycleUnit: 'аккаунтов',
   statusRateLimited: 'Лимит запросов (429). Остановлено для защиты аккаунта.',
   statusNoSession: 'Нет сессии Instagram. Обновите страницу и войдите.',
   statusPhaseFollowing: (current, total) => `Подписки: ${current} / ${total}…`,
@@ -489,6 +595,12 @@ const ru: UxTranslationSlice = {
   prevPage: 'Предыдущая страница',
   nextPage: 'Следующая страница',
   searchAccounts: 'Поиск аккаунтов',
+  smartSelectTitle: 'Умный выбор',
+  clearSelection: 'Очистить выбор',
+  protectSelected: 'Защитить выбранные',
+  unprotectSelected: 'Убрать из белого списка',
+  scanSummaryTitle: 'Итоги сканирования',
+  selectGhosts: 'Призраки',
 };
 
 const pl: UxTranslationSlice = {
@@ -509,6 +621,8 @@ const pl: UxTranslationSlice = {
   timingAfterFiveSearch: 'Czekaj po pięciu cyklach wyszukiwania',
   timingBetweenUnfollows: 'Czas między unfollowami',
   timingAfterFiveUnfollows: 'Czekaj po pięciu unfollowach',
+  timingUsersPerCycle: 'Kont na żądanie',
+  timingUsersPerCycleUnit: 'kont',
   statusRateLimited: 'Limit zapytań (429). Zatrzymano, by chronić konto.',
   statusNoSession: 'Brak sesji Instagram. Odśwież stronę i zaloguj się.',
   statusPhaseFollowing: (current, total) => `Obserwowani: ${current} / ${total}…`,
@@ -523,6 +637,12 @@ const pl: UxTranslationSlice = {
   prevPage: 'Poprzednia strona',
   nextPage: 'Następna strona',
   searchAccounts: 'Szukaj kont',
+  smartSelectTitle: 'Inteligentny wybór',
+  clearSelection: 'Wyczyść zaznaczenie',
+  protectSelected: 'Chroń zaznaczone',
+  unprotectSelected: 'Usuń z białej listy',
+  scanSummaryTitle: 'Podsumowanie skanu',
+  selectGhosts: 'Duchy',
 };
 
 const nl: UxTranslationSlice = {
@@ -543,6 +663,8 @@ const nl: UxTranslationSlice = {
   timingAfterFiveSearch: 'Wachten na vijf zoekcycli',
   timingBetweenUnfollows: 'Tijd tussen unfollows',
   timingAfterFiveUnfollows: 'Wachten na vijf unfollows',
+  timingUsersPerCycle: 'Accounts per verzoek',
+  timingUsersPerCycleUnit: 'accounts',
   statusRateLimited: 'Limiet bereikt (429). Gestopt om je account te beschermen.',
   statusNoSession: 'Geen Instagram-sessie. Vernieuw de pagina en log in.',
   statusPhaseFollowing: (current, total) => `Volgend: ${current} / ${total}…`,
@@ -557,6 +679,12 @@ const nl: UxTranslationSlice = {
   prevPage: 'Vorige pagina',
   nextPage: 'Volgende pagina',
   searchAccounts: 'Accounts zoeken',
+  smartSelectTitle: 'Slim Selecteren',
+  clearSelection: 'Selectie Wissen',
+  protectSelected: 'Selectie Beschermen',
+  unprotectSelected: 'Van Whitelist Verwijderen',
+  scanSummaryTitle: 'Scanoverzicht',
+  selectGhosts: 'Geesten',
 };
 
 const vi: UxTranslationSlice = {
@@ -577,6 +705,8 @@ const vi: UxTranslationSlice = {
   timingAfterFiveSearch: 'Chờ sau năm chu kỳ tìm',
   timingBetweenUnfollows: 'Thời gian giữa các lần unfollow',
   timingAfterFiveUnfollows: 'Chờ sau năm lần unfollow',
+  timingUsersPerCycle: 'Tài khoản mỗi yêu cầu',
+  timingUsersPerCycleUnit: 'tài khoản',
   statusRateLimited: 'Giới hạn yêu cầu (429). Đã dừng để bảo vệ tài khoản.',
   statusNoSession: 'Không có phiên Instagram. Tải lại trang và đăng nhập.',
   statusPhaseFollowing: (current, total) => `Đang follow: ${current} / ${total}…`,
@@ -591,6 +721,12 @@ const vi: UxTranslationSlice = {
   prevPage: 'Trang trước',
   nextPage: 'Trang sau',
   searchAccounts: 'Tìm tài khoản',
+  smartSelectTitle: 'Chọn Thông Minh',
+  clearSelection: 'Xóa Lựa Chọn',
+  protectSelected: 'Bảo Vệ Mục Đã Chọn',
+  unprotectSelected: 'Xóa Khỏi Danh Sách Trắng',
+  scanSummaryTitle: 'Tóm Tắt Quét',
+  selectGhosts: 'Ma',
 };
 
 export const UX_STRINGS: Record<UxLocale, UxTranslationSlice> = {

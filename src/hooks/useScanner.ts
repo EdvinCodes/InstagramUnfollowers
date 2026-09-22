@@ -140,11 +140,14 @@ export const useScanner = (timings: Timings) => {
       await sleep(randomSleep);
 
       if (pageIndex > 0 && pageIndex % 5 === 0) {
-        // Only the status text changes here, not the progress number — avoids
-        // needing to know which phase/percentage is "current" from in here.
-        setScannerState(prev => ({ ...prev, statusMessage: t('statusCoolingDown') }));
         const jitter = Math.random() * 10000 - 5000; // +/- 5s so it isn't a fixed, detectable pattern
-        await sleep(Math.max(0, timings.timeToWaitAfterFiveSearchCycles + jitter));
+        const cooldownMs = Math.max(0, timings.timeToWaitAfterFiveSearchCycles + jitter);
+        // Real duration in the message (like davidarroyo1234's "Sleeping N seconds..."
+        // toast) instead of a generic "cooling down" with no number attached. Only the
+        // status text changes here, not the progress number — avoids needing to know
+        // which phase/percentage is "current" from in here.
+        setScannerState(prev => ({ ...prev, statusMessage: t('statusCoolingDown')(Math.round(cooldownMs / 1000)) }));
+        await sleep(cooldownMs);
       }
     };
 
@@ -180,7 +183,7 @@ export const useScanner = (timings: Timings) => {
           break;
         }
 
-        const pageResult = await fetchFollowingPage(dsUserId, maxId, followingRankToken);
+        const pageResult = await fetchFollowingPage(dsUserId, maxId, followingRankToken, timings.usersPerSearchCycle);
 
         if (pageResult.status === 429 || pageResult.status === 0) {
           // status 0 = a 2xx response that wasn't JSON (challenge/error page) —
@@ -253,7 +256,7 @@ export const useScanner = (timings: Timings) => {
             break;
           }
 
-          const pageResult = await fetchFollowersPage(dsUserId, followersMaxId, followersRankToken);
+          const pageResult = await fetchFollowersPage(dsUserId, followersMaxId, followersRankToken, timings.usersPerSearchCycle);
 
           if (pageResult.status === 429 || pageResult.status === 0) {
             followerRetries++;

@@ -16,6 +16,13 @@ export const DEFAULT_TIME_BETWEEN_SEARCH_CYCLES = 1000;
 export const DEFAULT_TIME_TO_WAIT_AFTER_FIVE_SEARCH_CYCLES = 10000;
 export const DEFAULT_TIME_BETWEEN_UNFOLLOWS = 4000;
 export const DEFAULT_TIME_TO_WAIT_AFTER_FIVE_UNFOLLOWS = 300000;
+// Accounts requested per following/followers page (davidarroyo1234's fork calls this
+// "usersPerSearchCycle" and exposes it in Settings). Instagram may still return fewer
+// per page on its own — particularly for followers, which is server-chunked to ~15-25
+// regardless of what's requested — this only controls what we ask for.
+export const DEFAULT_USERS_PER_SEARCH_CYCLE = 50;
+export const MIN_USERS_PER_SEARCH_CYCLE = 10;
+export const MAX_USERS_PER_SEARCH_CYCLE = 100;
 
 // FILTER CONSTANTS
 export const WITHOUT_PROFILE_PICTURE_URL_IDS = [

@@ -626,6 +626,104 @@ input[type='checkbox'] {
   }
 }
 
+// --- SMART SELECT (davidarroyo1234's Verified/Private/No Pic/Clear row, adapted:
+// Ghosts instead of a second profile-pic button since that's already a filter here) ---
+.smart-select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.smart-select-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.smart-select-btn {
+  border-radius: 10px;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  text-align: center;
+  white-space: normal;
+
+  &--wide {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  &--protect {
+    background: rgba(56, 189, 248, 0.12);
+    color: #38bdf8;
+    border-color: rgba(56, 189, 248, 0.3);
+    &:hover:not(:disabled) {
+      background: rgba(56, 189, 248, 0.24);
+    }
+  }
+}
+
+// --- SCAN SUMMARY (end-of-scan totals, shown once percentage hits 100) ---
+.scan-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.scan-summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.scan-summary-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  padding: 0.6rem 0.4rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.scan-summary-value {
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1;
+  color: variables.$text-main;
+}
+
+.scan-summary-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: variables.$text-muted;
+}
+
+// Sticky action bar (pause + pagination + unfollow/remove-follower) — pinned to the
+// bottom of the scrolling sidebar (.app-sidebar has overflow-y: auto) so it survives
+// Filters/Smart Select/Summary growing taller than the viewport, same intent as
+// davidarroyo1234's fixed Unfollow button. The gradient fades in from transparent so
+// content scrolling underneath doesn't cut off with a hard edge.
+.sidebar-sticky-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding-top: 1rem;
+  background: linear-gradient(
+    to bottom,
+    rgba(15, 23, 42, 0) 0%,
+    variables.$bg-app-overlay 22%,
+    variables.$bg-app-overlay 100%
+  );
+  backdrop-filter: variables.$backdrop-blur;
+}
+
 .tabs-container {
   grid-column: 1 / -1;
   display: flex;
@@ -1656,6 +1754,11 @@ input[type='checkbox'] {
   .app-sidebar p {
     color: #64748b;
     font-weight: 500;
+  }
+  // Sticky action bar needs a light-matching gradient — the dark default would
+  // otherwise float as a stray navy bar over this theme's white sidebar.
+  .sidebar-sticky-actions {
+    background: linear-gradient(to bottom, rgba(248, 250, 252, 0) 0%, #f8fafc 22%, #f8fafc 100%);
   }
 
   // Tarjetas de usuarios (Cards)

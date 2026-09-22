@@ -7,6 +7,7 @@ describe('estimateCancelDurationMs', () => {
     timeToWaitAfterFiveSearchCycles: 10000,
     timeBetweenUnfollows: 4000,
     timeToWaitAfterFiveUnfollows: 300000,
+    usersPerSearchCycle: 50,
   };
 
   it('returns 0 for a single action', () => {

@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  fetchFollowersPage,
+  fetchFollowingPage,
   findUnclassifiedUserIds,
   isSuspiciousEmptyFirstPage,
   mapRestUserToNode,
@@ -211,5 +213,51 @@ describe('isSuspiciousEmptyFirstPage', () => {
 
   it('does not flag a page that actually has users', () => {
     expect(isSuspiciousEmptyFirstPage([baseUser], 2834)).toBe(false);
+  });
+});
+
+describe('fetchFollowingPage / fetchFollowersPage page size', () => {
+  const originalFetch = globalThis.fetch;
+  const originalDocument = (globalThis as { document?: unknown }).document;
+
+  beforeEach(() => {
+    // fetchListPage's headers go through growthApi's getHeaders(), which reads the
+    // csrftoken cookie via document.cookie — stub it since vitest runs in a plain
+    // Node environment with no DOM.
+    (globalThis as { document?: unknown }).document = { cookie: 'csrftoken=test' };
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    (globalThis as { document?: unknown }).document = originalDocument;
+  });
+
+  function stubFetchCapturingUrl(): { getUrl: () => string | null } {
+    let capturedUrl: string | null = null;
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      capturedUrl = String(input);
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ users: [] }),
+      } as Response;
+    }) as typeof fetch;
+    return { getUrl: () => capturedUrl };
+  }
+
+  it('requests the caller-configured usersPerSearchCycle instead of a fixed 50', async () => {
+    const following = stubFetchCapturingUrl();
+    await fetchFollowingPage('123', null, null, 80);
+    expect(new URL(following.getUrl()!).searchParams.get('count')).toBe('80');
+
+    const followers = stubFetchCapturingUrl();
+    await fetchFollowersPage('123', null, null, 10);
+    expect(new URL(followers.getUrl()!).searchParams.get('count')).toBe('10');
+  });
+
+  it('falls back to 50 when no count is passed (background/legacy callers)', async () => {
+    const following = stubFetchCapturingUrl();
+    await fetchFollowingPage('123', null, null);
+    expect(new URL(following.getUrl()!).searchParams.get('count')).toBe('50');
   });
 });

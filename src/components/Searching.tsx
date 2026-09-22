@@ -7,7 +7,9 @@ import {
   getSafePage,
   getUsersForDisplay,
   getDynamicStorageKey,
+  isMissingProfilePicture,
   isSameAccount,
+  viewerFollowsBack,
 } from '../utils/utils';
 import { UserAvatar } from './UserAvatar';
 import { calculateGhostScore, getGhostLabel, getGhostColor } from '../utils/ghostScore';
@@ -152,6 +154,38 @@ export const Searching = ({
     return getUsersForDisplay(scanResults, whitelistedResults, currentTab, searchTerm, filter, t);
   }, [isChangesTab, scanResults, whitelistedResults, currentTab, searchTerm, filter]);
 
+  // Same population as the Non-followers / Mutuals tabs: viewerFollowsBack (not a raw
+  // boolean) and whitelist excluded. Ghosts here are ghost+bot only, matching the
+  // Smart Select button — suspicious accounts stay out of this total.
+  const liveScanDone = state.status === 'scanning' && state.source === 'live' && state.percentage === 100;
+  const scanSummary = useMemo(() => {
+    if (!liveScanDone) {
+      return null;
+    }
+    let nonFollowers = 0;
+    let mutuals = 0;
+    let privateAccounts = 0;
+    let ghosts = 0;
+    for (const user of scanResults) {
+      if (whitelistedResults.some(w => isSameAccount(w, user))) {
+        continue;
+      }
+      if (viewerFollowsBack(user)) {
+        mutuals += 1;
+      } else {
+        nonFollowers += 1;
+      }
+      if (user.is_private) {
+        privateAccounts += 1;
+      }
+      const level = calculateGhostScore(user, t).level;
+      if (level === 'ghost' || level === 'bot') {
+        ghosts += 1;
+      }
+    }
+    return { nonFollowers, mutuals, privateAccounts, ghosts };
+  }, [liveScanDone, scanResults, whitelistedResults]);
+
   const scanningPage = state.status === 'scanning' ? state.page : 1;
   const changePage = paginateDiffPeople(changePeople, scanningPage);
   const maxPage = isChangesTab ? changePage.maxPage : getMaxPage(usersForDisplay);
@@ -191,36 +225,104 @@ export const Searching = ({
     }
   };
 
-  const handleWhitelistToggle = (e: React.MouseEvent<HTMLDivElement>, user: UserNode) => {
-    e.preventDefault();
-    e.stopPropagation();
-    let newWhitelisted: readonly UserNode[] = [];
+  // Shared by the single-user avatar click (below) and the bulk "Protect Selected" /
+  // "Remove from Whitelist" Smart Select action — same add/remove-from-whitelist
+  // rules either way, just over one user or over the whole current selection.
+  // Returns null when there's nothing to change (empty input, or the "changes" tab
+  // where whitelisting doesn't apply) so callers can bail without touching state.
+  const computeWhitelistChange = (users: readonly UserNode[]): readonly UserNode[] | null => {
+    if (users.length === 0) {
+      return null;
+    }
 
     switch (state.currentTab) {
       case 'non_whitelisted':
-      case 'mutuals':
-        newWhitelisted = [...state.whitelistedResults, user];
-        HistoryService.addEvent('WHITELISTED', user);
-        break;
-      case 'whitelisted':
-        newWhitelisted = state.whitelistedResults.filter(u => !isSameAccount(u, user));
-        HistoryService.addEvent('UNWHITELISTED', user);
-        break;
+      case 'mutuals': {
+        // isSameAccount (not a plain id Set), same as getUsersForDisplay's whitelist
+        // check — matches by username too so this can't ever double-add someone.
+        const toAdd = users.filter(u => !state.whitelistedResults.some(w => isSameAccount(w, u)));
+        if (toAdd.length === 0) {
+          return null;
+        }
+        HistoryService.addEvents('WHITELISTED', toAdd);
+        return [...state.whitelistedResults, ...toAdd];
+      }
+      case 'whitelisted': {
+        HistoryService.addEvents('UNWHITELISTED', users);
+        return state.whitelistedResults.filter(w => !users.some(u => isSameAccount(w, u)));
+      }
       case 'changes':
-        return;
+        return null;
       default:
         return assertUnreachable(state);
     }
+  };
 
+  const persistWhitelist = (newWhitelisted: readonly UserNode[]) => {
     const dynamicWhitelistKey = getDynamicStorageKey(WHITELISTED_RESULTS_STORAGE_KEY);
     try {
       localStorage.setItem(dynamicWhitelistKey, JSON.stringify(newWhitelisted));
     } catch (err) {
       console.error('Error writing whitelist', err);
     }
+  };
 
+  const handleWhitelistToggle = (e: React.MouseEvent<HTMLDivElement>, user: UserNode) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const newWhitelisted = computeWhitelistChange([user]);
+    if (!newWhitelisted) {
+      return;
+    }
+    persistWhitelist(newWhitelisted);
     setState(prev => (prev.status === 'scanning' ? { ...prev, whitelistedResults: newWhitelisted } : prev));
   };
+
+  // Smart Select — bulk-whitelist whatever is currently checked, then clear the
+  // selection so the queue doesn't still show accounts that just left non-followers.
+  const handleBulkWhitelist = () => {
+    const newWhitelisted = computeWhitelistChange(state.selectedResults);
+    if (!newWhitelisted) {
+      return;
+    }
+    persistWhitelist(newWhitelisted);
+    setState(prev =>
+      prev.status === 'scanning' ? { ...prev, whitelistedResults: newWhitelisted, selectedResults: [] } : prev,
+    );
+  };
+
+  // Smart Select — adds to the existing selection (union, not replace) so it composes
+  // with manual checkbox picks and with the other Smart Select buttons, same as
+  // toggleAllUsers/toggleCurrentPageUsers in main.tsx. Only ever adds accounts that
+  // are currently visible under usersForDisplay (respects tab/search/filters).
+  const addUsersToSelection = (usersToAdd: readonly UserNode[]) => {
+    setState(prev => {
+      if (prev.status !== 'scanning') {
+        return prev;
+      }
+      const currentIds = new Set(prev.selectedResults.map(u => u.id));
+      const toAdd = usersToAdd.filter(u => !currentIds.has(u.id));
+      if (toAdd.length === 0) {
+        return prev;
+      }
+      return { ...prev, selectedResults: [...prev.selectedResults, ...toAdd] };
+    });
+  };
+
+  const selectVerified = () => addUsersToSelection(usersForDisplay.filter(u => u.is_verified));
+  const selectPrivate = () => addUsersToSelection(usersForDisplay.filter(u => u.is_private));
+  const selectNoProfilePic = () => addUsersToSelection(usersForDisplay.filter(isMissingProfilePicture));
+  // Ghost and bot only (score >= 45). "Suspicious" (25–44) stays out of the unfollow
+  // queue — the filter checkbox can still show those, but one click must not select them.
+  const selectGhosts = () =>
+    addUsersToSelection(
+      usersForDisplay.filter(u => {
+        const level = calculateGhostScore(u, t).level;
+        return level === 'ghost' || level === 'bot';
+      }),
+    );
+  const clearSelection = () =>
+    setState(prev => (prev.status === 'scanning' ? { ...prev, selectedResults: [] } : prev));
 
   const handleUnfollowStart = (actionType: 'unfollow' | 'remove_follower') => {
     if (state.source === 'meta') {
@@ -277,6 +379,45 @@ export const Searching = ({
           </button>
         </div>
         <FiltersSidebar state={state} handleScanFilter={handleScanFilter} />
+        {state.source !== 'meta' && (
+          <div className='smart-select'>
+            <p style={{ fontWeight: 'bold' }}>{t('smartSelectTitle')}</p>
+            <div className='smart-select-grid'>
+              <button type='button' className='smart-select-btn' onClick={selectVerified}>
+                {t('verified')}
+              </button>
+              <button type='button' className='smart-select-btn' onClick={selectPrivate}>
+                {t('private')}
+              </button>
+              <button type='button' className='smart-select-btn' onClick={selectNoProfilePic}>
+                {t('noProfilePic')}
+              </button>
+              <button type='button' className='smart-select-btn' onClick={selectGhosts}>
+                {t('selectGhosts')}
+              </button>
+            </div>
+            <button
+              type='button'
+              className='smart-select-btn smart-select-btn--wide'
+              onClick={clearSelection}
+              disabled={state.selectedResults.length === 0}
+            >
+              {t('clearSelection')}
+              {state.selectedResults.length > 0 ? ` (${state.selectedResults.length})` : ''}
+            </button>
+            {state.currentTab !== 'changes' && (
+              <button
+                type='button'
+                className='smart-select-btn smart-select-btn--wide smart-select-btn--protect'
+                onClick={handleBulkWhitelist}
+                disabled={state.selectedResults.length === 0}
+              >
+                {state.currentTab === 'whitelisted' ? t('unprotectSelected') : t('protectSelected')}
+                {state.selectedResults.length > 0 ? ` (${state.selectedResults.length})` : ''}
+              </button>
+            )}
+          </div>
+        )}
         <div className='grow stats-box'>
           <p>
             {t('displayed')}: {isChangesTab ? changePeople.length : usersForDisplay.length}
@@ -301,78 +442,112 @@ export const Searching = ({
             </>
           )}
         </div>
-        {/* Solo mostramos los controles si el escaneo está en curso */}
-        {state.percentage > 0 && state.percentage < 100 && (
-          <div className='controls'>
+        {/* Final totals over the WHOLE scan (state.results), not just the current
+            tab/filter — same idea as davidarroyo1234's end-of-scan "Scan Summary",
+            extended with Mutuals + Ghosts instead of just Verified. Meta imports skip
+            this: Ghost Score isn't validated yet for accounts without a live profile
+            picture (see ROADMAP.md §6), so the count would be misleading. */}
+        {scanSummary && (
+          <div className='scan-summary'>
+            <p style={{ fontWeight: 'bold' }}>{t('scanSummaryTitle')}</p>
+            <div className='scan-summary-grid'>
+              <div className='scan-summary-cell'>
+                <span className='scan-summary-value'>{scanSummary.nonFollowers}</span>
+                <span className='scan-summary-label'>{t('nonFollowers')}</span>
+              </div>
+              <div className='scan-summary-cell'>
+                <span className='scan-summary-value'>{scanSummary.mutuals}</span>
+                <span className='scan-summary-label'>{t('mutuals')}</span>
+              </div>
+              <div className='scan-summary-cell'>
+                <span className='scan-summary-value'>{scanSummary.privateAccounts}</span>
+                <span className='scan-summary-label'>{t('private')}</span>
+              </div>
+              <div className='scan-summary-cell'>
+                <span className='scan-summary-value'>{scanSummary.ghosts}</span>
+                <span className='scan-summary-label'>{t('selectGhosts')}</span>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Sticky like davidarroyo1234's fixed Unfollow button: pause + pagination +
+            the unfollow/remove-follower actions stay reachable at the bottom of the
+            sidebar instead of scrolling away once Filters/Smart Select/Summary grow
+            taller than the viewport. */}
+        <div className='sidebar-sticky-actions'>
+          {/* Solo mostramos los controles si el escaneo está en curso */}
+          {state.percentage > 0 && state.percentage < 100 && (
+            <div className='controls'>
+              <button
+                className={`button-control ${scanningPaused ? 'btn-resume' : 'btn-pause'}`}
+                onClick={onTogglePauseClick}
+                disabled={isTogglingPause}
+                style={{
+                  opacity: isTogglingPause ? 0.7 : 1,
+                  cursor: isTogglingPause ? 'wait' : 'pointer',
+                }}
+              >
+                {isTogglingPause
+                  ? scanningPaused
+                    ? t('resuming')
+                    : t('pausing')
+                  : scanningPaused
+                    ? t('resumeScan')
+                    : t('pauseScan')}
+              </button>
+            </div>
+          )}
+          <div className='pagination-controls'>
+            <p>{t('pages')}</p>
+            <div className='pagination-row'>
+              <button
+                type='button'
+                className='btn-icon'
+                onClick={() => handlePageChange('prev')}
+                disabled={safePage <= 1}
+                aria-label={t('prevPage')}
+              >
+                ‹
+              </button>
+              <span className='page-indicator'>
+                {safePage} / {maxPage}
+              </span>
+              <button
+                type='button'
+                className='btn-icon'
+                onClick={() => handlePageChange('next')}
+                disabled={safePage >= maxPage}
+                aria-label={t('nextPage')}
+              >
+                ›
+              </button>
+            </div>
+          </div>
+          {state.source !== 'meta' && state.currentTab === 'mutuals' && (
             <button
-              className={`button-control ${scanningPaused ? 'btn-resume' : 'btn-pause'}`}
-              onClick={onTogglePauseClick}
-              disabled={isTogglingPause}
+              className='unfollow'
               style={{
-                opacity: isTogglingPause ? 0.7 : 1,
-                cursor: isTogglingPause ? 'wait' : 'pointer',
+                marginBottom: '10px',
+                background: 'rgba(234, 179, 8, 0.15)',
+                color: '#eab308',
+                borderColor: 'rgba(234, 179, 8, 0.3)',
               }}
+              onClick={() => handleUnfollowStart('remove_follower')}
+              disabled={state.selectedResults.length === 0}
             >
-              {isTogglingPause
-                ? scanningPaused
-                  ? t('resuming')
-                  : t('pausing')
-                : scanningPaused
-                  ? t('resumeScan')
-                  : t('pauseScan')}
+              {t('removeFollower')} ({state.selectedResults.length})
             </button>
-          </div>
-        )}
-        <div className='pagination-controls'>
-          <p>{t('pages')}</p>
-          <div className='pagination-row'>
+          )}
+          {state.source !== 'meta' && (
             <button
-              type='button'
-              className='btn-icon'
-              onClick={() => handlePageChange('prev')}
-              disabled={safePage <= 1}
-              aria-label={t('prevPage')}
+              className='unfollow btn-danger'
+              onClick={() => handleUnfollowStart('unfollow')}
+              disabled={state.selectedResults.length === 0}
             >
-              ‹
+              {t('unfollow')} ({state.selectedResults.length})
             </button>
-            <span className='page-indicator'>
-              {safePage} / {maxPage}
-            </span>
-            <button
-              type='button'
-              className='btn-icon'
-              onClick={() => handlePageChange('next')}
-              disabled={safePage >= maxPage}
-              aria-label={t('nextPage')}
-            >
-              ›
-            </button>
-          </div>
+          )}
         </div>
-        {state.source !== 'meta' && state.currentTab === 'mutuals' && (
-          <button
-            className='unfollow'
-            style={{
-              marginBottom: '10px',
-              background: 'rgba(234, 179, 8, 0.15)',
-              color: '#eab308',
-              borderColor: 'rgba(234, 179, 8, 0.3)',
-            }}
-            onClick={() => handleUnfollowStart('remove_follower')}
-            disabled={state.selectedResults.length === 0}
-          >
-            {t('removeFollower')} ({state.selectedResults.length})
-          </button>
-        )}
-        {state.source !== 'meta' && (
-          <button
-            className='unfollow btn-danger'
-            onClick={() => handleUnfollowStart('unfollow')}
-            disabled={state.selectedResults.length === 0}
-          >
-            {t('unfollow')} ({state.selectedResults.length})
-          </button>
-        )}
       </aside>
 
       {/* Lista de Resultados */}

@@ -1,5 +1,12 @@
 import { UserNode } from '../model/user';
-import { TIMINGS_STORAGE_KEY, UNFOLLOWERS_PER_PAGE, WITHOUT_PROFILE_PICTURE_URL_IDS } from '../constants/constants';
+import {
+  DEFAULT_USERS_PER_SEARCH_CYCLE,
+  MAX_USERS_PER_SEARCH_CYCLE,
+  MIN_USERS_PER_SEARCH_CYCLE,
+  TIMINGS_STORAGE_KEY,
+  UNFOLLOWERS_PER_PAGE,
+  WITHOUT_PROFILE_PICTURE_URL_IDS,
+} from '../constants/constants';
 import { ScanningTab } from '../model/scanning-tab';
 import { ScanningFilter } from '../model/scanning-filter';
 import { Timings } from '../model/timings';
@@ -75,6 +82,18 @@ export const isProfilePicAnonymous = (url: string | undefined): boolean => {
   );
 };
 
+/** Same "no real profile picture" heuristic used by the showWithOutProfilePicture
+ * filter and CSV/PDF exports — pulled out so the Smart Select "No Profile Pic"
+ * button (Searching.tsx) can select the exact same set of accounts instead of
+ * re-implementing the check and risking it drifting out of sync. */
+export function isMissingProfilePicture(user: UserNode): boolean {
+  return (
+    !!user.has_anonymous_profile_picture ||
+    isProfilePicAnonymous(user.profile_pic_url) ||
+    WITHOUT_PROFILE_PICTURE_URL_IDS.some(id => user.profile_pic_url.includes(id))
+  );
+}
+
 export function getUsersForDisplay(
   results: readonly UserNode[],
   whitelistedResults: readonly UserNode[],
@@ -134,15 +153,8 @@ export function getUsersForDisplay(
     // Se añade la comprobación de la palabra 'default' en la URL (igual que ghostScore)
     // y se usa has_anonymous_profile_picture con una comprobación de falsiness más robusta
     // para cubrir los casos donde el campo llega como undefined desde la API.
-    if (filter.showWithOutProfilePicture) {
-      const isMissingPic =
-        !!user.has_anonymous_profile_picture ||
-        isProfilePicAnonymous(user.profile_pic_url) ||
-        WITHOUT_PROFILE_PICTURE_URL_IDS.some(id => user.profile_pic_url.includes(id));
-
-      if (!isMissingPic) {
-        return false;
-      }
+    if (filter.showWithOutProfilePicture && !isMissingProfilePicture(user)) {
+      return false;
     }
 
     // Si busco fantasmas y este usuario es 'safe' (seguro), lo descarto
@@ -319,6 +331,15 @@ function isTimings(value: unknown): value is Timings {
   );
 }
 
+/** Clamps a candidate `usersPerSearchCycle` value into the safe range, falling back to
+ * the default for anything non-finite (missing field, corrupted storage, empty input). */
+export function clampUsersPerSearchCycle(value: number | undefined): number {
+  if (value === undefined || !Number.isFinite(value)) {
+    return DEFAULT_USERS_PER_SEARCH_CYCLE;
+  }
+  return Math.min(MAX_USERS_PER_SEARCH_CYCLE, Math.max(MIN_USERS_PER_SEARCH_CYCLE, Math.round(value)));
+}
+
 export function loadTimings(): Timings | null {
   try {
     const raw = localStorage.getItem(getDynamicStorageKey(TIMINGS_STORAGE_KEY));
@@ -326,7 +347,15 @@ export function loadTimings(): Timings | null {
       return null;
     }
     const parsed = JSON.parse(raw);
-    return isTimings(parsed) ? parsed : null;
+    if (!isTimings(parsed)) {
+      return null;
+    }
+    // Older stored timings (saved before usersPerSearchCycle existed) won't have this
+    // field — backfill the default instead of discarding the rest of the saved settings.
+    return {
+      ...parsed,
+      usersPerSearchCycle: clampUsersPerSearchCycle((parsed as Partial<Timings>).usersPerSearchCycle),
+    };
   } catch {
     return null;
   }

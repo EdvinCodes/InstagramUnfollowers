@@ -9,6 +9,12 @@
  *   GET /api/v1/friendships/{userId}/following/?count=50[&max_id=...]
  *   GET /api/v1/friendships/{userId}/followers/?count=50[&max_id=...]
  *
+ * `count` defaults to 50 here but is configurable end-to-end (see
+ * Timings.usersPerSearchCycle, set in Settings) — same knob davidarroyo1234's fork
+ * exposes. Instagram may still return fewer per page on its own regardless of what's
+ * requested (particularly for followers, which is server-chunked to ~15-25), so this
+ * only controls the upper bound of what we ask for, not a guarantee.
+ *
  * These are unofficial endpoints — Instagram can change or rate-limit them too,
  * so every caller must treat a non-200 status explicitly instead of assuming
  * "no data" means "no accounts".
@@ -170,9 +176,10 @@ async function fetchListPage(
   maxId: string | null,
   query?: string,
   rankToken?: string | null,
+  count: number = LIST_PAGE_SIZE,
 ): Promise<FetchListPageResult> {
   const url = new URL(`https://www.instagram.com/api/v1/friendships/${userId}/${kind}/`);
-  url.searchParams.set('count', String(LIST_PAGE_SIZE));
+  url.searchParams.set('count', String(count));
   url.searchParams.set('search_surface', 'follow_list_page');
   if (query) {
     url.searchParams.set('query', query);
@@ -216,16 +223,18 @@ export function fetchFollowingPage(
   userId: string,
   maxId: string | null,
   rankToken?: string | null,
+  count?: number,
 ): Promise<FetchListPageResult> {
-  return fetchListPage(userId, 'following', maxId, undefined, rankToken);
+  return fetchListPage(userId, 'following', maxId, undefined, rankToken, count);
 }
 
 export function fetchFollowersPage(
   userId: string,
   maxId: string | null,
   rankToken?: string | null,
+  count?: number,
 ): Promise<FetchListPageResult> {
-  return fetchListPage(userId, 'followers', maxId, undefined, rankToken);
+  return fetchListPage(userId, 'followers', maxId, undefined, rankToken, count);
 }
 
 export function searchOwnFollowing(userId: string, username: string): Promise<FetchListPageResult> {

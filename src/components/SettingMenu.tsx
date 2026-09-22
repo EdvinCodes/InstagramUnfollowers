@@ -5,8 +5,13 @@ import type { Locale } from '../i18n/translations';
 import { isMonitorEnabled, setMonitorEnabled } from '../services/realtimeMonitor';
 // import { CloudSync, type SyncState } from '../services/cloudSync';
 // import { HistoryService } from '../services/historyService';
-import { isChromeStorageAvailable, getDynamicStorageKey } from '../utils/utils';
-import { CHROME_SCAN_FREQUENCY_KEY, WHITELISTED_RESULTS_STORAGE_KEY } from '../constants/constants';
+import { clampUsersPerSearchCycle, isChromeStorageAvailable, getDynamicStorageKey } from '../utils/utils';
+import {
+  CHROME_SCAN_FREQUENCY_KEY,
+  MAX_USERS_PER_SEARCH_CYCLE,
+  MIN_USERS_PER_SEARCH_CYCLE,
+  WHITELISTED_RESULTS_STORAGE_KEY,
+} from '../constants/constants';
 
 interface SettingMenuProps {
   setSettingState: (state: boolean) => void;
@@ -24,11 +29,13 @@ interface SettingInputProps {
   label: string;
   value: number;
   min: number;
+  max?: number;
+  unit?: string;
   name: string;
   onChange: (newValue: number) => void;
 }
 
-const SettingRow = ({ label, value, min, name, onChange }: SettingInputProps) => (
+const SettingRow = ({ label, value, min, max = 999999, unit = 'ms', name, onChange }: SettingInputProps) => (
   <div className='row'>
     <label htmlFor={name}>{label}</label>
     <div className='input-group'>
@@ -37,11 +44,11 @@ const SettingRow = ({ label, value, min, name, onChange }: SettingInputProps) =>
         id={name}
         name={name}
         min={min}
-        max={999999}
+        max={max}
         value={value}
         onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(Number(e.currentTarget.value))}
       />
-      <span className='unit'>(ms)</span>
+      <span className='unit'>({unit})</span>
     </div>
   </div>
 );
@@ -112,6 +119,7 @@ export const SettingMenu = ({
   const [timeToWaitAfterFiveUnfollows, setTimeToWaitAfterFiveUnfollows] = useState(
     currentTimings.timeToWaitAfterFiveUnfollows,
   );
+  const [usersPerSearchCycle, setUsersPerSearchCycle] = useState(currentTimings.usersPerSearchCycle);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -122,6 +130,10 @@ export const SettingMenu = ({
       timeToWaitAfterFiveSearchCycles,
       timeBetweenUnfollows,
       timeToWaitAfterFiveUnfollows,
+      // Clamped here (not on every keystroke) so typing a two-digit number doesn't get
+      // cut off mid-edit — same UX as the other timing fields, just range-guarded since
+      // this one feeds straight into an Instagram API request parameter.
+      usersPerSearchCycle: clampUsersPerSearchCycle(usersPerSearchCycle),
     });
     setSettingState(false);
   };
@@ -137,6 +149,7 @@ export const SettingMenu = ({
         timeToWaitAfterFiveSearchCycles,
         timeBetweenUnfollows,
         timeToWaitAfterFiveUnfollows,
+        usersPerSearchCycle,
       },
       whitelist: whitelistData ? JSON.parse(whitelistData) : [],
     };
@@ -171,6 +184,9 @@ export const SettingMenu = ({
           setTimeToWaitAfterFiveSearchCycles(data.timings.timeToWaitAfterFiveSearchCycles);
           setTimeBetweenUnfollows(data.timings.timeBetweenUnfollows);
           setTimeToWaitAfterFiveUnfollows(data.timings.timeToWaitAfterFiveUnfollows);
+          // Older backups (pre-usersPerSearchCycle) won't have this field — clamp
+          // falls back to the default instead of setting state to undefined/NaN.
+          setUsersPerSearchCycle(clampUsersPerSearchCycle(data.timings.usersPerSearchCycle));
         }
 
         // Restaurar Whitelist
@@ -261,6 +277,16 @@ export const SettingMenu = ({
             min={70000}
             value={timeToWaitAfterFiveUnfollows}
             onChange={setTimeToWaitAfterFiveUnfollows}
+          />
+
+          <SettingRow
+            label={t('timingUsersPerCycle')}
+            name='usersPerSearchCycle'
+            min={MIN_USERS_PER_SEARCH_CYCLE}
+            max={MAX_USERS_PER_SEARCH_CYCLE}
+            unit={t('timingUsersPerCycleUnit')}
+            value={usersPerSearchCycle}
+            onChange={setUsersPerSearchCycle}
           />
 
           {/* <-- SECCIÓN DE TEMA AÑADIDA --> */}

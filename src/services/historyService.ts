@@ -28,6 +28,22 @@ function capHistory(events: HistoryEvent[]): HistoryEvent[] {
   return events.slice(0, MAX_HISTORY_ITEMS);
 }
 
+function createHistoryEvent(type: HistoryEventType, user: UserNode): HistoryEvent {
+  const minimalUser: Partial<UserNode> = {
+    id: user.id,
+    username: user.username,
+    profile_pic_url: user.profile_pic_url,
+    full_name: user.full_name,
+  };
+  return {
+    id: generateId(),
+    timestamp: Date.now(),
+    type,
+    user: minimalUser as UserNode,
+    count: type === 'REQUEST_CANCELLED' ? 1 : undefined,
+  };
+}
+
 export const HistoryService = {
   getHistory: (): HistoryEvent[] => {
     try {
@@ -48,30 +64,31 @@ export const HistoryService = {
   },
 
   addEvent: (type: HistoryEventType, user: UserNode) => {
+    if (type === 'REQUEST_CANCELLED') {
+      const history = HistoryService.getHistory();
+      const newEvent = createHistoryEvent(type, user);
+      persist(capHistory(mergeCancelledIntoHistory(history, newEvent)));
+      return;
+    }
+    HistoryService.addEvents(type, [user]);
+  },
+
+  /**
+   * Same event shape as addEvent, but one localStorage read and one write for the
+   * whole batch. Bulk whitelist ("Protect selected") used to call addEvent per user,
+   * which re-read and re-wrote the full history N times and could freeze the tab.
+   * Newest user in `users` ends up first, matching a loop of addEvent.
+   */
+  addEvents: (type: HistoryEventType, users: readonly UserNode[]) => {
+    if (users.length === 0 || type === 'REQUEST_CANCELLED') {
+      return;
+    }
     const history = HistoryService.getHistory();
-
-    const minimalUser: Partial<UserNode> = {
-      id: user.id,
-      username: user.username,
-      profile_pic_url: user.profile_pic_url,
-      full_name: user.full_name,
-    };
-
-    const newEvent: HistoryEvent = {
-      id: generateId(),
-      timestamp: Date.now(),
-      type,
-      user: minimalUser as UserNode,
-      count: type === 'REQUEST_CANCELLED' ? 1 : undefined,
-    };
-
-    const updatedHistory = capHistory(
-      type === 'REQUEST_CANCELLED'
-        ? mergeCancelledIntoHistory(history, newEvent)
-        : [newEvent, ...history],
-    );
-
-    persist(updatedHistory);
+    const newestFirst: HistoryEvent[] = [];
+    for (let i = users.length - 1; i >= 0; i--) {
+      newestFirst.push(createHistoryEvent(type, users[i]));
+    }
+    persist(capHistory([...newestFirst, ...history]));
   },
 
   clearHistory: () => {
