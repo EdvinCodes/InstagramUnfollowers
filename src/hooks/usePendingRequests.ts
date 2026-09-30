@@ -127,10 +127,9 @@ export function usePendingRequests(
         }
       };
 
-      // Instagram rate-limits this endpoint hard (GET web_profile_info especially) once a queue
-      // gets into the thousands. Instead of dying on the very first 429 like before, back off
-      // with growing delays and retry automatically — only give up for good after several
-      // consecutive failures in a row.
+      // A deleted or missing username often 429s web_profile_info. That is one
+      // account, not a ban: skip it and keep cancelling the rest. The cancel POST
+      // still backs off, and stops the queue only after several of those in a row.
       let consecutiveRateLimitHits = 0;
 
       const backoffAndRetry = async (): Promise<boolean> => {
@@ -181,11 +180,16 @@ export function usePendingRequests(
             const lookup = await lookupUserByUsername(user.username);
 
             if (isRateLimitResponse(lookup.status)) {
-              if (!(await backoffAndRetry())) {
-                aborted = true;
-                break;
-              }
-              continue;
+              skipped += 1;
+              processed += 1;
+              addResult('skip', user.username, t('pendingSkipLookup')(user.username));
+              patch({
+                processedCount: processed,
+                skippedCount: skipped,
+                percentage: Math.floor((processed / usersToCancel.length) * 100),
+              });
+              handled = true;
+              break;
             }
             consecutiveRateLimitHits = 0;
 

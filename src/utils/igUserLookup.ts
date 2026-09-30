@@ -54,8 +54,8 @@ async function lookupViaUsernameInfo(username: string): Promise<UserLookupResult
     `https://www.instagram.com/api/v1/users/${encodeURIComponent(username)}/usernameinfo/`,
     { headers: getHeaders(), credentials: 'include' },
   );
-  if (res.status === 429) {
-    return { id: null, status: 429, friendship: null };
+  if (res.status === 429 || res.status === 404) {
+    return { id: null, status: res.status, friendship: null };
   }
   if (!res.ok) {
     return null;
@@ -82,8 +82,8 @@ async function lookupViaProfilePage(username: string): Promise<UserLookupResult 
       referer: 'https://www.instagram.com/',
     },
   });
-  if (res.status === 429) {
-    return { id: null, status: 429, friendship: null };
+  if (res.status === 429 || res.status === 404) {
+    return { id: null, status: res.status, friendship: null };
   }
   if (!res.ok) {
     return null;
@@ -101,6 +101,9 @@ async function lookupViaWebProfileInfo(username: string): Promise<UserLookupResu
     `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`,
     { headers: getHeaders(), credentials: 'include' },
   );
+  if (res.status === 404) {
+    return { id: null, status: 404, friendship: null };
+  }
   if (!res.ok) {
     return { id: null, status: res.status, friendship: null };
   }
@@ -113,6 +116,34 @@ async function lookupViaWebProfileInfo(username: string): Promise<UserLookupResu
     status: res.status,
     friendship: parseFriendshipStatus(user ?? null),
   };
+}
+
+export interface LookupAttemptState {
+  found: UserLookupResult | null;
+  rateLimit: UserLookupResult | null;
+}
+
+/** A missing account (404) is final. A 429 on one strategy must not hide it, and must not win if another strategy can still answer. */
+export function absorbLookupAttempt(state: LookupAttemptState, result: UserLookupResult | null): 'done' | 'next' {
+  if (!result) {
+    return 'next';
+  }
+  if (result.id) {
+    state.found = result;
+    return 'done';
+  }
+  if (result.status === 404) {
+    state.found = { id: null, status: 404, friendship: null };
+    return 'done';
+  }
+  if (result.status === 429) {
+    state.rateLimit = result;
+  }
+  return 'next';
+}
+
+export function finishLookup(state: LookupAttemptState): UserLookupResult {
+  return state.found ?? state.rateLimit ?? { id: null, status: 0, friendship: null };
 }
 
 /**
@@ -144,26 +175,22 @@ export async function lookupUserByUsername(username: string): Promise<UserLookup
     lookupViaWebProfileInfo,
   ];
 
-  let lastRateLimit: UserLookupResult | null = null;
+  const state: LookupAttemptState = { found: null, rateLimit: null };
 
   for (const attempt of attempts) {
     try {
-      const result = await attempt(handle);
-      if (!result) {
-        continue;
+      const step = absorbLookupAttempt(state, await attempt(handle));
+      if (step === 'done' && state.found?.id) {
+        writeCachedUserId(handle, state.found.id);
+        return state.found;
       }
-      if (result.status === 429) {
-        lastRateLimit = result;
-        continue;
-      }
-      if (result.id) {
-        writeCachedUserId(handle, result.id);
-        return result;
+      if (step === 'done') {
+        return finishLookup(state);
       }
     } catch {
       // Try the next strategy.
     }
   }
 
-  return lastRateLimit ?? { id: null, status: 0, friendship: null };
+  return finishLookup(state);
 }
