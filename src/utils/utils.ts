@@ -237,10 +237,6 @@ export function getCookie(name: string): string | null {
   return null;
 }
 
-export function unfollowUserUrlGenerator(idToUnfollow: string): string {
-  return `https://www.instagram.com/web/friendships/${idToUnfollow}/unfollow/`;
-}
-
 // Genera y descarga un archivo CSV con los resultados del escaneo.
 export const exportToCSV = (
   results: readonly UserNode[],
@@ -328,10 +324,6 @@ export function isChromeStorageAvailable(): boolean {
   } catch {
     return false;
   }
-}
-
-export function removeFollowerUrlGenerator(idToRemove: string): string {
-  return `https://www.instagram.com/web/friendships/${idToRemove}/remove_follower/`;
 }
 
 // Like davidarroyo1234's fork: scan/unfollow timing settings persist across

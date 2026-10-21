@@ -238,7 +238,7 @@ export function usePendingRequests(
           }
 
           setStatus(t('pendingCancelling')(user.username));
-          const result = await cancelFollowRequest(lookupId);
+          const result = await cancelFollowRequest(lookupId, user.username);
 
           if (isRateLimitResponse(result.status, result.body)) {
             if (!(await backoffAndRetry())) {

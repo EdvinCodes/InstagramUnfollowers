@@ -2,12 +2,9 @@ import { useState, useRef, useCallback } from 'preact/hooks';
 import { UserNode } from '../model/user';
 import { UnfollowLogEntry } from '../model/unfollow-log-entry';
 import { Timings } from '../model/timings';
-import {
-  getCookie,
-  sleep,
-  unfollowUserUrlGenerator,
-  removeFollowerUrlGenerator,
-} from '../utils/utils';
+import { getCookie, sleep } from '../utils/utils';
+import { removeFollower, unfollowUser } from '../utils/growthApi';
+import { isRateLimitResponse } from '../utils/growthHelpers';
 import { t } from '../i18n/i18n';
 
 // 1. IMPORTAMOS EL SERVICIO DE HISTORIAL (V4.0)
@@ -72,6 +69,7 @@ export const useUnfollowerQueue = (timings: Timings) => {
 
       let counter = 0;
       let abortedByRateLimit = false;
+      let abortedBecauseIgnored = false;
 
       for (const user of usersToUnfollow) {
         // 1. Verificación de Parada/Pausa
@@ -107,27 +105,20 @@ export const useUnfollowerQueue = (timings: Timings) => {
 
         let success = false;
         try {
-          // Decidimos qué endpoint usar
-          const targetUrl =
+          const result =
             actionType === 'unfollow'
-              ? unfollowUserUrlGenerator(user.id)
-              : removeFollowerUrlGenerator(user.id);
-
-          const response = await fetch(targetUrl, {
-            headers: {
-              'content-type': 'application/x-www-form-urlencoded',
-              'x-csrftoken': csrftoken,
-            },
-            method: 'POST',
-            mode: 'cors',
-            credentials: 'include',
-          });
-          if (response.status === 429) {
+              ? await unfollowUser(user.id, user.username)
+              : await removeFollower(user.id, user.username);
+          if (isRateLimitResponse(result.status, result.body)) {
             abortedByRateLimit = true;
             shouldStopRef.current = true;
             success = false;
+          } else if (!result.ok && result.ignored) {
+            abortedBecauseIgnored = true;
+            shouldStopRef.current = true;
+            success = false;
           } else {
-            success = response.ok;
+            success = result.ok;
           }
         } catch (e) {
           console.error('Fetch error:', e);
@@ -173,9 +164,11 @@ export const useUnfollowerQueue = (timings: Timings) => {
         isUnfollowing: false,
         statusMessage: abortedByRateLimit
           ? t('statusRateLimited')
-          : shouldStopRef.current
-            ? t('statusStopped')
-            : t('statusCompleted'),
+          : abortedBecauseIgnored
+            ? t('statusUnfollowIgnored')
+            : shouldStopRef.current
+              ? t('statusStopped')
+              : t('statusCompleted'),
       }));
     },
     [timings],
