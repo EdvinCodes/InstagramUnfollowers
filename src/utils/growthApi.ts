@@ -461,20 +461,7 @@ export async function lookupUserByUsername(
 
 type ConfirmVerdict = 'yes' | 'no' | 'rate';
 
-async function readRelationship(
-  userId: string,
-  username: string | undefined,
-): Promise<{ verdict: ConfirmVerdict | 'unknown' }> {
-  if (username) {
-    const lookup = await lookupUserByUsername(username);
-    if (isRateLimitResponse(lookup.status)) {
-      return { verdict: 'rate' };
-    }
-    if (lookup.friendship) {
-      const cleared = relationshipCleared(lookup.friendship);
-      return { verdict: cleared ? 'yes' : 'no' };
-    }
-  }
+async function readRelationship(userId: string): Promise<{ verdict: ConfirmVerdict | 'unknown' }> {
   const shown = await fetchFriendshipStatus(userId);
   if (isRateLimitResponse(shown.status)) {
     return { verdict: 'rate' };
@@ -486,14 +473,10 @@ async function readRelationship(
   return { verdict: cleared ? 'yes' : 'no' };
 }
 
-async function confirmDestroyed(
-  userId: string,
-  body: string,
-  username?: string,
-): Promise<ConfirmVerdict> {
+async function confirmDestroyed(userId: string, body: string): Promise<ConfirmVerdict> {
   const parsed = didFriendshipActionSucceed('destroy', body);
   await sleep(400);
-  const live = await readRelationship(userId, username);
+  const live = await readRelationship(userId);
   if (live.verdict === 'rate') {
     return 'rate';
   }
@@ -502,7 +485,7 @@ async function confirmDestroyed(
   }
   if (live.verdict === 'no' && parsed === true) {
     await sleep(700);
-    const again = await readRelationship(userId, username);
+    const again = await readRelationship(userId);
     if (again.verdict === 'rate') {
       return 'rate';
     }
@@ -552,7 +535,7 @@ async function postFriendshipAction(
 
   const verdict = action === 'remove_follower'
     ? await confirmRemoved(userId, posted.body)
-    : await confirmDestroyed(userId, posted.body, username);
+    : await confirmDestroyed(userId, posted.body);
   if (verdict === 'rate') {
     return { ok: false, status: 429, body: posted.body };
   }
@@ -570,7 +553,7 @@ async function postFriendshipAction(
       return { ok: false, status: fallback.status, body: fallback.body };
     }
     if (fallback.status !== 404 && fallback.status !== 0) {
-      const again = await confirmDestroyed(userId, fallback.body, username);
+      const again = await confirmDestroyed(userId, fallback.body);
       if (again === 'rate') {
         return { ok: false, status: 429, body: fallback.body };
       }
@@ -584,30 +567,12 @@ async function postFriendshipAction(
   return { ok: false, status: posted.status, body: posted.body, ignored: true };
 }
 
-async function resolveProfileId(
-  userId: string,
-  username?: string,
-): Promise<{ id: string; status: number }> {
-  if (!username) {
-    return { id: userId, status: 200 };
-  }
-  const lookup = await lookupUserByUsername(username);
-  if (isRateLimitResponse(lookup.status)) {
-    return { id: userId, status: lookup.status };
-  }
-  return { id: lookup.id ?? userId, status: lookup.status };
-}
-
 export function followUser(userId: string, username?: string): Promise<FriendshipMutationResult> {
   return postFriendshipAction('create', userId, username);
 }
 
-export async function removeFollower(userId: string, username?: string): Promise<FriendshipMutationResult> {
-  const resolved = await resolveProfileId(userId, username);
-  if (isRateLimitResponse(resolved.status)) {
-    return { ok: false, status: resolved.status, body: '' };
-  }
-  return postFriendshipAction('remove_follower', resolved.id, username);
+export function removeFollower(userId: string, username?: string): Promise<FriendshipMutationResult> {
+  return postFriendshipAction('remove_follower', userId, username);
 }
 
 interface WebSessionTokens {
@@ -839,20 +804,27 @@ async function polarisUnfollow(
     return { ok: false, status: res.status, body: JSON.stringify(reported), ignored: true };
   }
 
-  if (purpose === 'unfollow' && username) {
-    const stillThere = await isStillInFollowingList(userId, username);
-    if (stillThere === true) {
-      return { ok: false, status: res.status, body: 'still in following list', ignored: true };
+  if (purpose === 'unfollow') {
+    if (username) {
+      const stillThere = await isStillInFollowingList(userId, username);
+      if (stillThere === true) {
+        return { ok: false, status: res.status, body: 'still in following list', ignored: true };
+      }
+      if (stillThere === false) {
+        return { ok: true, status: res.status, body: text.slice(0, 500) };
+      }
     }
-    if (stillThere === false) {
+    if (reported?.following === false && reported.outgoingRequest !== true) {
       return { ok: true, status: res.status, body: text.slice(0, 500) };
     }
+    console.warn(`Unfollow of ${userId} could not be confirmed`, text.slice(0, 300));
+    return { ok: false, status: res.status, body: 'unconfirmed', ignored: true };
   }
 
-  let live = await readRelationship(userId, username);
+  let live = await readRelationship(userId);
   if (live.verdict === 'no' && reported?.following === false && reported.outgoingRequest === false) {
     await sleep(700);
-    live = await readRelationship(userId, username);
+    live = await readRelationship(userId);
   }
   if (live.verdict === 'rate') {
     return { ok: false, status: 429, body: errorText };
@@ -870,12 +842,8 @@ async function polarisUnfollow(
   return { ok: false, status: res.status, body: 'unconfirmed', ignored: true };
 }
 
-export async function unfollowUser(userId: string, username?: string): Promise<FriendshipMutationResult> {
-  const resolved = await resolveProfileId(userId, username);
-  if (isRateLimitResponse(resolved.status)) {
-    return { ok: false, status: resolved.status, body: '' };
-  }
-  return polarisUnfollow(resolved.id, username, 'unfollow');
+export function unfollowUser(userId: string, username?: string): Promise<FriendshipMutationResult> {
+  return polarisUnfollow(userId, username, 'unfollow');
 }
 
 export function cancelFollowRequest(
