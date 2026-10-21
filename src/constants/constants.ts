@@ -1,4 +1,8 @@
 export const INSTAGRAM_HOSTNAME = 'www.instagram.com';
+// instagram.com's own Unfollow button. doc_id is the persisted query Instagram
+// was serving on 18 Oct 2026 (davidarroyo1234/InstagramUnfollowers#363).
+export const INSTAGRAM_UNFOLLOW_DOC_ID = '27789106940691111';
+export const INSTAGRAM_UNFOLLOW_FRIENDLY_NAME = 'usePolarisUnfollowMutation';
 export const UNFOLLOWERS_PER_PAGE = 50;
 export const WHITELISTED_RESULTS_STORAGE_KEY = 'ig_unfollower_whitelisted_results';
 export const HISTORY_RESULTS_STORAGE_KEY = 'ig_unfollower_history_snapshot';

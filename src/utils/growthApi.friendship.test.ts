@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { didFriendshipActionSucceed, parseFriendshipStatus, readIgWebConfig } from './growthApi';
+import {
+  didFriendshipActionSucceed,
+  findGraphqlFriendship,
+  jazoest,
+  parseFriendshipStatus,
+  parseInstagramGraphql,
+  readIgWebConfig,
+  readWebSessionTokens,
+} from './growthApi';
 
 describe('parseFriendshipStatus', () => {
   it('reads root-level Instagram show() fields', () => {
@@ -65,5 +73,46 @@ describe('readIgWebConfig', () => {
       ajaxId: '1026488586',
       asbdId: '359341',
     });
+  });
+});
+
+describe('readWebSessionTokens', () => {
+  it('reads fb_dtsg and lsd from the instagram page payload', () => {
+    const html =
+      '["DTSGInitialData",[],{"token":"NAf-dtsg"}],["LSD",[],{"token":"Adlsd"}],"client_revision":1026488586';
+    expect(readWebSessionTokens(html)).toEqual({
+      fbDtsg: 'NAf-dtsg',
+      lsd: 'Adlsd',
+      revision: '1026488586',
+    });
+  });
+
+  it('returns null when either token is missing', () => {
+    expect(readWebSessionTokens('{"LSD":[],{"token":"only-lsd"}}')).toBeNull();
+  });
+});
+
+describe('jazoest', () => {
+  it('prefixes the char-code sum with 2', () => {
+    expect(jazoest('AB')).toBe(`2${'A'.charCodeAt(0) + 'B'.charCodeAt(0)}`);
+  });
+});
+
+describe('parseInstagramGraphql', () => {
+  it('strips the anti-hijacking prefix and rejects an HTML page', () => {
+    expect(parseInstagramGraphql('for (;;);{"data":{"ok":true}}')).toEqual({ data: { ok: true } });
+    expect(parseInstagramGraphql('<!DOCTYPE html><html></html>')).toBeNull();
+  });
+});
+
+describe('findGraphqlFriendship', () => {
+  it('finds friendship_status nested under the mutation payload', () => {
+    expect(
+      findGraphqlFriendship({
+        xdt_destroy_friendship: {
+          friendship_status: { following: false, outgoing_request: false },
+        },
+      }),
+    ).toEqual({ following: false, outgoingRequest: false });
   });
 });

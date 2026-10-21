@@ -104,6 +104,7 @@ export function usePendingRequests(
       let skipped = 0;
       let failed = 0;
       let abortedByRateLimit = false;
+      let abortedBecauseIgnored = false;
 
       const waitIfPaused = async () => {
         while (!isStopped()) {
@@ -249,6 +250,21 @@ export function usePendingRequests(
           }
           consecutiveRateLimitHits = 0;
 
+          if (result.ignored) {
+            failed += 1;
+            processed += 1;
+            addResult('fail', user.username, t('pendingFailed')(user.username));
+            patch({
+              processedCount: processed,
+              failedCount: failed,
+              percentage: Math.floor((processed / usersToCancel.length) * 100),
+            });
+            abortedBecauseIgnored = true;
+            aborted = true;
+            handled = true;
+            break;
+          }
+
           processed += 1;
           if (result.ok) {
             cancelled += 1;
@@ -276,7 +292,7 @@ export function usePendingRequests(
         }
 
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- abortedByRateLimit is set inside the backoffAndRetry closure
-        if (processed < usersToCancel.length && !isStopped() && !abortedByRateLimit) {
+        if (processed < usersToCancel.length && !isStopped() && !abortedByRateLimit && !abortedBecauseIgnored) {
           if (processed % 5 === 0) {
             setStatus(t('pendingCooldown'));
             await interruptibleSleep(timings.timeToWaitAfterFiveUnfollows);
@@ -296,9 +312,11 @@ export function usePendingRequests(
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- abortedByRateLimit is set inside the backoffAndRetry closure
         statusMessage: abortedByRateLimit
           ? t('pendingRateLimited')
-          : isStopped()
-            ? t('pendingStopped')
-            : t('pendingCompleted'),
+          : abortedBecauseIgnored
+            ? t('statusUnfollowIgnored')
+            : isStopped()
+              ? t('pendingStopped')
+              : t('pendingCompleted'),
       });
     },
     [addResult, getState, isStopped, patch, setStatus, timings],
