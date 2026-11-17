@@ -4,6 +4,7 @@ import { HISTORY_STRINGS, type HistoryTranslationSlice } from './historyStrings'
 import { HUB_STRINGS, type HubTranslationSlice } from './hubStrings';
 import { META_STRINGS, type MetaTranslationSlice } from './metaStrings';
 import { PENDING_STRINGS, type PendingTranslationSlice } from './pendingStrings';
+import { SCAN_STRINGS, type ScanTranslationSlice } from './scanStrings';
 import { UX_STRINGS, type UxTranslationSlice } from './uxStrings';
 
 export type Locale =
@@ -24,7 +25,7 @@ export type Locale =
   | 'nl'
   | 'vi';
 
-export interface Translations extends GrowthTranslationSlice, UxTranslationSlice, PendingTranslationSlice, MetaTranslationSlice, CleanTranslationSlice, HubTranslationSlice, HistoryTranslationSlice {
+export interface Translations extends GrowthTranslationSlice, UxTranslationSlice, PendingTranslationSlice, MetaTranslationSlice, CleanTranslationSlice, HubTranslationSlice, HistoryTranslationSlice, ScanTranslationSlice {
   appName: string;
   minimize: string;
   history: string;
@@ -376,6 +377,7 @@ const en: Translations = {
   ...CLEAN_STRINGS.en,
   ...HUB_STRINGS.en,
   ...HISTORY_STRINGS.en,
+  ...SCAN_STRINGS.en,
 };
 
 //  Español
@@ -560,6 +562,7 @@ const es: Translations = {
   ...CLEAN_STRINGS.es,
   ...HUB_STRINGS.es,
   ...HISTORY_STRINGS.es,
+  ...SCAN_STRINGS.es,
 };
 
 //  Português (BR)
@@ -743,6 +746,7 @@ const ptBR: Translations = {
   ...CLEAN_STRINGS['pt-BR'],
   ...HUB_STRINGS['pt-BR'],
   ...HISTORY_STRINGS['pt-BR'],
+  ...SCAN_STRINGS['pt-BR'],
 };
 
 //  Français
@@ -929,6 +933,7 @@ const fr: Translations = {
   ...CLEAN_STRINGS.fr,
   ...HUB_STRINGS.fr,
   ...HISTORY_STRINGS.fr,
+  ...SCAN_STRINGS.fr,
 };
 
 //  Italiano
@@ -1113,6 +1118,7 @@ const it: Translations = {
   ...CLEAN_STRINGS.it,
   ...HUB_STRINGS.it,
   ...HISTORY_STRINGS.it,
+  ...SCAN_STRINGS.it,
 };
 
 // 🇩🇪 Deutsch
@@ -1297,6 +1303,7 @@ const de: Translations = {
   ...CLEAN_STRINGS.de,
   ...HUB_STRINGS.de,
   ...HISTORY_STRINGS.de,
+  ...SCAN_STRINGS.de,
 };
 
 //  Export
@@ -1478,6 +1485,7 @@ const tr: Translations = {
   ...CLEAN_STRINGS.tr,
   ...HUB_STRINGS.tr,
   ...HISTORY_STRINGS.tr,
+  ...SCAN_STRINGS.tr,
 };
 
 
@@ -1659,6 +1667,7 @@ const hi: Translations = {
   ...CLEAN_STRINGS.hi,
   ...HUB_STRINGS.hi,
   ...HISTORY_STRINGS.hi,
+  ...SCAN_STRINGS.hi,
 };
 
 // Indonesian
@@ -1839,6 +1848,7 @@ const id: Translations = {
   ...CLEAN_STRINGS.id,
   ...HUB_STRINGS.id,
   ...HISTORY_STRINGS.id,
+  ...SCAN_STRINGS.id,
 };
 
 // Arabic
@@ -2019,6 +2029,7 @@ const ar: Translations = {
   ...CLEAN_STRINGS.ar,
   ...HUB_STRINGS.ar,
   ...HISTORY_STRINGS.ar,
+  ...SCAN_STRINGS.ar,
 };
 
 // Japanese
@@ -2199,6 +2210,7 @@ const ja: Translations = {
   ...CLEAN_STRINGS.ja,
   ...HUB_STRINGS.ja,
   ...HISTORY_STRINGS.ja,
+  ...SCAN_STRINGS.ja,
 };
 
 // Korean
@@ -2379,6 +2391,7 @@ const ko: Translations = {
   ...CLEAN_STRINGS.ko,
   ...HUB_STRINGS.ko,
   ...HISTORY_STRINGS.ko,
+  ...SCAN_STRINGS.ko,
 };
 
 // Russian
@@ -2559,6 +2572,7 @@ const ru: Translations = {
   ...CLEAN_STRINGS.ru,
   ...HUB_STRINGS.ru,
   ...HISTORY_STRINGS.ru,
+  ...SCAN_STRINGS.ru,
 };
 
 // Polish
@@ -2739,6 +2753,7 @@ const pl: Translations = {
   ...CLEAN_STRINGS.pl,
   ...HUB_STRINGS.pl,
   ...HISTORY_STRINGS.pl,
+  ...SCAN_STRINGS.pl,
 };
 
 // Dutch
@@ -2919,6 +2934,7 @@ const nl: Translations = {
   ...CLEAN_STRINGS.nl,
   ...HUB_STRINGS.nl,
   ...HISTORY_STRINGS.nl,
+  ...SCAN_STRINGS.nl,
 };
 
 // Vietnamese
@@ -3099,6 +3115,7 @@ const vi: Translations = {
   ...CLEAN_STRINGS.vi,
   ...HUB_STRINGS.vi,
   ...HISTORY_STRINGS.vi,
+  ...SCAN_STRINGS.vi,
 };
 
 export const translations: Record<Locale, Translations> = {

@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Built with](https://img.shields.io/badge/Built%20with-Preact%20%26%20TypeScript-blueviolet)](https://preactjs.com/)
 [![Works with](https://img.shields.io/badge/Instagram-Compatible-E1306C.svg)](https://www.instagram.com/)
-[![Version](https://img.shields.io/badge/version-9.0.4-brightgreen.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
+[![Version](https://img.shields.io/badge/version-9.1.0-brightgreen.svg)](https://github.com/edvincodes/InstagramUnfollowers/releases)
 
 [🇺🇸 English](#-english-version) | [🇪🇸 Español](#-versión-en-español) | [🇹🇷 Türkçe](#-türkçe-sürüm)
 
@@ -16,7 +16,7 @@
 
 **The safest, most advanced Instagram Unfollowers tracker.** See who doesn't follow you back, detect ghost accounts with a 0-100 Ghost Score, export PDF health reports, and grow your audience — **100% locally in your browser**, no password required.
 
-> **🚀 v9.0.4:** Unfollow uses the id from the scan. It no longer asks `web_profile_info` first, so a 429 on that lookup cannot stop the queue.
+> **🚀 v9.1.0:** Instagram's Oct/Nov 2026 client headers are wired end-to-end. Soft-blocks retry, long follower lists can resume, and unfollow uses destroy with GraphQL fallback — without publishing incomplete scans.
 
 > **🚀 v9.0.3:** Unfollow and cancelling a pending request use Instagram's own Unfollow button mutation, then check that the relationship is gone.
 
@@ -137,7 +137,7 @@
 
 **El rastreador de Instagram Unfollowers más seguro y avanzado.** Descubre quién no te sigue de vuelta, detecta cuentas fantasma con una Ghost Score de 0-100, exporta reportes PDF y haz crecer tu audiencia — **100% en local en tu navegador**, sin contraseña.
 
-> **🚀 v9.0.4:** Dejar de seguir usa el id del escaneo. Ya no pregunta `web_profile_info` antes, así un 429 de esa búsqueda no para la cola.
+> **🚀 v9.1.0:** Cabeceras del cliente Oct/Nov 2026 de punta a punta. Soft-blocks con reintento, listas largas reanudables, y unfollow con destroy + GraphQL de respaldo — sin publicar escaneos incompletos.
 
 > **🚀 v9.0.3:** Dejar de seguir y cancelar una solicitud usan la misma mutación que el botón de Instagram, y solo cuentan si la relación desaparece.
 
@@ -380,6 +380,6 @@ Esta herramienta es un proyecto independiente y no está afiliada, asociada, aut
 
 ## ❤️ Credits
 
-Developed with ❤️ by **Edvin**. **v9.0.4 — Unfollow no longer looks the account up again.**
+Developed with ❤️ by **Edvin**. **v9.1.0 — Survives Instagram's Oct/Nov 2026 client breakages.**
 
 Licensed under the [MIT License](https://www.google.com/search?q=LICENSE).

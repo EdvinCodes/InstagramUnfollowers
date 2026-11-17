@@ -1,12 +1,22 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { t } from '../i18n/i18n';
 import { HistoryService } from '../services/historyService';
 import { loadCleanLists } from '../utils/cleanLists';
 import { loadMetaScanSnapshot } from '../utils/metaScan';
 import { readCancelledUsernames, readImportedPendingList } from '../utils/pendingStorage';
+import { currentViewerId } from '../utils/accountGuard';
+import {
+  checkpointFollowerCount,
+  loadFollowersCheckpoint,
+} from '../utils/scanCheckpoint';
+import {
+  cooldownSecondsLeft,
+  formatCountdown,
+  subscribeCooldown,
+} from '../utils/cooldown';
 
 interface NotSearchingProps {
-  onScan?: () => void;
+  onScan?: (options?: { fresh?: boolean }) => void;
   onGrowth: () => void;
   onPendingRequests: () => void;
   onMetaImport: () => void;
@@ -53,6 +63,36 @@ export const NotSearching = ({
   onHistory,
   isPro,
 }: NotSearchingProps) => {
+  const [cooldownLeft, setCooldownLeft] = useState(() => cooldownSecondsLeft());
+  const [savedFollowers, setSavedFollowers] = useState(0);
+
+  useEffect(() => {
+    const refreshCheckpoint = () => {
+      const viewerId = currentViewerId();
+      if (!viewerId) {
+        setSavedFollowers(0);
+        return;
+      }
+      const checkpoint = loadFollowersCheckpoint(viewerId);
+      setSavedFollowers(checkpoint ? checkpointFollowerCount(checkpoint) : 0);
+    };
+    refreshCheckpoint();
+    const onFocus = () => refreshCheckpoint();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, []);
+
+  useEffect(() => {
+    const tick = () => setCooldownLeft(cooldownSecondsLeft());
+    tick();
+    const unsubscribe = subscribeCooldown(tick);
+    const timer = window.setInterval(tick, 1000);
+    return () => {
+      unsubscribe();
+      window.clearInterval(timer);
+    };
+  }, []);
+
   const stats = useMemo(() => {
     try {
       const snapshot = loadMetaScanSnapshot();
@@ -84,6 +124,9 @@ export const NotSearching = ({
     }
   }, []);
 
+  const cooldownActive = cooldownLeft > 0;
+  const canScan = !!onScan && !cooldownActive;
+
   return (
     <section className='home-hub' aria-label={t('hubTitle')}>
       <header className='home-hub__intro'>
@@ -91,6 +134,31 @@ export const NotSearching = ({
         <h2 className='home-hub__title'>{t('hubTitle')}</h2>
         <p className='home-hub__subtitle'>{t('hubSubtitle')}</p>
       </header>
+
+      {cooldownActive && (
+        <div className='home-hub__banner home-hub__banner--warn' role='status'>
+          {t('cooldownBanner')(formatCountdown(cooldownLeft))}
+        </div>
+      )}
+
+      {savedFollowers > 0 && !cooldownActive && (
+        <div className='home-hub__banner home-hub__banner--info' role='status'>
+          <p>{t('resumeCheckpointBanner')(savedFollowers)}</p>
+          <div className='home-hub__banner-actions'>
+            <button type='button' className='hub-card__primary' onClick={() => onScan?.()} disabled={!canScan}>
+              {t('resumeCheckpointButton')}
+            </button>
+            <button
+              type='button'
+              className='hub-card__row'
+              onClick={() => onScan?.({ fresh: true })}
+              disabled={!canScan}
+            >
+              {t('startFreshScan')}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className='home-hub__grid'>
         <article className='hub-card hub-card--analyze'>
@@ -103,8 +171,14 @@ export const NotSearching = ({
               <p>{t('hubAnalyzeDesc')}</p>
             </div>
           </div>
-          <button type='button' className='hub-card__primary' onClick={onScan}>
-            {t('hubScanLive')}
+          <button
+            type='button'
+            className='hub-card__primary'
+            onClick={() => onScan?.(savedFollowers > 0 ? { fresh: true } : undefined)}
+            disabled={!canScan}
+            title={cooldownActive ? t('cooldownBanner')(formatCountdown(cooldownLeft)) : undefined}
+          >
+            {savedFollowers > 0 ? t('startFreshScan') : t('hubScanLive')}
           </button>
           <button type='button' className='hub-card__row' onClick={onMetaImport}>
             <span>{t('metaEntry')}</span>

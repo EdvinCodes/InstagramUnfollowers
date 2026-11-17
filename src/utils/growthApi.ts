@@ -1,13 +1,19 @@
-import { INSTAGRAM_UNFOLLOW_DOC_ID, INSTAGRAM_UNFOLLOW_FRIENDLY_NAME } from '../constants/constants';
 import { getCookie, isProfilePicAnonymous, sleep } from './utils';
-import { isRateLimitResponse, postsWithinWindow } from './growthHelpers';
+import { postsWithinWindow } from './growthHelpers';
 import {
   GROWTH_MAX_COMMENT_PAGES,
   GROWTH_MAX_POSTS,
   GROWTH_POST_WINDOW_DAYS,
 } from '../constants/growth';
-
-const IG_APP_ID = '936619743392459';
+import {
+  getWebSessionTokens,
+  igFetchJson,
+  jazoest,
+  instagramApiHeaders,
+  type IgFailure,
+} from './igClient';
+import { pageListsAccount, searchOwnFollowing } from './igListsApi';
+import { INSTAGRAM_UNFOLLOW_DOC_ID, INSTAGRAM_UNFOLLOW_FRIENDLY_NAME } from '../constants/constants';
 
 export interface IgUserBrief {
   id: string;
@@ -26,15 +32,9 @@ export interface FriendshipStatus {
   followedBy?: boolean | null;
 }
 
+/** Headers for every Instagram API call. Prefer this over hand-built headers. */
 export function getHeaders(): HeadersInit {
-  const csrfToken = getCookie('csrftoken') ?? '';
-  return {
-    'x-ig-app-id': IG_APP_ID,
-    'x-csrftoken': csrfToken,
-    'x-requested-with': 'XMLHttpRequest',
-    'accept': '*/*',
-    'referer': 'https://www.instagram.com/',
-  };
+  return instagramApiHeaders({ referer: 'https://www.instagram.com/' });
 }
 
 export function getCurrentUserId(): string | null {
@@ -44,6 +44,7 @@ export function getCurrentUserId(): string | null {
 interface WebProfileFriendship {
   following?: boolean;
   outgoing_request?: boolean;
+  followed_by?: boolean;
 }
 
 interface WebProfileResponse {
@@ -96,12 +97,6 @@ interface UserInfoResponse {
   };
 }
 
-interface FriendshipShowResponse {
-  following?: boolean;
-  outgoing_request?: boolean;
-  friendship_status?: WebProfileFriendship;
-}
-
 export function parseFriendshipStatus(json: unknown): FriendshipStatus | null {
   if (!json || typeof json !== 'object') {
     return null;
@@ -110,11 +105,7 @@ export function parseFriendshipStatus(json: unknown): FriendshipStatus | null {
   const nested = record.friendship_status;
   const source =
     nested && typeof nested === 'object' ? (nested as Record<string, unknown>) : record;
-  if (
-    !('following' in source) &&
-    !('outgoing_request' in source) &&
-    !('followed_by' in source)
-  ) {
+  if (!('following' in source) && !('outgoing_request' in source) && !('followed_by' in source)) {
     return null;
   }
   return {
@@ -126,15 +117,10 @@ export function parseFriendshipStatus(json: unknown): FriendshipStatus | null {
 
 export async function getUserIdByUsername(username: string): Promise<string | null> {
   try {
-    const res = await fetch(
+    const res = await igFetchJson<WebProfileResponse>(
       `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`,
-      { headers: getHeaders(), credentials: 'include' },
     );
-    if (!res.ok) {
-      return null;
-    }
-    const json = (await res.json()) as WebProfileResponse;
-    return json.data?.user?.id ?? null;
+    return res.json?.data?.user?.id ?? null;
   } catch {
     return null;
   }
@@ -150,13 +136,12 @@ export async function getRecentPostIds(userId: string): Promise<string[]> {
         ? `https://www.instagram.com/api/v1/feed/user/${userId}/?count=12&max_id=${encodeURIComponent(nextMaxId)}`
         : `https://www.instagram.com/api/v1/feed/user/${userId}/?count=12`;
 
-      const res = await fetch(url, { headers: getHeaders(), credentials: 'include' });
-      if (!res.ok) {
+      const res = await igFetchJson<UserFeedResponse>(url);
+      if (res.failure || !res.json) {
         break;
       }
 
-      const json = (await res.json()) as UserFeedResponse;
-      const items = json.items ?? [];
+      const items = res.json.items ?? [];
       if (items.length === 0) {
         break;
       }
@@ -177,10 +162,10 @@ export async function getRecentPostIds(userId: string): Promise<string[]> {
         }
       }
 
-      if (reachedOldPosts || !json.next_max_id) {
+      if (reachedOldPosts || !res.json.next_max_id) {
         break;
       }
-      nextMaxId = json.next_max_id;
+      nextMaxId = res.json.next_max_id;
     }
   } catch {
     return postIds;
@@ -200,23 +185,21 @@ export async function getCommenterIds(mediaId: string): Promise<string[]> {
         ? `https://www.instagram.com/api/v1/media/${mediaId}/comments/?can_support_threading=true&permalink_enabled=false&max_id=${encodeURIComponent(nextMaxId)}`
         : `https://www.instagram.com/api/v1/media/${mediaId}/comments/?can_support_threading=true&permalink_enabled=false`;
 
-      const res = await fetch(url, { headers: getHeaders(), credentials: 'include' });
-      if (!res.ok) {
+      const res = await igFetchJson<CommentsResponse>(url);
+      if (res.failure || !res.json) {
         break;
       }
 
-      const json = (await res.json()) as CommentsResponse;
-      const comments = json.comments ?? [];
-
-      for (const c of comments) {
-        const uid = String(c.user?.pk ?? c.user_id ?? c.user?.user_id ?? '');
+      const comments = res.json.comments ?? [];
+      for (const comment of comments) {
+        const uid = String(comment.user?.pk ?? comment.user_id ?? comment.user?.user_id ?? '');
         if (uid && !seen.has(uid)) {
           seen.add(uid);
           ids.push(uid);
         }
       }
 
-      nextMaxId = json.next_max_id ?? json.next_min_id;
+      nextMaxId = res.json.next_max_id ?? res.json.next_min_id;
       if (!nextMaxId || comments.length === 0) {
         break;
       }
@@ -230,29 +213,19 @@ export async function getCommenterIds(mediaId: string): Promise<string[]> {
 
 export async function getUserBrief(userId: string): Promise<IgUserBrief | null> {
   try {
-    const res = await fetch(`https://www.instagram.com/api/v1/users/${userId}/info/`, {
-      headers: getHeaders(),
-      credentials: 'include',
-    });
-    if (!res.ok) {
-      return null;
-    }
-
-    const json = (await res.json()) as UserInfoResponse;
-    const user = json.user;
-    if (!user) {
+    const res = await igFetchJson<UserInfoResponse>(`https://www.instagram.com/api/v1/users/${userId}/info/`);
+    const user = res.json?.user;
+    if (res.failure || !user) {
       return null;
     }
 
     const picUrl = user.profile_pic_url_hd ?? user.profile_pic_url ?? '';
     const mediaCount = user.media_count ?? 0;
-    const isGhost = isProfilePicAnonymous(picUrl) || mediaCount === 0;
-
     return {
       id: String(user.pk ?? userId),
       username: user.username ?? userId,
       isPrivate: Boolean(user.is_private),
-      isGhost,
+      isGhost: isProfilePicAnonymous(picUrl) || mediaCount === 0,
       mediaCount,
       followingCount: user.following_count ?? 0,
       followerCount: user.follower_count ?? 0,
@@ -264,86 +237,45 @@ export async function getUserBrief(userId: string): Promise<IgUserBrief | null> 
 
 export async function fetchFriendshipStatus(
   userId: string,
-): Promise<{ status: number; friendship: FriendshipStatus | null }> {
-  try {
-    const res = await fetch(`https://www.instagram.com/api/v1/friendships/show/${userId}/`, {
-      headers: getHeaders(),
-      credentials: 'include',
-    });
-    if (!res.ok) {
-      return { status: res.status, friendship: null };
-    }
-    const json = (await res.json()) as FriendshipShowResponse;
-    return {
-      status: res.status,
-      friendship: parseFriendshipStatus(json),
-    };
-  } catch {
-    return { status: 0, friendship: null };
-  }
+): Promise<{ status: number; friendship: FriendshipStatus | null; failure: IgFailure | null }> {
+  const res = await igFetchJson(`https://www.instagram.com/api/v1/friendships/show/${userId}/`);
+  return {
+    status: res.status,
+    friendship: parseFriendshipStatus(res.json),
+    failure: res.failure,
+  };
 }
 
 export async function getFriendshipStatus(userId: string): Promise<FriendshipStatus | null> {
-  const result = await fetchFriendshipStatus(userId);
-  return result.friendship;
+  return (await fetchFriendshipStatus(userId)).friendship;
 }
 
-/**
- * Instagram retired POST /web/friendships/{id}/unfollow/ (it now 404s).
- * A 200 from /api/v1/friendships/destroy/ is not enough: the body can be
- * `{"status":"ok"}` while the account is still followed. Success means
- * friendships/show says the relationship is gone.
- */
 export type FriendshipAction = 'create' | 'destroy' | 'remove_follower';
 
 export interface FriendshipMutationResult {
   ok: boolean;
   status: number;
   body: string;
-  /** HTTP succeeded but the follow is still there. The queue should stop. */
+  failure: IgFailure | null;
+  /** HTTP succeeded but the relationship is still there. The queue should stop. */
   ignored?: boolean;
 }
 
-const IG_ASBD_FALLBACK = '129477';
-
-interface IgWebConfig {
-  wwwClaim: string;
-  ajaxId: string;
-  asbdId: string;
-}
-
-let cachedWebConfig: IgWebConfig | null = null;
-
-export function readIgWebConfig(html: string): IgWebConfig {
-  const claim = html.match(/"www_claim"\s*:\s*"(hmac\.[^"]+)"/)?.[1] ?? '0';
-  const ajax = html.match(/"rollout_hash"\s*:\s*"(\d+)"/)?.[1] ?? '1';
-  const asbd =
-    html.match(/"ASBD_ID"\s*:\s*"?(\d+)"?/)?.[1] ??
-    html.match(/"asbd_id"\s*:\s*"?(\d+)"?/)?.[1] ??
-    IG_ASBD_FALLBACK;
-  return { wwwClaim: claim, ajaxId: ajax, asbdId: asbd };
-}
-
-function getIgWebConfig(): IgWebConfig {
-  if (!cachedWebConfig) {
-    cachedWebConfig = readIgWebConfig(document.documentElement.innerHTML);
-  }
-  return cachedWebConfig;
-}
-
-function rememberWwwClaim(response: Response): void {
-  const claim = response.headers.get('x-ig-set-www-claim');
-  if (!claim || claim === '0') {
-    return;
-  }
-  cachedWebConfig = { ...getIgWebConfig(), wwwClaim: claim };
+function friendshipFormBody(userId: string, tokens: { fbDtsg: string }): string {
+  return new URLSearchParams({
+    user_id: userId,
+    container_module: 'profile',
+    nav_chain: 'PolarisProfilePostsTabRoot:profilePage:1:via_cold_start',
+    fb_dtsg: tokens.fbDtsg,
+    jazoest: jazoest(tokens.fbDtsg),
+  }).toString();
 }
 
 /** True when the body proves the action, false when it proves it did not, null when it does not say. */
 export function didFriendshipActionSucceed(action: FriendshipAction, body: string): boolean | null {
   let json: unknown;
   try {
-    json = JSON.parse(body) as unknown;
+    json = JSON.parse(body.replace(/^for \(;;\);/, '')) as unknown;
   } catch {
     return null;
   }
@@ -381,312 +313,16 @@ export function didFriendshipActionSucceed(action: FriendshipAction, body: strin
   return true;
 }
 
-function friendshipFormBody(userId: string): string {
-  return new URLSearchParams({
-    user_id: userId,
-    container_module: 'profile',
-    nav_chain: 'PolarisProfileRoot:profilePage:1:via_cold_start',
-    radio_type: 'wifi-none',
-  }).toString();
-}
-
-function actionHeaders(username?: string): Record<string, string> {
-  const config = getIgWebConfig();
-  const referer = username
-    ? `https://www.instagram.com/${encodeURIComponent(username)}/`
-    : 'https://www.instagram.com/';
-  return {
-    'x-ig-app-id': IG_APP_ID,
-    'x-asbd-id': config.asbdId,
-    'x-csrftoken': getCookie('csrftoken') ?? '',
-    'x-instagram-ajax': config.ajaxId,
-    'x-ig-www-claim': config.wwwClaim,
-    'x-requested-with': 'XMLHttpRequest',
-    'content-type': 'application/x-www-form-urlencoded',
-    'origin': 'https://www.instagram.com',
-    referer,
-    'accept': '*/*',
-  };
-}
-
-async function postFriendshipUrl(
-  url: string,
-  userId: string,
-  username?: string,
-): Promise<FriendshipMutationResult> {
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: actionHeaders(username),
-      credentials: 'include',
-      body: friendshipFormBody(userId),
-    });
-    rememberWwwClaim(res);
-    const body = await res.text();
-    return { ok: res.ok, status: res.status, body };
-  } catch {
-    return { ok: false, status: 0, body: '' };
-  }
-}
-
-function relationshipCleared(status: FriendshipStatus | null): boolean | null {
-  if (!status) {
-    return null;
-  }
-  return !status.following && !status.outgoingRequest;
-}
-
-export async function lookupUserByUsername(
-  username: string,
-): Promise<{ id: string | null; status: number; friendship: FriendshipStatus | null }> {
-  try {
-    const res = await fetch(
-      `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`,
-      { headers: getHeaders(), credentials: 'include' },
-    );
-    if (!res.ok) {
-      return { id: null, status: res.status, friendship: null };
-    }
-    const json = (await res.json()) as WebProfileResponse;
-    const user = json.data?.user;
-    return {
-      id: user?.id ?? null,
-      status: res.status,
-      friendship: parseFriendshipStatus(user ?? null),
-    };
-  } catch {
-    return { id: null, status: 0, friendship: null };
-  }
-}
-
-type ConfirmVerdict = 'yes' | 'no' | 'rate';
-
-async function readRelationship(userId: string): Promise<{ verdict: ConfirmVerdict | 'unknown' }> {
-  const shown = await fetchFriendshipStatus(userId);
-  if (isRateLimitResponse(shown.status)) {
-    return { verdict: 'rate' };
-  }
-  const cleared = relationshipCleared(shown.friendship);
-  if (cleared === null) {
-    return { verdict: 'unknown' };
-  }
-  return { verdict: cleared ? 'yes' : 'no' };
-}
-
-async function confirmDestroyed(userId: string, body: string): Promise<ConfirmVerdict> {
-  const parsed = didFriendshipActionSucceed('destroy', body);
-  await sleep(400);
-  const live = await readRelationship(userId);
-  if (live.verdict === 'rate') {
-    return 'rate';
-  }
-  if (live.verdict === 'yes') {
-    return 'yes';
-  }
-  if (live.verdict === 'no' && parsed === true) {
-    await sleep(700);
-    const again = await readRelationship(userId);
-    if (again.verdict === 'rate') {
-      return 'rate';
-    }
-    if (again.verdict === 'yes' || again.verdict === 'no') {
-      return again.verdict;
-    }
-  }
-  if (live.verdict === 'no') {
-    return 'no';
-  }
-  return parsed === true ? 'yes' : 'no';
-}
-
-async function confirmRemoved(userId: string, body: string): Promise<ConfirmVerdict> {
-  const parsed = didFriendshipActionSucceed('remove_follower', body);
-  await sleep(400);
-  const shown = await fetchFriendshipStatus(userId);
-  if (isRateLimitResponse(shown.status)) {
-    return 'rate';
-  }
-  if (shown.friendship?.followedBy === false) {
-    return 'yes';
-  }
-  if (shown.friendship?.followedBy === true) {
-    return 'no';
-  }
-  return parsed === true ? 'yes' : 'no';
-}
-
-async function postFriendshipAction(
-  action: FriendshipAction,
-  userId: string,
-  username?: string,
-): Promise<FriendshipMutationResult> {
-  const posted = await postFriendshipUrl(
-    `https://www.instagram.com/api/v1/friendships/${action}/${userId}/`,
-    userId,
-    username,
-  );
-  if (isRateLimitResponse(posted.status, posted.body)) {
-    return { ok: false, status: posted.status, body: posted.body };
-  }
-  if (action === 'create') {
-    const created = didFriendshipActionSucceed('create', posted.body);
-    return { ok: posted.ok && created !== false, status: posted.status, body: posted.body };
-  }
-
-  const verdict = action === 'remove_follower'
-    ? await confirmRemoved(userId, posted.body)
-    : await confirmDestroyed(userId, posted.body);
-  if (verdict === 'rate') {
-    return { ok: false, status: 429, body: posted.body };
-  }
-  if (verdict === 'yes') {
-    return { ok: true, status: posted.status, body: posted.body };
-  }
-
-  if (action === 'destroy') {
-    const fallback = await postFriendshipUrl(
-      `https://www.instagram.com/api/v1/web/friendships/${userId}/unfollow/`,
-      userId,
-      username,
-    );
-    if (isRateLimitResponse(fallback.status, fallback.body)) {
-      return { ok: false, status: fallback.status, body: fallback.body };
-    }
-    if (fallback.status !== 404 && fallback.status !== 0) {
-      const again = await confirmDestroyed(userId, fallback.body);
-      if (again === 'rate') {
-        return { ok: false, status: 429, body: fallback.body };
-      }
-      if (again === 'yes') {
-        return { ok: true, status: fallback.status, body: fallback.body };
-      }
-      return { ok: false, status: fallback.status, body: fallback.body, ignored: true };
-    }
-  }
-
-  return { ok: false, status: posted.status, body: posted.body, ignored: true };
-}
-
-export function followUser(userId: string, username?: string): Promise<FriendshipMutationResult> {
-  return postFriendshipAction('create', userId, username);
-}
-
-export function removeFollower(userId: string, username?: string): Promise<FriendshipMutationResult> {
-  return postFriendshipAction('remove_follower', userId, username);
-}
-
-interface WebSessionTokens {
-  fbDtsg: string;
-  lsd: string;
-  revision?: string;
-}
-
-let cachedWebSessionTokens: WebSessionTokens | null = null;
-
-export function readWebSessionTokens(html: string): WebSessionTokens | null {
-  const fbDtsg =
-    /"DTSGInitialData",\[\],\{"token":"([^"]+)"/.exec(html)?.[1] ??
-    /"dtsg":\{"token":"([^"]+)"/.exec(html)?.[1];
-  const lsd = /"LSD",\[\],\{"token":"([^"]+)"/.exec(html)?.[1];
-  if (!fbDtsg || !lsd) {
-    return null;
-  }
-  const revision = /"client_revision":(\d+)/.exec(html)?.[1];
-  return revision ? { fbDtsg, lsd, revision } : { fbDtsg, lsd };
-}
-
-/** Instagram's checksum of fb_dtsg: "2" plus the sum of its char codes. */
-export function jazoest(fbDtsg: string): string {
-  let sum = 0;
-  for (let i = 0; i < fbDtsg.length; i++) {
-    sum += fbDtsg.charCodeAt(i);
-  }
-  return `2${sum}`;
-}
-
-interface RequireModule {
-  token?: string;
-  client_revision?: string | number;
-}
-
-function readRequireTokens(): WebSessionTokens | null {
-  const req = (window as unknown as { require?: (name: string) => RequireModule | undefined }).require;
-  if (typeof req !== 'function') {
-    return null;
-  }
-  try {
-    const fbDtsg = req('DTSGInitialData')?.token;
-    const lsd = req('LSD')?.token;
-    if (!fbDtsg || !lsd) {
-      return null;
-    }
-    const revision = req('SiteData')?.client_revision;
-    return revision === undefined || revision === ''
-      ? { fbDtsg, lsd }
-      : { fbDtsg, lsd, revision: String(revision) };
-  } catch {
-    return null;
-  }
-}
-
-async function getWebSessionTokens(): Promise<WebSessionTokens | null> {
-  if (cachedWebSessionTokens) {
-    return cachedWebSessionTokens;
-  }
-  const fromRequire = readRequireTokens();
-  if (fromRequire) {
-    cachedWebSessionTokens = fromRequire;
-    return cachedWebSessionTokens;
-  }
-  cachedWebSessionTokens = readWebSessionTokens(document.documentElement.innerHTML);
-  if (!cachedWebSessionTokens) {
-    try {
-      const res = await fetch('https://www.instagram.com/', { credentials: 'same-origin' });
-      cachedWebSessionTokens = readWebSessionTokens(await res.text());
-    } catch (error) {
-      console.warn('Could not load Instagram session tokens', error);
-    }
-  }
-  return cachedWebSessionTokens;
-}
-
-export interface GraphqlFriendship {
-  following: boolean | null;
-  outgoingRequest: boolean | null;
-}
-
-export function parseInstagramGraphql(text: string): Record<string, unknown> | null {
-  const trimmed = text.replace(/^for \(;;\);/, '').trim();
-  if (!trimmed || trimmed.startsWith('<')) {
-    return null;
-  }
-  try {
-    const json = JSON.parse(trimmed) as unknown;
-    if (!json || typeof json !== 'object') {
-      return null;
-    }
-    return json as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
-
-export function findGraphqlFriendship(node: unknown, depth = 0): GraphqlFriendship | null {
+export function findFriendshipInPayload(node: unknown, depth = 0): FriendshipStatus | null {
   if (depth > 12 || !node || typeof node !== 'object') {
     return null;
   }
-  const record = node as Record<string, unknown>;
-  const nested = record.friendship_status;
-  if (nested && typeof nested === 'object') {
-    const source = nested as Record<string, unknown>;
-    return {
-      following: typeof source.following === 'boolean' ? source.following : null,
-      outgoingRequest: typeof source.outgoing_request === 'boolean' ? source.outgoing_request : null,
-    };
+  const parsed = parseFriendshipStatus(node);
+  if (parsed) {
+    return parsed;
   }
-  const keys = Object.keys(record);
-  for (const key of keys) {
-    const found = findGraphqlFriendship(record[key], depth + 1);
+  for (const value of Object.values(node as Record<string, unknown>)) {
+    const found = findFriendshipInPayload(value, depth + 1);
     if (found) {
       return found;
     }
@@ -694,54 +330,150 @@ export function findGraphqlFriendship(node: unknown, depth = 0): GraphqlFriendsh
   return null;
 }
 
-function graphqlErrorText(data: Record<string, unknown>): string {
-  return `${JSON.stringify(data.errors ?? data.error ?? '')} ${String(data.message ?? '')} ${String(data.errorSummary ?? '')}`;
-}
-
-function relationshipStillOpen(status: GraphqlFriendship | FriendshipStatus | null): boolean {
-  if (!status) {
-    return false;
-  }
-  if ('outgoingRequest' in status) {
-    return status.following === true || status.outgoingRequest === true;
-  }
-  return false;
-}
-
 async function isStillInFollowingList(userId: string, username: string): Promise<boolean | null> {
   const viewerId = getCurrentUserId();
   if (!viewerId) {
     return null;
   }
-  try {
-    const url =
-      `https://www.instagram.com/api/v1/friendships/${viewerId}/following/` +
-      `?count=12&query=${encodeURIComponent(username)}&search_surface=follow_list_page`;
-    const res = await fetch(url, { headers: getHeaders(), credentials: 'include' });
-    if (!res.ok) {
-      return null;
-    }
-    const json = (await res.json()) as { users?: Array<{ pk?: string | number; pk_id?: string | number; id?: string | number; username?: string }> };
-    const target = username.toLowerCase();
-    return (json.users ?? []).some(user => {
-      const name = (user.username ?? '').toLowerCase();
-      const ids = [user.pk, user.pk_id, user.id].map(value => (value === undefined ? '' : String(value)));
-      return name === target || ids.includes(userId);
-    });
-  } catch (error) {
-    console.warn(`Could not verify unfollow of @${username}`, error);
+  const page = await searchOwnFollowing(viewerId, username);
+  if (page.failure) {
     return null;
   }
+  return pageListsAccount(page, userId, username);
 }
 
-async function polarisUnfollow(
+async function confirmDestroyed(
+  userId: string,
+  username: string | undefined,
+  body: string,
+): Promise<'yes' | 'no' | 'rate' | 'unknown'> {
+  const reported = didFriendshipActionSucceed('destroy', body);
+  if (reported === true) {
+    return 'yes';
+  }
+  if (reported === false) {
+    return 'no';
+  }
+  if (username) {
+    const stillThere = await isStillInFollowingList(userId, username);
+    if (stillThere === true) {
+      return 'no';
+    }
+    if (stillThere === false) {
+      return 'yes';
+    }
+  }
+  const shown = await fetchFriendshipStatus(userId);
+  if (shown.failure === 'rate_limited' || shown.failure === 'soft_block') {
+    return 'rate';
+  }
+  if (!shown.friendship) {
+    return 'unknown';
+  }
+  return !shown.friendship.following && !shown.friendship.outgoingRequest ? 'yes' : 'no';
+}
+
+async function postFriendshipAction(
+  action: FriendshipAction,
+  userId: string,
+  username?: string,
+): Promise<FriendshipMutationResult> {
+  const tokens = await getWebSessionTokens();
+  if (!tokens) {
+    return { ok: false, status: 0, body: 'missing fb_dtsg', failure: 'session', ignored: true };
+  }
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/x-www-form-urlencoded',
+  };
+  if (tokens.revision) {
+    headers['X-Instagram-AJAX'] = tokens.revision;
+  }
+  if (username) {
+    headers.referer = `https://www.instagram.com/${encodeURIComponent(username)}/`;
+  }
+
+  const res = await igFetchJson(`https://www.instagram.com/api/v1/friendships/${action}/${userId}/`, {
+    method: 'POST',
+    headers,
+    body: friendshipFormBody(userId, tokens),
+  });
+  const body = res.json ? JSON.stringify(res.json) : res.detail;
+
+  if (res.failure) {
+    return {
+      ok: false,
+      status: res.status,
+      body,
+      failure: res.failure,
+      ignored: res.failure === 'soft_block' || res.failure === 'failed',
+    };
+  }
+
+  if (action === 'create') {
+    const created = didFriendshipActionSucceed('create', body);
+    return {
+      ok: created !== false,
+      status: res.status,
+      body,
+      failure: created === false ? 'failed' : null,
+    };
+  }
+
+  if (action === 'remove_follower') {
+    const removed = didFriendshipActionSucceed('remove_follower', body);
+    if (removed === true) {
+      return { ok: true, status: res.status, body, failure: null };
+    }
+    await sleep(400);
+    const shown = await fetchFriendshipStatus(userId);
+    if (shown.friendship?.followedBy === false) {
+      return { ok: true, status: res.status, body, failure: null };
+    }
+    if (shown.friendship?.followedBy === true || removed === false) {
+      return { ok: false, status: res.status, body, failure: 'failed', ignored: true };
+    }
+    return { ok: false, status: res.status, body, failure: 'failed', ignored: true };
+  }
+
+  const verdict = await confirmDestroyed(userId, username, body);
+  if (verdict === 'rate') {
+    return { ok: false, status: 429, body, failure: 'rate_limited' };
+  }
+  if (verdict === 'yes') {
+    return { ok: true, status: res.status, body, failure: null };
+  }
+  return { ok: false, status: res.status, body, failure: 'failed', ignored: true };
+}
+
+/**
+ * Instagram's own Unfollow button, as of Nov 2026:
+ * POST /api/v1/friendships/destroy/{id}/ with the web client's headers and
+ * fb_dtsg in the body. A 200 alone is not enough — the relationship must be gone.
+ *
+ * GraphQL (usePolarisUnfollowMutation) stays as a fallback when destroy answers
+ * with the HTML page (soft_block), the same way the web client fell back for a
+ * while in October.
+ */
+async function destroyRelationship(
   userId: string,
   username: string | undefined,
   purpose: 'unfollow' | 'cancel',
 ): Promise<FriendshipMutationResult> {
+  const primary = await postFriendshipAction('destroy', userId, username);
+  if (primary.ok) {
+    return primary;
+  }
+  // Only fall back to GraphQL when destroy looked like the Oct soft-block
+  // (HTML page) or an opaque fail — not for rate limits / session / not_found.
+  if (primary.failure !== 'soft_block' && primary.failure !== 'failed') {
+    return primary;
+  }
+
+  // Soft-block / opaque fail: try the GraphQL mutation the web button used in Oct.
   const tokens = await getWebSessionTokens();
   if (!tokens) {
-    return { ok: false, status: 0, body: 'missing fb_dtsg', ignored: true };
+    return primary;
   }
   const params: Record<string, string> = {
     av: getCurrentUserId() ?? '',
@@ -767,88 +499,98 @@ async function polarisUnfollow(
     params.__spin_r = tokens.revision;
   }
 
-  let res: Response;
-  try {
-    res = await fetch('https://www.instagram.com/api/graphql', {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'content-type': 'application/x-www-form-urlencoded',
-        'x-csrftoken': getCookie('csrftoken') ?? '',
-        'x-fb-friendly-name': INSTAGRAM_UNFOLLOW_FRIENDLY_NAME,
-        'x-fb-lsd': tokens.lsd,
-        'x-ig-app-id': IG_APP_ID,
-        'x-asbd-id': getIgWebConfig().asbdId,
-      },
-      body: new URLSearchParams(params).toString(),
-    });
-  } catch (error) {
-    console.warn('Unfollow request failed', error);
-    return { ok: false, status: 0, body: '' };
+  const res = await igFetchJson('https://www.instagram.com/api/graphql', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'x-fb-friendly-name': INSTAGRAM_UNFOLLOW_FRIENDLY_NAME,
+      'x-fb-lsd': tokens.lsd,
+    },
+    body: new URLSearchParams(params).toString(),
+  });
+  const body = res.json ? JSON.stringify(res.json) : res.detail;
+  if (res.failure || !res.json) {
+    return {
+      ok: false,
+      status: res.status,
+      body,
+      failure: res.failure ?? 'soft_block',
+      ignored: true,
+    };
   }
 
-  const text = await res.text().catch(() => '');
-  const data = parseInstagramGraphql(text);
-  const errorText = data ? graphqlErrorText(data) : text.slice(0, 300);
-  if (isRateLimitResponse(res.status, errorText) || (data?.spam === true)) {
-    return { ok: false, status: res.status === 200 ? 429 : res.status, body: errorText };
+  const reported = findFriendshipInPayload(res.json);
+  if (reported && (reported.following || reported.outgoingRequest)) {
+    return { ok: false, status: res.status, body, failure: 'failed', ignored: true };
   }
-  if (!res.ok || !data || data.errors || data.error || data.status === 'fail' || !data.data) {
-    console.warn(`Unfollow failed for ${userId}`, res.status, errorText);
-    return { ok: false, status: res.status, body: errorText, ignored: true };
-  }
-
-  const reported = findGraphqlFriendship(data.data);
-  if (relationshipStillOpen(reported)) {
-    console.warn(`Instagram kept the follow for ${userId}`, reported);
-    return { ok: false, status: res.status, body: JSON.stringify(reported), ignored: true };
-  }
-
-  if (purpose === 'unfollow') {
-    if (username) {
-      const stillThere = await isStillInFollowingList(userId, username);
-      if (stillThere === true) {
-        return { ok: false, status: res.status, body: 'still in following list', ignored: true };
-      }
-      if (stillThere === false) {
-        return { ok: true, status: res.status, body: text.slice(0, 500) };
-      }
+  if (purpose === 'unfollow' && username) {
+    const stillThere = await isStillInFollowingList(userId, username);
+    if (stillThere === true) {
+      return { ok: false, status: res.status, body, failure: 'failed', ignored: true };
     }
-    if (reported?.following === false && reported.outgoingRequest !== true) {
-      return { ok: true, status: res.status, body: text.slice(0, 500) };
+    if (stillThere === false) {
+      return { ok: true, status: res.status, body, failure: null };
     }
-    console.warn(`Unfollow of ${userId} could not be confirmed`, text.slice(0, 300));
-    return { ok: false, status: res.status, body: 'unconfirmed', ignored: true };
   }
+  if (reported && !reported.following && !reported.outgoingRequest) {
+    return { ok: true, status: res.status, body, failure: null };
+  }
+  const shown = await fetchFriendshipStatus(userId);
+  if (shown.friendship && !shown.friendship.following && !shown.friendship.outgoingRequest) {
+    return { ok: true, status: res.status, body, failure: null };
+  }
+  return { ok: false, status: res.status, body, failure: 'failed', ignored: true };
+}
 
-  let live = await readRelationship(userId);
-  if (live.verdict === 'no' && reported?.following === false && reported.outgoingRequest === false) {
-    await sleep(700);
-    live = await readRelationship(userId);
-  }
-  if (live.verdict === 'rate') {
-    return { ok: false, status: 429, body: errorText };
-  }
-  if (live.verdict === 'yes') {
-    return { ok: true, status: res.status, body: text.slice(0, 500) };
-  }
-  if (live.verdict === 'no') {
-    return { ok: false, status: res.status, body: 'relationship still open', ignored: true };
-  }
-  if (reported?.following === false && reported.outgoingRequest !== true) {
-    return { ok: true, status: res.status, body: text.slice(0, 500) };
-  }
-  console.warn(`Unfollow of ${userId} could not be confirmed`, text.slice(0, 300));
-  return { ok: false, status: res.status, body: 'unconfirmed', ignored: true };
+export function followUser(userId: string, username?: string): Promise<FriendshipMutationResult> {
+  return postFriendshipAction('create', userId, username);
+}
+
+export function removeFollower(userId: string, username?: string): Promise<FriendshipMutationResult> {
+  return postFriendshipAction('remove_follower', userId, username);
 }
 
 export function unfollowUser(userId: string, username?: string): Promise<FriendshipMutationResult> {
-  return polarisUnfollow(userId, username, 'unfollow');
+  return destroyRelationship(userId, username, 'unfollow');
 }
 
-export function cancelFollowRequest(
-  userId: string,
-  username?: string,
-): Promise<FriendshipMutationResult> {
-  return polarisUnfollow(userId, username, 'cancel');
+export function cancelFollowRequest(userId: string, username?: string): Promise<FriendshipMutationResult> {
+  return destroyRelationship(userId, username, 'cancel');
+}
+
+export async function lookupUserByUsername(
+  username: string,
+): Promise<{ id: string | null; status: number; friendship: FriendshipStatus | null }> {
+  const res = await igFetchJson<WebProfileResponse>(
+    `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`,
+  );
+  const user = res.json?.data?.user;
+  return {
+    id: user?.id ?? null,
+    status: res.status,
+    friendship: parseFriendshipStatus(user ?? null),
+  };
+}
+
+// Kept for the friendship unit tests that cover the GraphQL / HTML parsers.
+export { parseInstagramJson as parseInstagramGraphql, jazoest, readWebSessionTokens } from './igClient';
+export { IG_ASBD_ID as IG_ASBD_FALLBACK } from './igClient';
+
+export function readIgWebConfig(html: string): { wwwClaim: string; ajaxId: string; asbdId: string } {
+  const claim = html.match(/"www_claim"\s*:\s*"(hmac\.[^"]+)"/)?.[1] ?? '0';
+  const ajax = html.match(/"rollout_hash"\s*:\s*"(\d+)"/)?.[1] ?? '1';
+  const asbd =
+    html.match(/"ASBD_ID"\s*:\s*"?(\d+)"?/)?.[1] ?? html.match(/"asbd_id"\s*:\s*"?(\d+)"?/)?.[1] ?? '359341';
+  return { wwwClaim: claim, ajaxId: ajax, asbdId: asbd };
+}
+
+export function findGraphqlFriendship(
+  node: unknown,
+  depth = 0,
+): { following: boolean | null; outgoingRequest: boolean | null } | null {
+  const found = findFriendshipInPayload(node, depth);
+  if (!found) {
+    return null;
+  }
+  return { following: found.following, outgoingRequest: found.outgoingRequest };
 }

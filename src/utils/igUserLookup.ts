@@ -1,9 +1,9 @@
 import {
   getCurrentUserId,
-  getHeaders,
   parseFriendshipStatus,
   type FriendshipStatus,
 } from './growthApi';
+import { igFetchJson } from './igClient';
 import { searchOwnFollowing } from './igListsApi';
 import { extractUserIdFromProfileHtml } from './igProfileLookup';
 import { readCachedUserId, writeCachedUserId } from './pendingStorage';
@@ -32,10 +32,10 @@ async function lookupViaOwnFollowing(username: string): Promise<UserLookupResult
     return null;
   }
   const page = await searchOwnFollowing(selfId, username);
-  if (page.status === 429) {
+  if (page.failure === 'rate_limited' || page.status === 429) {
     return { id: null, status: 429, friendship: null };
   }
-  if (page.status !== 200) {
+  if (page.failure || page.status !== 200) {
     return null;
   }
   const match = page.users.find(user => user.username.toLowerCase() === username.toLowerCase());
@@ -50,38 +50,42 @@ async function lookupViaOwnFollowing(username: string): Promise<UserLookupResult
 }
 
 async function lookupViaUsernameInfo(username: string): Promise<UserLookupResult | null> {
-  const res = await fetch(
-    `https://www.instagram.com/api/v1/users/${encodeURIComponent(username)}/usernameinfo/`,
-    { headers: getHeaders(), credentials: 'include' },
-  );
-  if (res.status === 429 || res.status === 404) {
-    return { id: null, status: res.status, friendship: null };
+  const res = await igFetchJson<{
+    user?: { pk?: string | number; pk_id?: string | number; friendship_status?: unknown };
+  }>(`https://www.instagram.com/api/v1/users/${encodeURIComponent(username)}/usernameinfo/`);
+  if (res.failure === 'rate_limited' || res.status === 429) {
+    return { id: null, status: 429, friendship: null };
   }
-  if (!res.ok) {
+  if (res.failure === 'not_found' || res.status === 404) {
+    return { id: null, status: 404, friendship: null };
+  }
+  if (res.failure || !res.json) {
     return null;
   }
-  const json = (await res.json()) as {
-    user?: { pk?: string | number; pk_id?: string | number; friendship_status?: unknown };
-  };
-  const id = json.user?.pk ?? json.user?.pk_id;
+  const id = res.json.user?.pk ?? res.json.user?.pk_id;
   if (id === undefined) {
     return { id: null, status: res.status, friendship: null };
   }
   return {
     id: String(id),
     status: res.status,
-    friendship: parseFriendshipStatus(json.user ?? null),
+    friendship: parseFriendshipStatus(res.json.user ?? null),
   };
 }
 
 async function lookupViaProfilePage(username: string): Promise<UserLookupResult | null> {
-  const res = await fetch(`https://www.instagram.com/${encodeURIComponent(username)}/`, {
-    credentials: 'include',
-    headers: {
-      accept: 'text/html',
-      referer: 'https://www.instagram.com/',
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`https://www.instagram.com/${encodeURIComponent(username)}/`, {
+      credentials: 'include',
+      headers: {
+        accept: 'text/html',
+        referer: 'https://www.instagram.com/',
+      },
+    });
+  } catch {
+    return null;
+  }
   if (res.status === 429 || res.status === 404) {
     return { id: null, status: res.status, friendship: null };
   }
@@ -97,20 +101,16 @@ async function lookupViaProfilePage(username: string): Promise<UserLookupResult 
 }
 
 async function lookupViaWebProfileInfo(username: string): Promise<UserLookupResult> {
-  const res = await fetch(
-    `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`,
-    { headers: getHeaders(), credentials: 'include' },
-  );
-  if (res.status === 404) {
+  const res = await igFetchJson<{
+    data?: { user?: { id?: string; friendship_status?: unknown } };
+  }>(`https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`);
+  if (res.failure === 'not_found' || res.status === 404) {
     return { id: null, status: 404, friendship: null };
   }
-  if (!res.ok) {
-    return { id: null, status: res.status, friendship: null };
+  if (res.failure || !res.json) {
+    return { id: null, status: res.status || 0, friendship: null };
   }
-  const json = (await res.json()) as {
-    data?: { user?: { id?: string; friendship_status?: unknown } };
-  };
-  const user = json.data?.user;
+  const user = res.json.data?.user;
   return {
     id: user?.id ?? null,
     status: res.status,

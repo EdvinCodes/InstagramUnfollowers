@@ -6,24 +6,22 @@
  *
  * This module replaces it with the same private REST endpoints the Instagram web
  * app itself uses for the following/followers lists:
- *   GET /api/v1/friendships/{userId}/following/?count=50[&max_id=...]
- *   GET /api/v1/friendships/{userId}/followers/?count=50[&max_id=...]
+ *   GET /api/v1/friendships/{userId}/following/?count=50&search_surface=follow_list_page[&max_id=...]
+ *   GET /api/v1/friendships/{userId}/followers/?count=50&search_surface=follow_list_page[&max_id=...]
  *
- * `count` defaults to 50 here but is configurable end-to-end (see
- * Timings.usersPerSearchCycle, set in Settings) — same knob davidarroyo1234's fork
- * exposes. Instagram may still return fewer per page on its own regardless of what's
- * requested (particularly for followers, which is server-chunked to ~15-25), so this
- * only controls the upper bound of what we ask for, not a guarantee.
+ * The query matches what instagram.com sends (no rank_token), and the headers
+ * come from igClient. `count` is configurable end-to-end (Timings.usersPerSearchCycle);
+ * Instagram may still return fewer per page (followers come in chunks of ~25).
  *
- * These are unofficial endpoints — Instagram can change or rate-limit them too,
- * so every caller must treat a non-200 status explicitly instead of assuming
- * "no data" means "no accounts".
+ * These are unofficial endpoints, so every page reports *why* it failed
+ * (`failure`) instead of an empty list that could pass for "no accounts".
  */
-import { getHeaders } from './growthApi';
+import { igFetchJson, type IgFailure } from './igClient';
 import { Typename, UserNode } from '../model/user';
-import { clampUsersPerSearchCycle, getCookie, isProfilePicAnonymous, sleep } from './utils';
+import { clampUsersPerSearchCycle, isProfilePicAnonymous, sleep } from './utils';
 
 const LIST_PAGE_SIZE = 50;
+const SEARCH_PAGE_SIZE = 12;
 
 export interface RestUser {
   readonly pk: string;
@@ -64,16 +62,20 @@ interface RestListResponse {
   has_more?: boolean;
   big_list?: boolean;
   status?: string;
-  follow_ranking_token?: string;
 }
 
-export interface FetchListPageResult {
+export interface ListPage {
   readonly users: readonly RestUser[];
   readonly nextMaxId: string | null;
-  /** Ranking token Instagram echoes back; pass it into the next page of the SAME list. */
-  readonly rankToken: string | null;
-  /** Raw HTTP status. Callers must branch on 429 (rate limit) vs other errors themselves. */
+  /**
+   * The cursor is the last pk, guessed because Instagram said has_more without
+   * sending next_max_id. Getting that same guess back means the list ended;
+   * getting a real cursor back means the walk is stuck.
+   */
+  readonly cursorIsSynthetic: boolean;
   readonly status: number;
+  readonly failure: IgFailure | null;
+  readonly detail: string;
 }
 
 export function collectRawUserIds(raw: RawRestUser): string[] {
@@ -110,14 +112,6 @@ export function parseFollowedBy(raw: RawRestUser): boolean | null {
   return null;
 }
 
-/** Instagram's own clients echo this back on every following/followers page request
- * after the first, to keep list ordering stable while it paginates. Optional — the
- * endpoint still works without it — but omitting it can let entries shift between
- * pages on large lists. */
-export function parseRankToken(json: RestListResponse): string | null {
-  return typeof json.follow_ranking_token === 'string' ? json.follow_ranking_token : null;
-}
-
 export function parseNextMaxId(json: RestListResponse, lastPk: string | null): string | null {
   const raw = json.next_max_id;
   if (raw !== undefined && raw !== null) {
@@ -134,22 +128,6 @@ export function parseNextMaxId(json: RestListResponse, lastPk: string | null): s
     return lastPk;
   }
   return null;
-}
-
-/**
- * Instagram sometimes answers a private-API call with `200 OK` (or another 2xx) but
- * hands back an HTML "please wait a few minutes" / challenge page instead of JSON —
- * calling `.json()` directly then throws a raw `SyntaxError` ("Unexpected token '<'")
- * that has nothing to do with rate limiting or pagination, yet aborts the entire scan
- * if left uncaught. Parse defensively so callers can treat it as a soft failure.
- */
-async function safeJsonParse<T>(response: Response): Promise<T | null> {
-  try {
-    const text = await response.text();
-    return JSON.parse(text) as T;
-  } catch {
-    return null;
-  }
 }
 
 export function normalizeRestUser(raw: RawRestUser): RestUser | null {
@@ -170,17 +148,39 @@ export function normalizeRestUser(raw: RawRestUser): RestUser | null {
   };
 }
 
+function failedPage(status: number, failure: IgFailure, detail: string): ListPage {
+  return { users: [], nextMaxId: null, cursorIsSynthetic: false, status, failure, detail };
+}
+
+/** Turns one Instagram list answer into a page. Exported for tests. */
+export function readListPage(status: number, json: RestListResponse, url: string): ListPage {
+  if (!Array.isArray(json.users)) {
+    // A JSON answer without the list is not "zero accounts": treat it like the
+    // HTML soft-block so the walk pauses and retries.
+    return failedPage(status, 'soft_block', `No users array in the answer for ${url}`);
+  }
+  const users = json.users.map(normalizeRestUser).filter((user): user is RestUser => user !== null);
+  const lastPk = users.length > 0 ? users[users.length - 1].pk : null;
+  const nextMaxId = parseNextMaxId(json, lastPk);
+  return {
+    users,
+    nextMaxId,
+    cursorIsSynthetic: nextMaxId !== null && (json.next_max_id === undefined || json.next_max_id === null),
+    status,
+    failure: null,
+    detail: '',
+  };
+}
+
 async function fetchListPage(
   userId: string,
   kind: 'following' | 'followers',
   maxId: string | null,
-  query?: string,
-  rankToken?: string | null,
-  count: number = LIST_PAGE_SIZE,
-): Promise<FetchListPageResult> {
-  const pageSize = clampUsersPerSearchCycle(count);
+  query: string | undefined,
+  count: number,
+): Promise<ListPage> {
   const url = new URL(`https://www.instagram.com/api/v1/friendships/${userId}/${kind}/`);
-  url.searchParams.set('count', String(pageSize));
+  url.searchParams.set('count', String(count));
   url.searchParams.set('search_surface', 'follow_list_page');
   if (query) {
     url.searchParams.set('query', query);
@@ -188,58 +188,36 @@ async function fetchListPage(
   if (maxId) {
     url.searchParams.set('max_id', maxId);
   }
-  if (rankToken) {
-    url.searchParams.set('rank_token', rankToken);
+
+  const response = await igFetchJson<RestListResponse>(url.toString());
+  if (response.failure || !response.json) {
+    return failedPage(response.status, response.failure ?? 'soft_block', response.detail);
   }
-
-  const response = await fetch(url.toString(), {
-    headers: getHeaders(),
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    return { users: [], nextMaxId: null, rankToken: null, status: response.status };
-  }
-
-  const json = await safeJsonParse<RestListResponse>(response);
-  if (json === null) {
-    // 2xx status but not JSON — treat like a soft rate limit (status 0) so callers
-    // back off and retry instead of an uncaught SyntaxError killing the whole scan.
-    return { users: [], nextMaxId: null, rankToken: null, status: 0 };
-  }
-  const users = (json.users ?? [])
-    .map(normalizeRestUser)
-    .filter((user): user is RestUser => user !== null);
-  const lastPk = users.length > 0 ? users[users.length - 1].pk : null;
-
-  return {
-    users,
-    nextMaxId: parseNextMaxId(json, lastPk),
-    rankToken: parseRankToken(json),
-    status: response.status,
-  };
+  return readListPage(response.status, response.json, url.toString());
 }
 
-export function fetchFollowingPage(
-  userId: string,
-  maxId: string | null,
-  rankToken?: string | null,
-  count?: number,
-): Promise<FetchListPageResult> {
-  return fetchListPage(userId, 'following', maxId, undefined, rankToken, count);
+export function fetchFollowingPage(userId: string, maxId: string | null, count?: number): Promise<ListPage> {
+  return fetchListPage(userId, 'following', maxId, undefined, clampUsersPerSearchCycle(count ?? LIST_PAGE_SIZE));
 }
 
-export function fetchFollowersPage(
-  userId: string,
-  maxId: string | null,
-  rankToken?: string | null,
-  count?: number,
-): Promise<FetchListPageResult> {
-  return fetchListPage(userId, 'followers', maxId, undefined, rankToken, count);
+export function fetchFollowersPage(userId: string, maxId: string | null, count?: number): Promise<ListPage> {
+  return fetchListPage(userId, 'followers', maxId, undefined, clampUsersPerSearchCycle(count ?? LIST_PAGE_SIZE));
 }
 
-export function searchOwnFollowing(userId: string, username: string): Promise<FetchListPageResult> {
-  return fetchListPage(userId, 'following', null, username);
+/** Instagram's own search box in the "Following" dialog. */
+export function searchOwnFollowing(userId: string, username: string): Promise<ListPage> {
+  return fetchListPage(userId, 'following', null, username, SEARCH_PAGE_SIZE);
+}
+
+/** Instagram's own search box in the "Followers" dialog. */
+export function searchOwnFollowers(userId: string, username: string): Promise<ListPage> {
+  return fetchListPage(userId, 'followers', null, username, SEARCH_PAGE_SIZE);
+}
+
+/** True when the page lists this account (by any id variant or by username). */
+export function pageListsAccount(page: ListPage, userId: string, username: string): boolean {
+  const target = username.trim().toLowerCase();
+  return page.users.some(user => user.ids.includes(userId) || (!!target && user.username.toLowerCase() === target));
 }
 
 export function addRestUserToFollowerIndex(
@@ -324,17 +302,15 @@ export function isSuspiciousEmptyFirstPage(pageUsers: readonly RestUser[], known
 /**
  * Following-list accounts we still can't classify as "follows back" for sure —
  * nothing already confirms it (no `friendship_status.followed_by === true`, no match
- * in the followers index, no earlier show_many call). These need a `show_many` bulk
- * check instead of being silently defaulted to "does not follow back".
+ * in the followers index). These go to the bounded `show_many` sweep instead of
+ * being trusted blindly.
  *
  * IMPORTANT: this intentionally does NOT special-case `followedBy === false` as
  * "already resolved, skip it". An earlier version of this function did that (treating
  * `false` as just as trustworthy as `true`), and it caused real, confirmed mutuals to
  * get stuck permanently in "non-follower" — Instagram's `friendship_status` on the
  * *following* list is not reliable in the false/negative direction (it looks like it
- * can be stale or simply wrong), only in the positive one. `show_many` is the
- * authoritative check either way, so anyone not already confirmed `true` gets
- * verified, regardless of what the list said.
+ * can be stale or simply wrong), only in the positive one.
  */
 export function findUnclassifiedUserIds(
   followingUsers: readonly RestUser[],
@@ -350,59 +326,42 @@ interface ShowManyResponse {
   friendship_statuses?: Record<string, { followed_by?: boolean }>;
 }
 
+const SHOW_MANY_CHUNK = 20;
+const SHOW_MANY_MAX_IDS = 100;
+
 /**
- * Bulk follow-back check. Used when the followers list came back empty / IDs
- * didn't match, so we would otherwise mark the entire following list as
- * non-followers.
+ * Bulk follow-back check for the few accounts the complete followers list
+ * still did not match (an id-scheme mismatch). Only ever adds "follows you".
  *
- * Best-effort by design: a single bad chunk (429, any other error status, or a
- * non-JSON "challenge page" body) only skips THAT chunk — it never throws and
- * never discards whatever earlier chunks already resolved. Only a 429 is
- * reported back via `status` so the caller can decide to slow down; every other
- * hiccup is silent since this is already a safety net for a handful of stragglers,
- * not the primary classification path.
+ * Bounded and polite: at most SHOW_MANY_MAX_IDS ids, and it stops at the first
+ * failed chunk instead of pushing more requests into a limit.
  */
 export async function fetchFollowedByMany(
   userIds: readonly string[],
-): Promise<{ followedByIds: Set<string>; status: number }> {
+): Promise<{ followedByIds: Set<string>; failure: IgFailure | null }> {
   const followedByIds = new Set<string>();
-  const csrfToken = getCookie('csrftoken') ?? '';
-  const chunkSize = 20;
-  let sawRateLimit = false;
+  const ids = userIds.slice(0, SHOW_MANY_MAX_IDS);
 
-  for (let i = 0; i < userIds.length; i += chunkSize) {
-    const chunk = userIds.slice(i, i + chunkSize);
-    const res = await fetch('https://www.instagram.com/api/v1/friendships/show_many/', {
+  for (let i = 0; i < ids.length; i += SHOW_MANY_CHUNK) {
+    const chunk = ids.slice(i, i + SHOW_MANY_CHUNK);
+    const response = await igFetchJson<ShowManyResponse>('https://www.instagram.com/api/v1/friendships/show_many/', {
       method: 'POST',
-      headers: {
-        ...getHeaders(),
-        'content-type': 'application/x-www-form-urlencoded',
-        'x-csrftoken': csrfToken,
-      },
-      credentials: 'include',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: `user_ids=${chunk.join(',')}`,
     });
-
-    if (res.status === 429) {
-      sawRateLimit = true;
-    } else if (res.ok) {
-      const json = await safeJsonParse<ShowManyResponse>(res);
-      // json === null means 2xx but non-JSON (challenge page) — skip this chunk only.
-      if (json !== null) {
-        for (const [id, status] of Object.entries(json.friendship_statuses ?? {})) {
-          if (status.followed_by) {
-            followedByIds.add(id);
-          }
-        }
+    if (response.failure || !response.json) {
+      return { followedByIds, failure: response.failure ?? 'soft_block' };
+    }
+    const statuses = response.json.friendship_statuses ?? {};
+    for (const id of Object.keys(statuses)) {
+      if (statuses[id].followed_by) {
+        followedByIds.add(id);
       }
     }
-    // Any other status: skip this chunk, keep going — a handful of unresolved
-    // stragglers is fine, aborting the whole safety net is not.
-
-    if (i + chunkSize < userIds.length) {
-      await sleep(300);
+    if (i + SHOW_MANY_CHUNK < ids.length) {
+      await sleep(400);
     }
   }
 
-  return { followedByIds, status: sawRateLimit ? 429 : 200 };
+  return { followedByIds, failure: null };
 }

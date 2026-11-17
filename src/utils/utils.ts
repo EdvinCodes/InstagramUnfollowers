@@ -270,7 +270,15 @@ export const exportToCSV = (
     const status = user.is_new_unfollower ? t.newBadge : t.old;
     const profileUrl = `https://www.instagram.com/${user.username}`;
     const ghostAnalysis = calculateGhostScore(user, t);
-    const csvEscape = (text: any) => `"${String(text).replace(/"/g, '""')}"`;
+    // Neutralize spreadsheet formula injection (=, +, -, @, tab/CR) while
+    // still quoting every field the usual CSV way.
+    const csvEscape = (text: unknown) => {
+      let value = String(text ?? '');
+      if (/^[=+\-@\t\r]/.test(value)) {
+        value = `'${value}`;
+      }
+      return `"${value.replace(/"/g, '""')}"`;
+    };
 
     let premiumColumns: string[];
     if (isPro) {

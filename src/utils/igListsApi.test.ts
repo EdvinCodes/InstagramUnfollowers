@@ -8,7 +8,6 @@ import {
   normalizeRestUser,
   parseFollowedBy,
   parseNextMaxId,
-  parseRankToken,
   restUserFollowsViewer,
 } from './igListsApi';
 
@@ -151,18 +150,6 @@ describe('mapRestUserToNode', () => {
   });
 });
 
-describe('parseRankToken', () => {
-  it('reads follow_ranking_token when Instagram sent it', () => {
-    expect(parseRankToken({ follow_ranking_token: 'be11c209708f4fda|5537015771|osr' })).toBe(
-      'be11c209708f4fda|5537015771|osr',
-    );
-  });
-
-  it('returns null when Instagram omitted it', () => {
-    expect(parseRankToken({})).toBeNull();
-  });
-});
-
 describe('findUnclassifiedUserIds', () => {
   it('skips accounts already resolved by friendship_status or the followers index', () => {
     const knownByFlag = { ...baseUser, pk: '1', ids: ['1'], followedBy: true };
@@ -239,35 +226,36 @@ describe('fetchFollowingPage / fetchFollowersPage page size', () => {
       return {
         ok: true,
         status: 200,
+        headers: { get: () => null },
         text: async () => JSON.stringify({ users: [] }),
-      } as Response;
+      } as unknown as Response;
     }) as typeof fetch;
     return { getUrl: () => capturedUrl };
   }
 
   it('requests the caller-configured usersPerSearchCycle instead of a fixed 50', async () => {
     const following = stubFetchCapturingUrl();
-    await fetchFollowingPage('123', null, null, 80);
+    await fetchFollowingPage('123', null, 80);
     expect(new URL(following.getUrl()!).searchParams.get('count')).toBe('80');
 
     const followers = stubFetchCapturingUrl();
-    await fetchFollowersPage('123', null, null, 10);
+    await fetchFollowersPage('123', null, 10);
     expect(new URL(followers.getUrl()!).searchParams.get('count')).toBe('10');
   });
 
   it('clamps a count outside 10-100 before it hits Instagram', async () => {
     const tooHigh = stubFetchCapturingUrl();
-    await fetchFollowingPage('123', null, null, 500);
+    await fetchFollowingPage('123', null, 500);
     expect(new URL(tooHigh.getUrl()!).searchParams.get('count')).toBe('100');
 
     const tooLow = stubFetchCapturingUrl();
-    await fetchFollowersPage('123', null, null, 1);
+    await fetchFollowersPage('123', null, 1);
     expect(new URL(tooLow.getUrl()!).searchParams.get('count')).toBe('10');
   });
 
   it('falls back to 50 when no count is passed (background/legacy callers)', async () => {
     const following = stubFetchCapturingUrl();
-    await fetchFollowingPage('123', null, null);
+    await fetchFollowingPage('123', null);
     expect(new URL(following.getUrl()!).searchParams.get('count')).toBe('50');
   });
 });

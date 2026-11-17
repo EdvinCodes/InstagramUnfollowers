@@ -2,17 +2,17 @@ import { useState, useRef, useCallback } from 'preact/hooks';
 import { UserNode } from '../model/user';
 import { UnfollowLogEntry } from '../model/unfollow-log-entry';
 import { Timings } from '../model/timings';
-import { getCookie, sleep } from '../utils/utils';
+import { sleep } from '../utils/utils';
 import { removeFollower, unfollowUser } from '../utils/growthApi';
-import { isRateLimitResponse } from '../utils/growthHelpers';
 import { t } from '../i18n/i18n';
-
-// 1. IMPORTAMOS EL SERVICIO DE HISTORIAL (V4.0)
 import { HistoryService } from '../services/historyService';
+import { assertSameViewer, currentViewerId, isAccountChangedError } from '../utils/accountGuard';
+import { beginForegroundWork } from '../utils/foregroundWork';
+import { cooldownSecondsLeft, formatCountdown, startCooldown } from '../utils/cooldown';
 
 interface UnfollowerState {
   isUnfollowing: boolean;
-  progress: number; // 0 a 100
+  progress: number;
   unfollowLog: UnfollowLogEntry[];
   statusMessage: string;
 }
@@ -31,7 +31,7 @@ export const useUnfollowerQueue = (timings: Timings) => {
 
   const togglePause = useCallback(() => {
     isPausedRef.current = !isPausedRef.current;
-    setIsPausedUI(isPausedRef.current); // 🔄 Re-render inmediato
+    setIsPausedUI(isPausedRef.current);
   }, []);
 
   const stopUnfollowing = useCallback(() => {
@@ -47,9 +47,9 @@ export const useUnfollowerQueue = (timings: Timings) => {
         return;
       }
 
-      // Reset de estado para un nuevo proceso
       shouldStopRef.current = false;
       isPausedRef.current = false;
+      setIsPausedUI(false);
       setUnfollowerState({
         isUnfollowing: true,
         progress: 0,
@@ -57,118 +57,140 @@ export const useUnfollowerQueue = (timings: Timings) => {
         statusMessage: t('statusStartingQueue'),
       });
 
-      const csrftoken = getCookie('csrftoken');
-      if (!csrftoken) {
+      const cooldownLeft = cooldownSecondsLeft();
+      if (cooldownLeft > 0) {
         setUnfollowerState(prev => ({
           ...prev,
           isUnfollowing: false,
-          statusMessage: t('statusNoCsrf'),
+          statusMessage: t('cooldownToast')(formatCountdown(cooldownLeft)),
         }));
         return;
       }
 
+      const viewerId = currentViewerId();
+      if (!viewerId) {
+        setUnfollowerState(prev => ({
+          ...prev,
+          isUnfollowing: false,
+          statusMessage: t('statusNoSession'),
+        }));
+        return;
+      }
+
+      const releaseWork = beginForegroundWork();
       let counter = 0;
       let abortedByRateLimit = false;
       let abortedBecauseIgnored = false;
+      let abortedByAccountChange = false;
 
-      for (const user of usersToUnfollow) {
-        // 1. Verificación de Parada/Pausa
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (shouldStopRef.current) {
-          break;
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        while (isPausedRef.current) {
-          setUnfollowerState(prev => ({ ...prev, statusMessage: t('statusUnfollowPaused') }));
-          await sleep(1000);
+      try {
+        for (const user of usersToUnfollow) {
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           if (shouldStopRef.current) {
             break;
           }
-        }
 
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (shouldStopRef.current) {
-          break;
-        }
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          while (isPausedRef.current) {
+            setUnfollowerState(prev => ({ ...prev, statusMessage: t('statusUnfollowPaused') }));
+            await sleep(1000);
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            if (shouldStopRef.current) {
+              break;
+            }
+          }
 
-        // 2. Acción de Unfollow
-        const actionText =
-          actionType === 'unfollow'
-            ? t('statusUnfollowing')(user.username)
-            : t('statusRemoving')(user.username);
-        setUnfollowerState(prev => ({
-          ...prev,
-          statusMessage: actionText,
-        }));
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          if (shouldStopRef.current) {
+            break;
+          }
 
-        let success = false;
-        try {
-          const result =
+          assertSameViewer(viewerId);
+
+          const actionText =
             actionType === 'unfollow'
-              ? await unfollowUser(user.id, user.username)
-              : await removeFollower(user.id, user.username);
-          if (isRateLimitResponse(result.status, result.body)) {
-            abortedByRateLimit = true;
-            shouldStopRef.current = true;
+              ? t('statusUnfollowing')(user.username)
+              : t('statusRemoving')(user.username);
+          setUnfollowerState(prev => ({
+            ...prev,
+            statusMessage: actionText,
+          }));
+
+          let success = false;
+          try {
+            const result =
+              actionType === 'unfollow'
+                ? await unfollowUser(user.id, user.username)
+                : await removeFollower(user.id, user.username);
+            if (
+              result.failure === 'rate_limited' ||
+              result.failure === 'action_blocked' ||
+              result.failure === 'soft_block'
+            ) {
+              abortedByRateLimit = true;
+              startCooldown();
+              shouldStopRef.current = true;
+              success = false;
+            } else if (!result.ok && result.ignored) {
+              abortedBecauseIgnored = true;
+              shouldStopRef.current = true;
+              success = false;
+            } else {
+              success = result.ok;
+            }
+          } catch (e) {
+            if (isAccountChangedError(e)) {
+              abortedByAccountChange = true;
+              shouldStopRef.current = true;
+            } else {
+              console.error('Fetch error:', e);
+            }
             success = false;
-          } else if (!result.ok && result.ignored) {
-            abortedBecauseIgnored = true;
-            shouldStopRef.current = true;
-            success = false;
-          } else {
-            success = result.ok;
           }
-        } catch (e) {
-          console.error('Fetch error:', e);
-          success = false;
-        }
 
-        // --- CONEXIÓN V4.0: GUARDAR EN HISTORIAL ---
-        if (success) {
-          const historyAction = actionType === 'unfollow' ? 'YOU_UNFOLLOWED' : 'SOFT_BLOCKED';
-          HistoryService.addEvent(historyAction, user);
-        }
-        // -------------------------------------------
+          if (success) {
+            const historyAction = actionType === 'unfollow' ? 'YOU_UNFOLLOWED' : 'SOFT_BLOCKED';
+            HistoryService.addEvent(historyAction, user);
+          }
 
-        // 3. Actualizar Log y Progreso
-        counter++;
-        const currentPercentage = Math.floor((counter / usersToUnfollow.length) * 100);
+          counter++;
+          const currentPercentage = Math.floor((counter / usersToUnfollow.length) * 100);
 
-        setUnfollowerState(prev => ({
-          ...prev,
-          progress: currentPercentage,
-          unfollowLog: [...prev.unfollowLog, { user, unfollowedSuccessfully: success }],
-        }));
+          setUnfollowerState(prev => ({
+            ...prev,
+            progress: currentPercentage,
+            unfollowLog: [...prev.unfollowLog, { user, unfollowedSuccessfully: success }],
+          }));
 
-        // 4. Lógica de espera (Anti-Ban)
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (counter < usersToUnfollow.length && !shouldStopRef.current) {
-          // Jitter entre cada unfollow
-          const jitter = Math.floor(Math.random() * (timings.timeBetweenUnfollows * 0.2));
-          const waitTime = timings.timeBetweenUnfollows + jitter;
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          if (counter < usersToUnfollow.length && !shouldStopRef.current) {
+            const jitter = Math.floor(Math.random() * (timings.timeBetweenUnfollows * 0.2));
+            const waitTime = timings.timeBetweenUnfollows + jitter;
 
-          // Pausa larga cada 5 unfollows
-          if (counter % 5 === 0) {
-            setUnfollowerState(prev => ({ ...prev, statusMessage: t('statusWaitingCooldown') }));
-            await sleep(timings.timeToWaitAfterFiveUnfollows);
-          } else {
-            await sleep(waitTime);
+            if (counter % 5 === 0) {
+              setUnfollowerState(prev => ({ ...prev, statusMessage: t('statusWaitingCooldown') }));
+              await sleep(timings.timeToWaitAfterFiveUnfollows);
+            } else {
+              await sleep(waitTime);
+            }
           }
         }
+      } finally {
+        releaseWork();
       }
 
       setUnfollowerState(prev => ({
         ...prev,
         isUnfollowing: false,
-        statusMessage: abortedByRateLimit
-          ? t('statusRateLimited')
-          : abortedBecauseIgnored
-            ? t('statusUnfollowIgnored')
-            : shouldStopRef.current
-              ? t('statusStopped')
-              : t('statusCompleted'),
+        statusMessage: abortedByAccountChange
+          ? t('accountChanged')
+          : abortedByRateLimit
+            ? t('statusRateLimited')
+            : abortedBecauseIgnored
+              ? t('statusUnfollowIgnored')
+              : shouldStopRef.current
+                ? t('statusStopped')
+                : t('statusCompleted'),
       }));
     },
     [timings],

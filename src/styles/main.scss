@@ -1008,6 +1008,36 @@ input[type='checkbox'] {
     line-height: 1.5;
   }
 
+  .home-hub__banner {
+    margin: 0 0 1rem;
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    line-height: 1.4;
+
+    p {
+      margin: 0 0 0.65rem;
+    }
+  }
+
+  .home-hub__banner--warn {
+    background: rgba(255, 193, 7, 0.12);
+    border: 1px solid rgba(255, 193, 7, 0.35);
+    color: #f0d78c;
+  }
+
+  .home-hub__banner--info {
+    background: rgba(100, 160, 255, 0.12);
+    border: 1px solid rgba(100, 160, 255, 0.35);
+    color: #c5d8ff;
+  }
+
+  .home-hub__banner-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
   .home-hub__grid {
     display: grid;
     grid-template-columns: 1fr 1fr;

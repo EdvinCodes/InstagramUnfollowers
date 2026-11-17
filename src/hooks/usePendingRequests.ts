@@ -18,7 +18,10 @@ import {
 } from '../constants/growth';
 import { toPendingHistoryUser } from '../utils/pendingHelpers';
 import { addCancelledUsernames } from '../utils/pendingStorage';
-import { getCookie, sleep } from '../utils/utils';
+import { sleep } from '../utils/utils';
+import { beginForegroundWork } from '../utils/foregroundWork';
+import { cooldownSecondsLeft, formatCountdown, startCooldown } from '../utils/cooldown';
+import { currentViewerId, assertSameViewer, isAccountChangedError } from '../utils/accountGuard';
 
 type SetStateUpdater = (state: State | ((prev: State) => State)) => void;
 
@@ -92,98 +95,164 @@ export function usePendingRequests(
         statusMessage: t('pendingStatusStarting'),
       });
 
-      const csrftoken = getCookie('csrftoken');
-      if (!csrftoken) {
-        addResult('fail', '', t('pendingNoCsrf'));
+      const cooldownLeft = cooldownSecondsLeft();
+      if (cooldownLeft > 0) {
+        addResult('fail', '', t('cooldownToast')(formatCountdown(cooldownLeft)));
         patch({ isRunning: false });
         return;
       }
 
+      const viewerId = currentViewerId();
+      if (!viewerId) {
+        addResult('fail', '', t('statusNoSession'));
+        patch({ isRunning: false });
+        return;
+      }
+
+      const releaseWork = beginForegroundWork();
       let processed = 0;
       let cancelled = 0;
       let skipped = 0;
       let failed = 0;
       let abortedByRateLimit = false;
       let abortedBecauseIgnored = false;
+      let abortedByAccountChange = false;
 
-      const waitIfPaused = async () => {
-        while (!isStopped()) {
-          const current = getState();
-          if (current.status !== 'pending_requests' || !current.isPaused) {
-            break;
+      try {
+        const waitIfPaused = async () => {
+          while (!isStopped()) {
+            const current = getState();
+            if (current.status !== 'pending_requests' || !current.isPaused) {
+              break;
+            }
+            setStatus(t('pendingPaused'));
+            await sleep(1000);
           }
-          setStatus(t('pendingPaused'));
-          await sleep(1000);
-        }
-      };
+        };
 
-      const interruptibleSleep = async (ms: number) => {
-        const end = Date.now() + ms;
-        while (Date.now() < end && !isStopped()) {
+        const interruptibleSleep = async (ms: number) => {
+          const end = Date.now() + ms;
+          while (Date.now() < end && !isStopped()) {
+            await waitIfPaused();
+            if (isStopped()) {
+              break;
+            }
+            await sleep(Math.min(1000, end - Date.now()));
+          }
+        };
+
+        // A deleted or missing username often 429s web_profile_info. That is one
+        // account, not a ban: skip it and keep cancelling the rest. The cancel POST
+        // still backs off, and stops the queue only after several of those in a row.
+        let consecutiveRateLimitHits = 0;
+
+        const backoffAndRetry = async (): Promise<boolean> => {
+          consecutiveRateLimitHits += 1;
+          if (consecutiveRateLimitHits > RATE_LIMIT_MAX_RETRIES) {
+            abortedByRateLimit = true;
+            startCooldown();
+            return false;
+          }
+
+          const waitMs = computeBackoffMs(
+            consecutiveRateLimitHits,
+            GROWTH_RATE_LIMIT_BACKOFF_MS,
+            GROWTH_RATE_LIMIT_BACKOFF_MAX_MS,
+          );
+          const endAt = Date.now() + waitMs;
+          while (Date.now() < endAt && !isStopped()) {
+            await waitIfPaused();
+            if (isStopped()) {
+              break;
+            }
+            const remainingSeconds = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+            setStatus(t('pendingRetryingIn')(remainingSeconds));
+            await sleep(Math.min(1000, Math.max(0, endAt - Date.now())) || 1);
+          }
+          return !isStopped();
+        };
+
+        for (const user of usersToCancel) {
           await waitIfPaused();
           if (isStopped()) {
             break;
           }
-          await sleep(Math.min(1000, end - Date.now()));
-        }
-      };
 
-      // A deleted or missing username often 429s web_profile_info. That is one
-      // account, not a ban: skip it and keep cancelling the rest. The cancel POST
-      // still backs off, and stops the queue only after several of those in a row.
-      let consecutiveRateLimitHits = 0;
-
-      const backoffAndRetry = async (): Promise<boolean> => {
-        consecutiveRateLimitHits += 1;
-        if (consecutiveRateLimitHits > RATE_LIMIT_MAX_RETRIES) {
-          abortedByRateLimit = true;
-          return false;
-        }
-
-        const waitMs = computeBackoffMs(
-          consecutiveRateLimitHits,
-          GROWTH_RATE_LIMIT_BACKOFF_MS,
-          GROWTH_RATE_LIMIT_BACKOFF_MAX_MS,
-        );
-        const endAt = Date.now() + waitMs;
-        while (Date.now() < endAt && !isStopped()) {
-          await waitIfPaused();
-          if (isStopped()) {
-            break;
-          }
-          const remainingSeconds = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
-          setStatus(t('pendingRetryingIn')(remainingSeconds));
-          await sleep(Math.min(1000, Math.max(0, endAt - Date.now())) || 1);
-        }
-        return !isStopped();
-      };
-
-      for (const user of usersToCancel) {
-        await waitIfPaused();
-        if (isStopped()) {
-          break;
-        }
-
-        let lookupId: string | null = null;
-        let friendship: FriendshipStatus | null = null;
-        let handled = false;
-        let aborted = false;
-
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        while (!handled) {
-          if (isStopped()) {
-            aborted = true;
-            break;
+          try {
+            assertSameViewer(viewerId);
+          } catch (error) {
+            if (isAccountChangedError(error)) {
+              abortedByAccountChange = true;
+              break;
+            }
+            throw error;
           }
 
-          if (lookupId === null) {
-            setStatus(t('pendingLookingUp')(user.username));
-            const lookup = await lookupUserByUsername(user.username);
+          let lookupId: string | null = null;
+          let friendship: FriendshipStatus | null = null;
+          let handled = false;
+          let aborted = false;
 
-            if (isRateLimitResponse(lookup.status)) {
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          while (!handled) {
+            if (isStopped()) {
+              aborted = true;
+              break;
+            }
+
+            if (lookupId === null) {
+              setStatus(t('pendingLookingUp')(user.username));
+              const lookup = await lookupUserByUsername(user.username);
+
+              if (isRateLimitResponse(lookup.status)) {
+                skipped += 1;
+                processed += 1;
+                addResult('skip', user.username, t('pendingSkipLookup')(user.username));
+                patch({
+                  processedCount: processed,
+                  skippedCount: skipped,
+                  percentage: Math.floor((processed / usersToCancel.length) * 100),
+                });
+                handled = true;
+                break;
+              }
+              consecutiveRateLimitHits = 0;
+
+              if (!lookup.id) {
+                const transient =
+                  lookup.status === 0 || lookup.status === 401 || lookup.status === 403 || lookup.status >= 500;
+                failed += 1;
+                processed += 1;
+                if (!transient) {
+                  addCancelledUsernames([user.username]);
+                  addResult('skip', user.username, t('pendingSkipNotFound')(user.username));
+                } else {
+                  addResult('fail', user.username, t('pendingFailed')(user.username));
+                }
+                patch({
+                  processedCount: processed,
+                  failedCount: failed,
+                  percentage: Math.floor((processed / usersToCancel.length) * 100),
+                });
+                handled = true;
+                break;
+              }
+
+              lookupId = lookup.id;
+              friendship = lookup.friendship;
+            }
+
+            await waitIfPaused();
+            if (isStopped()) {
+              aborted = true;
+              break;
+            }
+
+            if (friendship?.following) {
               skipped += 1;
               processed += 1;
-              addResult('skip', user.username, t('pendingSkipLookup')(user.username));
+              addCancelledUsernames([user.username]);
+              addResult('skip', user.username, t('pendingSkipAccepted')(user.username));
               patch({
                 processedCount: processed,
                 skippedCount: skipped,
@@ -192,131 +261,97 @@ export function usePendingRequests(
               handled = true;
               break;
             }
+
+            setStatus(t('pendingCancelling')(user.username));
+            const result = await cancelFollowRequest(lookupId, user.username);
+
+            if (
+              result.failure === 'rate_limited' ||
+              result.failure === 'action_blocked' ||
+              result.failure === 'soft_block' ||
+              isRateLimitResponse(result.status, result.body)
+            ) {
+              if (!(await backoffAndRetry())) {
+                aborted = true;
+                break;
+              }
+              continue;
+            }
             consecutiveRateLimitHits = 0;
 
-            if (!lookup.id) {
-              const transient =
-                lookup.status === 0 || lookup.status === 401 || lookup.status === 403 || lookup.status >= 500;
+            if (result.ignored) {
               failed += 1;
               processed += 1;
-              if (!transient) {
-                addCancelledUsernames([user.username]);
-                addResult('skip', user.username, t('pendingSkipNotFound')(user.username));
-              } else {
-                addResult('fail', user.username, t('pendingFailed')(user.username));
-              }
+              addResult('fail', user.username, t('pendingFailed')(user.username));
               patch({
                 processedCount: processed,
                 failedCount: failed,
                 percentage: Math.floor((processed / usersToCancel.length) * 100),
               });
+              abortedBecauseIgnored = true;
+              aborted = true;
               handled = true;
               break;
             }
 
-            lookupId = lookup.id;
-            friendship = lookup.friendship;
-          }
-
-          await waitIfPaused();
-          if (isStopped()) {
-            aborted = true;
-            break;
-          }
-
-          if (friendship?.following) {
-            skipped += 1;
             processed += 1;
-            addCancelledUsernames([user.username]);
-            addResult('skip', user.username, t('pendingSkipAccepted')(user.username));
-            patch({
-              processedCount: processed,
-              skippedCount: skipped,
-              percentage: Math.floor((processed / usersToCancel.length) * 100),
-            });
-            handled = true;
-            break;
-          }
-
-          setStatus(t('pendingCancelling')(user.username));
-          const result = await cancelFollowRequest(lookupId, user.username);
-
-          if (isRateLimitResponse(result.status, result.body)) {
-            if (!(await backoffAndRetry())) {
-              aborted = true;
-              break;
+            if (result.ok) {
+              cancelled += 1;
+              addCancelledUsernames([user.username]);
+              HistoryService.addEvent(
+                'REQUEST_CANCELLED',
+                toPendingHistoryUser(user.username, lookupId, user.fullName),
+              );
+              addResult('success', user.username, t('pendingSuccess')(user.username));
+            } else {
+              failed += 1;
+              addResult('fail', user.username, t('pendingFailed')(user.username));
             }
-            continue;
-          }
-          consecutiveRateLimitHits = 0;
-
-          if (result.ignored) {
-            failed += 1;
-            processed += 1;
-            addResult('fail', user.username, t('pendingFailed')(user.username));
             patch({
               processedCount: processed,
+              cancelledCount: cancelled,
               failedCount: failed,
               percentage: Math.floor((processed / usersToCancel.length) * 100),
             });
-            abortedBecauseIgnored = true;
-            aborted = true;
             handled = true;
+          }
+
+          if (aborted) {
             break;
           }
 
-          processed += 1;
-          if (result.ok) {
-            cancelled += 1;
-            addCancelledUsernames([user.username]);
-            HistoryService.addEvent(
-              'REQUEST_CANCELLED',
-              toPendingHistoryUser(user.username, lookupId, user.fullName),
-            );
-            addResult('success', user.username, t('pendingSuccess')(user.username));
-          } else {
-            failed += 1;
-            addResult('fail', user.username, t('pendingFailed')(user.username));
-          }
-          patch({
-            processedCount: processed,
-            cancelledCount: cancelled,
-            failedCount: failed,
-            percentage: Math.floor((processed / usersToCancel.length) * 100),
-          });
-          handled = true;
-        }
-
-        if (aborted) {
-          break;
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- abortedByRateLimit is set inside the backoffAndRetry closure
-        if (processed < usersToCancel.length && !isStopped() && !abortedByRateLimit && !abortedBecauseIgnored) {
-          if (processed % 5 === 0) {
-            setStatus(t('pendingCooldown'));
-            await interruptibleSleep(timings.timeToWaitAfterFiveUnfollows);
-          } else {
-            const jitter = Math.floor(Math.random() * (timings.timeBetweenUnfollows * 0.2));
-            await interruptibleSleep(timings.timeBetweenUnfollows + jitter);
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- abortedByRateLimit is set inside the backoffAndRetry closure
+          if (processed < usersToCancel.length && !isStopped() && !abortedByRateLimit && !abortedBecauseIgnored) {
+            if (processed % 5 === 0) {
+              setStatus(t('pendingCooldown'));
+              await interruptibleSleep(timings.timeToWaitAfterFiveUnfollows);
+            } else {
+              const jitter = Math.floor(Math.random() * (timings.timeBetweenUnfollows * 0.2));
+              await interruptibleSleep(timings.timeBetweenUnfollows + jitter);
+            }
           }
         }
+      } finally {
+        releaseWork();
       }
 
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- abortedByRateLimit is set inside the backoffAndRetry closure
-      const finishedAll = processed >= usersToCancel.length && !abortedByRateLimit && !isStopped();
+      const finishedAll =
+        processed >= usersToCancel.length && !abortedByRateLimit && !abortedByAccountChange && !isStopped();
       patch({
         isRunning: false,
         isPaused: false,
         percentage: finishedAll ? 100 : Math.floor((processed / usersToCancel.length) * 100),
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- abortedByRateLimit is set inside the backoffAndRetry closure
-        statusMessage: abortedByRateLimit
-          ? t('pendingRateLimited')
-          : abortedBecauseIgnored
-            ? t('statusUnfollowIgnored')
-            : isStopped()
-              ? t('pendingStopped')
-              : t('pendingCompleted'),
+        statusMessage: abortedByAccountChange
+          ? t('accountChanged')
+          : abortedByRateLimit
+            ? t('pendingRateLimited')
+            : abortedBecauseIgnored
+              ? t('statusUnfollowIgnored')
+              : isStopped()
+                ? t('pendingStopped')
+                : t('pendingCompleted'),
       });
     },
     [addResult, getState, isStopped, patch, setStatus, timings],

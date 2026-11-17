@@ -1,28 +1,40 @@
 import { useState, useRef, useCallback } from 'preact/hooks';
 import { UserNode } from '../model/user';
-import { getCookie, sleep } from '../utils/utils';
+import { sleep } from '../utils/utils';
 import {
+  addRestUserToFollowerIndex,
+  fetchFollowedByMany,
   fetchFollowersPage,
   fetchFollowingPage,
-  fetchFollowedByMany,
-  findUnclassifiedUserIds,
   isSuspiciousEmptyFirstPage,
-  addRestUserToFollowerIndex,
-  RestUser,
+  mapRestUserToNode,
+  restUserFollowsViewer,
+  type ListPage,
+  type RestUser,
 } from '../utils/igListsApi';
 import { getUserBrief } from '../utils/growthApi';
-import { computeBackoffMs } from '../utils/growthHelpers';
-import { GROWTH_RATE_LIMIT_BACKOFF_MAX_MS, GROWTH_RATE_LIMIT_BACKOFF_MS, RATE_LIMIT_MAX_RETRIES } from '../constants/growth';
+import type { IgFailure } from '../utils/igClient';
 import { FOLLOWERS_PAGE_SAFETY_LIMIT, FOLLOWING_PAGE_SAFETY_LIMIT } from '../constants/constants';
 import { Timings } from '../model/timings';
 import { t } from '../i18n/i18n';
 import {
   absorbFollowingUsers,
-  classifyFollowing,
-  followersPassFailure,
+  EMPTY_SCAN_REPORT,
+  followersLookTruncated,
+  idsStillNeedingSweep,
   shouldPublishScanResults,
   type ScanFinishReason,
+  type ScanReport,
 } from '../utils/scanOutcome';
+import { pacingFactorFor, pageCapFor, walkList, type RetryNotice, type WalkDeps, type WalkResult } from '../utils/scanWalker';
+import {
+  clearFollowersCheckpoint,
+  loadFollowersCheckpoint,
+  saveFollowersCheckpoint,
+} from '../utils/scanCheckpoint';
+import { assertSameViewer, currentViewerId, isAccountChangedError } from '../utils/accountGuard';
+import { cooldownSecondsLeft, formatCountdown, startCooldown } from '../utils/cooldown';
+import { beginForegroundWork } from '../utils/foregroundWork';
 
 export type { ScanFinishReason };
 
@@ -32,6 +44,74 @@ interface ScannerState {
   results: UserNode[];
   statusMessage: string;
   finishReason: ScanFinishReason | null;
+  report: ScanReport;
+}
+
+export interface StartScanOptions {
+  /** Drop saved followers and start the download from the top. */
+  readonly fresh?: boolean;
+}
+
+const CHECKPOINT_EVERY_PAGES = 5;
+
+function retryMessage(notice: RetryNotice): string {
+  const { secondsLeft, attempt, maxAttempts } = notice;
+  switch (notice.failure) {
+    case 'rate_limited':
+      return t('retryRateLimited')(secondsLeft, attempt, maxAttempts);
+    case 'network':
+      return t('retryNetwork')(secondsLeft, attempt, maxAttempts);
+    case 'server':
+      return t('retryServer')(secondsLeft, attempt, maxAttempts);
+    default:
+      return t('retrySoftBlock')(secondsLeft, attempt, maxAttempts);
+  }
+}
+
+/** Finish reason for a list walk that did not complete. */
+function reasonForWalk(result: WalkResult): ScanFinishReason {
+  switch (result.end.kind) {
+    case 'stopped':
+      return 'stopped';
+    case 'failed':
+      return reasonForFailure(result.end.failure);
+    default:
+      return 'blocked';
+  }
+}
+
+function reasonForFailure(failure: IgFailure): ScanFinishReason {
+  switch (failure) {
+    case 'rate_limited':
+    case 'action_blocked':
+      return 'rate_limit';
+    case 'soft_block':
+      return 'blocked';
+    case 'session':
+      return 'no_session';
+    default:
+      return 'error';
+  }
+}
+
+/** Instagram pushed back (not a network or server hiccup): wait before trying again. */
+function isInstagramBlock(failure: IgFailure): boolean {
+  return failure === 'rate_limited' || failure === 'action_blocked' || failure === 'soft_block';
+}
+
+function statusForReason(reason: ScanFinishReason): string {
+  switch (reason) {
+    case 'no_session':
+      return t('sessionRejected');
+    case 'rate_limit':
+      return t('statusRateLimited');
+    case 'stopped':
+      return t('statusStopped');
+    case 'account_changed':
+      return t('accountChanged');
+    default:
+      return t('statusScanError');
+  }
 }
 
 export const useScanner = (timings: Timings) => {
@@ -41,6 +121,7 @@ export const useScanner = (timings: Timings) => {
     results: [],
     statusMessage: '',
     finishReason: null,
+    report: EMPTY_SCAN_REPORT,
   });
 
   const isPausedRef = useRef<boolean>(false);
@@ -56,320 +137,328 @@ export const useScanner = (timings: Timings) => {
     shouldStopRef.current = true;
   }, []);
 
-  const startScan = useCallback(async () => {
-    shouldStopRef.current = false;
-    isPausedRef.current = false;
-    setIsPausedUI(false);
+  const startScan = useCallback(
+    async (options: StartScanOptions = {}) => {
+      shouldStopRef.current = false;
+      isPausedRef.current = false;
+      setIsPausedUI(false);
 
-    setScannerState({
-      isScanning: true,
-      results: [],
-      progress: 0,
-      statusMessage: t('statusFetching'),
-      finishReason: null,
-    });
+      let report: ScanReport = EMPTY_SCAN_REPORT;
+      const setStatus = (statusMessage: string) => setScannerState(prev => ({ ...prev, statusMessage }));
+      const finish = (finishReason: ScanFinishReason, results: UserNode[], statusMessage: string) => {
+        setScannerState(prev => ({
+          ...prev,
+          isScanning: false,
+          progress: shouldPublishScanResults(finishReason, results.length, report.followersComplete)
+            ? 100
+            : prev.progress,
+          results: shouldPublishScanResults(finishReason, results.length, report.followersComplete) ? results : [],
+          statusMessage,
+          finishReason,
+          report,
+        }));
+      };
 
-    const dsUserId = getCookie('ds_user_id');
-    if (!dsUserId) {
-      setScannerState(prev => ({
-        ...prev,
-        isScanning: false,
-        statusMessage: t('statusNoSession'),
-        finishReason: 'no_session',
-      }));
-      return;
-    }
+      setScannerState({
+        isScanning: true,
+        results: [],
+        progress: 0,
+        statusMessage: t('statusFetching'),
+        finishReason: null,
+        report,
+      });
 
-    // ── Why nothing is classified/shown until BOTH lists are fully in ────────
-    // v8.3.0's GraphQL `edge_follow` query had `follows_viewer` baked into every
-    // following edge — Instagram told us "follows you back" for free, one list,
-    // done. That query stopped returning edges (issue #5) and got replaced with
-    // Instagram's private REST following list. Two different attempts to keep
-    // classifying "as you go" off of that REST list's own signals each turned
-    // out to be unsafe on real accounts: `friendship_status.followed_by` is
-    // frequently omitted entirely on large ("big list") accounts, AND (confirmed
-    // by a real bug report) can come back an outright wrong `false` — trusting
-    // either one, alone or via a per-page `show_many` check, got real mutuals
-    // stuck under "Non-followers".
-    //
-    // The only signal that cannot lie is: is this account's id/username actually
-    // present in MY followers list. That requires the full followers list, which
-    // takes time to paginate — so, like the reference fork this was rebuilt from
-    // (github.com/davidarroyo1234/InstagramUnfollowers), this scan fetches
-    // following fully, then followers fully, cross-references once, and only
-    // THEN writes `results` into state. Nothing is shown or sorted into Mutuals /
-    // Non-followers before that — see the in-app banner in Searching.tsx.
-    // `show_many` is kept only as a last-resort sweep afterwards, for whoever the
-    // followers list itself still couldn't resolve (id-scheme mismatch, a
-    // followers page that failed mid-scan, etc.) — never the primary signal.
-    const followingByPk = new Map<string, RestUser>();
-    const followerIds = new Set<string>();
-    const followerNames = new Set<string>();
-    let finishReason: ScanFinishReason = 'completed';
-    // Set when the followers list (or the final show_many sweep) couldn't be
-    // fully resolved but we still have a usable following list — the scan
-    // proceeds with what it has instead of throwing everything away, but the
-    // result gets flagged as `partial` instead of a clean `completed`.
-    let resultsMayBeIncomplete = false;
+      const viewerIdOrNull = currentViewerId();
+      if (!viewerIdOrNull) {
+        finish('no_session', [], t('statusNoSession'));
+        return;
+      }
+      const viewerId: string = viewerIdOrNull;
 
-    const waitWhilePaused = async () => {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      while (isPausedRef.current) {
-        setScannerState(prev => ({ ...prev, statusMessage: t('statusPaused') }));
-        await sleep(1000);
+      const cooldownLeft = cooldownSecondsLeft();
+      if (cooldownLeft > 0) {
+        finish('cooldown', [], t('cooldownToast')(formatCountdown(cooldownLeft)));
+        return;
+      }
+      if (options.fresh) {
+        clearFollowersCheckpoint(viewerId);
+      }
+
+      const releaseWork = beginForegroundWork();
+
+      const waitWhilePaused = async () => {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (shouldStopRef.current) {
-          break;
+        while (isPausedRef.current && !shouldStopRef.current) {
+          setStatus(t('statusPaused'));
+          await sleep(1000);
         }
-      }
-    };
+      };
 
-    // Anti-ban pacing between pages: the user-configured cycle time, PLUS a
-    // small random micro-pause, PLUS a longer jittered cooldown every 5 pages —
-    // same shape as davidarroyo1234's fork (a small extra randomization on top
-    // of a fixed cadence is less pattern-like than a fixed cadence alone).
-    const pacingSleep = async (pageIndex: number) => {
-      const microPause = Math.floor(Math.random() * 1500) + 500; // 500-2000ms
-      await sleep(microPause);
+      // Sleeps in one-second steps so a stop request is honoured quickly.
+      const pauseFor = async (ms: number) => {
+        const endAt = Date.now() + ms;
+        while (Date.now() < endAt && !shouldStopRef.current) {
+          await sleep(Math.min(1000, endAt - Date.now()));
+        }
+      };
 
-      const randomSleep =
-        Math.floor(Math.random() * timings.timeBetweenSearchCycles * 0.3) + timings.timeBetweenSearchCycles;
-      await sleep(randomSleep);
+      // Anti-ban pacing: the user's cycle time plus jitter, and a longer pause
+      // every five pages. `factor` stretches it on very long followers lists.
+      const pacingSleep = async (pagesFetched: number, factor: number) => {
+        await pauseFor(Math.floor(Math.random() * 1500) + 500);
+        const base = timings.timeBetweenSearchCycles;
+        await pauseFor((Math.floor(Math.random() * base * 0.3) + base) * factor);
+        if (pagesFetched % 5 === 0) {
+          const jitter = Math.random() * 10000 - 5000;
+          const cooldownMs = Math.max(0, timings.timeToWaitAfterFiveSearchCycles * factor + jitter);
+          setStatus(t('statusCoolingDown')(Math.round(cooldownMs / 1000)));
+          await pauseFor(cooldownMs);
+        }
+      };
 
-      if (pageIndex > 0 && pageIndex % 5 === 0) {
-        const jitter = Math.random() * 10000 - 5000; // +/- 5s so it isn't a fixed, detectable pattern
-        const cooldownMs = Math.max(0, timings.timeToWaitAfterFiveSearchCycles + jitter);
-        // Real duration in the message (like davidarroyo1234's "Sleeping N seconds..."
-        // toast) instead of a generic "cooling down" with no number attached. Only the
-        // status text changes here, not the progress number — avoids needing to know
-        // which phase/percentage is "current" from in here.
-        setScannerState(prev => ({ ...prev, statusMessage: t('statusCoolingDown')(Math.round(cooldownMs / 1000)) }));
-        await sleep(cooldownMs);
-      }
-    };
+      const walkDeps = (
+        fetchPage: WalkDeps['fetchPage'],
+        onPage: WalkDeps['onPage'],
+        pacingFactor: () => number,
+        onCursor?: WalkDeps['onCursor'],
+      ): WalkDeps => ({
+        fetchPage,
+        onPage,
+        onCursor,
+        shouldStop: () => shouldStopRef.current,
+        waitWhilePaused,
+        pace: pagesFetched => pacingSleep(pagesFetched, pacingFactor()),
+        onRetry: notice => setStatus(retryMessage(notice)),
+        onOffline: () => setStatus(t('waitingForConnection')),
+        checkAccount: () => assertSameViewer(viewerId),
+        sleep,
+        now: () => Date.now(),
+        isOnline: () => navigator.onLine,
+        waitForOnline: async () => {
+          while (!navigator.onLine && !shouldStopRef.current) {
+            await sleep(1000);
+          }
+        },
+      });
 
-    try {
-      // Best-effort totals from a separate endpoint. Used only for progress % and
-      // to tell a genuinely-empty list apart from Instagram silently failing to
-      // return one (see isSuspiciousEmptyFirstPage below).
-      const brief = await getUserBrief(dsUserId);
-      const totalFollowing = brief?.followingCount ?? -1;
-      const totalFollowers = brief?.followerCount ?? -1;
-
-      const publishProgress = (statusMessage: string, progress: number) => {
+      const publishProgress = (statusMessage: string, progress: number, results?: UserNode[]) => {
         setScannerState(prev => ({
           ...prev,
           isScanning: true,
           statusMessage,
           progress,
+          results: results ?? prev.results,
           finishReason: null,
+          report,
         }));
       };
 
-      // ── Phase A: following — 0% to 50% ───────────────────────────────────────
-      let maxId: string | null = null;
-      let followingRankToken: string | null = null;
-      let page = 0;
-      let retries = 0;
+      try {
+        // Totals from the profile: progress, page caps, and the truncation check.
+        const brief = await getUserBrief(viewerId);
+        assertSameViewer(viewerId);
+        const followersTotal = brief?.followerCount ?? -1;
+        const followingTotal = brief?.followingCount ?? -1;
+        report = { ...report, followersTotal, followingTotal };
 
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      while (!shouldStopRef.current) {
-        await waitWhilePaused();
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (shouldStopRef.current) {
-          break;
+        // ── Phase 1: the full followers list — 0% to 50% ─────────────────────
+        // Nothing is classified before this list is complete. A partial list
+        // would mark real followers as non-followers.
+        const followerIds = new Set<string>();
+        const followerNames = new Set<string>();
+        let followersCursor: string | null = null;
+        let resumed = false;
+
+        const checkpoint = loadFollowersCheckpoint(viewerId);
+        if (checkpoint) {
+          checkpoint.ids.forEach(id => followerIds.add(id));
+          checkpoint.usernames.forEach(name => followerNames.add(name));
+          followersCursor = checkpoint.cursor;
+          resumed = true;
+          report = { ...report, followersLoaded: followerNames.size };
         }
 
-        const pageResult = await fetchFollowingPage(dsUserId, maxId, followingRankToken, timings.usersPerSearchCycle);
-
-        if (pageResult.status === 429 || pageResult.status === 0) {
-          // status 0 = a 2xx response that wasn't JSON (challenge/error page) —
-          // treated exactly like a rate limit so it backs off and retries instead
-          // of throwing a raw SyntaxError that would abort the whole scan.
-          retries++;
-          if (retries > RATE_LIMIT_MAX_RETRIES) {
-            finishReason = 'rate_limit';
-            shouldStopRef.current = true;
-            break;
+        const saveCheckpoint = (): number => {
+          if (!followersCursor || followerNames.size === 0) {
+            return 0;
           }
-          await sleep(computeBackoffMs(retries, GROWTH_RATE_LIMIT_BACKOFF_MS, GROWTH_RATE_LIMIT_BACKOFF_MAX_MS));
-          continue;
+          const saved = saveFollowersCheckpoint({
+            version: 1,
+            accountId: viewerId,
+            ids: Array.from(followerIds),
+            usernames: Array.from(followerNames),
+            cursor: followersCursor,
+            timestamp: Date.now(),
+          });
+          return saved ? followerNames.size : 0;
+        };
+
+        const followersProgress = () => {
+          const loaded = followerNames.size;
+          return followersTotal > 0
+            ? Math.min(49, Math.floor((loaded / followersTotal) * 50))
+            : Math.min(45, Math.floor(loaded / 20));
+        };
+        if (resumed) {
+          publishProgress(t('resumingFollowers')(followerNames.size), followersProgress());
         }
 
-        if (pageResult.status !== 200) {
-          throw new Error(`API Error ${pageResult.status}`);
-        }
-        retries = 0;
-
-        if (page === 0 && isSuspiciousEmptyFirstPage(pageResult.users, totalFollowing)) {
-          // Instagram says we follow `totalFollowing` accounts but handed back
-          // zero of them. Reporting "0 results / completed" here is exactly the
-          // bug from issue #5 — bail out loudly instead.
-          finishReason = 'blocked';
-          shouldStopRef.current = true;
-          break;
-        }
-
-        absorbFollowingUsers(followingByPk, pageResult.users);
-        followingRankToken = pageResult.rankToken ?? followingRankToken;
-
-        const analyzed = followingByPk.size;
-        const followingTotal = totalFollowing > 0 ? totalFollowing : analyzed;
-        const phaseProgress =
-          totalFollowing > 0
-            ? Math.min(50, Math.floor((analyzed / followingTotal) * 50))
-            : Math.min(45, Math.floor(analyzed / 10));
-        publishProgress(t('statusPhaseFollowing')(analyzed, followingTotal), phaseProgress);
-
-        if (!pageResult.nextMaxId || pageResult.nextMaxId === maxId) {
-          break;
-        }
-        maxId = pageResult.nextMaxId;
-        page++;
-        if (page >= FOLLOWING_PAGE_SAFETY_LIMIT) {
-          console.error(`Stopping following scan early: hit the safety cap of ${FOLLOWING_PAGE_SAFETY_LIMIT} pages.`);
-          break;
-        }
-        await pacingSleep(page);
-      }
-
-      // ── Phase B: followers — 50% to 95% ──────────────────────────────────────
-      let followersCompletedOk = false;
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      if (!shouldStopRef.current && finishReason === 'completed') {
-        let followersMaxId: string | null = null;
-        let followersRankToken: string | null = null;
-        let followerPage = 0;
-        let followerRetries = 0;
-        let followersFetched = 0;
-
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        while (!shouldStopRef.current) {
-          await waitWhilePaused();
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-          if (shouldStopRef.current) {
-            break;
+        const onFollowersPage = (page: ListPage, pageIndex: number): 'continue' | 'reject' => {
+          if (pageIndex === 0 && !resumed && isSuspiciousEmptyFirstPage(page.users, followersTotal)) {
+            return 'reject';
           }
-
-          const pageResult = await fetchFollowersPage(dsUserId, followersMaxId, followersRankToken, timings.usersPerSearchCycle);
-
-          if (pageResult.status === 429 || pageResult.status === 0) {
-            followerRetries++;
-            if (followerRetries > RATE_LIMIT_MAX_RETRIES) {
-              // Give up on followers rather than abort the whole scan — handled
-              // as blocked/partial right after this loop, based on whether we
-              // already have SOME followers data to work with.
-              break;
-            }
-            await sleep(
-              computeBackoffMs(followerRetries, GROWTH_RATE_LIMIT_BACKOFF_MS, GROWTH_RATE_LIMIT_BACKOFF_MAX_MS),
-            );
-            continue;
+          if (
+            pageIndex === 0 &&
+            resumed &&
+            page.users.length > 0 &&
+            page.users.every(user => followerNames.has(user.username.toLowerCase()))
+          ) {
+            console.warn('Instagram did not continue from the saved cursor. Saved followers are kept.');
           }
+          page.users.forEach(user => addRestUserToFollowerIndex(user, followerIds, followerNames));
+          report = { ...report, followersLoaded: followerNames.size };
+          publishProgress(
+            t('statusPhaseFollowers')(followerNames.size, followersTotal > 0 ? followersTotal : followerNames.size),
+            followersProgress(),
+          );
+          return 'continue';
+        };
 
-          if (pageResult.status !== 200) {
-            break;
-          }
-          followerRetries = 0;
-
-          if (followerPage === 0 && isSuspiciousEmptyFirstPage(pageResult.users, totalFollowers)) {
-            // Same "200 OK but empty" failure mode as issue #5, just on the
-            // followers endpoint. Left unchecked, the cross-reference below
-            // would (wrongly) mark every following account as a non-follower.
-            finishReason = 'blocked';
-            shouldStopRef.current = true;
-            break;
-          }
-
-          pageResult.users.forEach(user => addRestUserToFollowerIndex(user, followerIds, followerNames));
-          followersFetched += pageResult.users.length;
-          followersRankToken = pageResult.rankToken ?? followersRankToken;
-
-          const followersTotal = totalFollowers > 0 ? totalFollowers : followersFetched;
-          const phaseProgress =
-            totalFollowers > 0
-              ? 50 + Math.min(45, Math.floor((followersFetched / followersTotal) * 45))
-              : Math.min(95, 50 + Math.floor(followersFetched / 20));
-          publishProgress(t('statusPhaseFollowers')(followersFetched, followersTotal), phaseProgress);
-
-          if (!pageResult.nextMaxId || pageResult.nextMaxId === followersMaxId) {
-            followersCompletedOk = true;
-            break;
-          }
-          followersMaxId = pageResult.nextMaxId;
-          followerPage++;
-          if (followerPage >= FOLLOWERS_PAGE_SAFETY_LIMIT) {
-            console.error(`Stopping followers scan early: hit the safety cap of ${FOLLOWERS_PAGE_SAFETY_LIMIT} pages.`);
-            break;
-          }
-          await pacingSleep(followerPage);
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (!shouldStopRef.current && finishReason === 'completed' && !followersCompletedOk) {
-          const failure = followersPassFailure(followerIds.size);
-          if (failure === 'blocked') {
-            // Never resolved a single follower despite following succeeding —
-            // showing "0 followers" would flag EVERY following account as a
-            // non-follower, exactly the bug this rewrite exists to fix. Don't
-            // show a list we know is misleading.
-            finishReason = 'blocked';
-          } else {
-            resultsMayBeIncomplete = true;
-          }
-        }
-      }
-
-      // ── Phase C: cross-reference + one optional show_many sweep — 95% to 100% ─
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      if (!shouldStopRef.current && finishReason === 'completed' && followingByPk.size > 0) {
-        publishProgress(t('statusClassifying'), 96);
-        const unclassifiedIds = findUnclassifiedUserIds(
-          Array.from(followingByPk.values()),
-          followerIds,
-          followerNames,
+        const followersWalk = await walkList(
+          {
+            startCursor: followersCursor,
+            pageCap: pageCapFor(followersTotal, FOLLOWERS_PAGE_SAFETY_LIMIT),
+          },
+          walkDeps(
+            cursor => fetchFollowersPage(viewerId, cursor, timings.usersPerSearchCycle),
+            onFollowersPage,
+            () => pacingFactorFor(followerNames.size),
+            (cursor, pagesFetched) => {
+              followersCursor = cursor;
+              if (pagesFetched % CHECKPOINT_EVERY_PAGES === 0) {
+                saveCheckpoint();
+              }
+            },
+          ),
         );
-        if (unclassifiedIds.length > 0) {
-          const many = await fetchFollowedByMany(unclassifiedIds);
-          many.followedByIds.forEach(id => followerIds.add(id));
-          if (many.status === 429) {
-            resultsMayBeIncomplete = true;
+
+        let followersComplete = followersWalk.end.kind === 'complete';
+        if (followersComplete && followersLookTruncated(followerNames.size, followersTotal)) {
+          console.warn(
+            `Instagram ended the followers list at ${followerNames.size} of ${followersTotal}. Not trusting it.`,
+          );
+          followersComplete = false;
+        }
+        report = { ...report, followersComplete, followersLoaded: followerNames.size };
+
+        if (!followersComplete) {
+          const end = followersWalk.end;
+          if (end.kind === 'failed') {
+            console.error('followers request failed:', end.detail);
+          }
+          // Keep what was downloaded when continuing later can help; a list
+          // that ended short or a cursor Instagram loops on would only repeat.
+          const resumable =
+            end.kind === 'failed' || end.kind === 'stopped' || (end.kind === 'stuck' && end.reason === 'page_cap');
+          followersCursor = resumable ? followersWalk.cursor : null;
+          const savedFollowers = resumable ? saveCheckpoint() : 0;
+          if (!resumable) {
+            clearFollowersCheckpoint(viewerId);
+          }
+          if (end.kind === 'failed' && isInstagramBlock(end.failure)) {
+            startCooldown();
+          }
+          report = {
+            ...report,
+            savedFollowers,
+            failure: end.kind === 'failed' ? end.failure : null,
+          };
+          const reason = end.kind === 'complete' ? 'blocked' : reasonForWalk(followersWalk);
+          finish(reason, [], savedFollowers > 0 ? t('followersSavedToast')(savedFollowers) : statusForReason(reason));
+          return;
+        }
+        clearFollowersCheckpoint(viewerId);
+
+        // ── Phase 2: following, checked against the complete followers list ──
+        // Every page is final as soon as it arrives, so results stream in.
+        const followingByPk = new Map<string, RestUser>();
+        const classified = new Map<string, UserNode>();
+
+        const onFollowingPage = (page: ListPage, pageIndex: number): 'continue' | 'reject' => {
+          if (pageIndex === 0 && isSuspiciousEmptyFirstPage(page.users, followingTotal)) {
+            return 'reject';
+          }
+          absorbFollowingUsers(followingByPk, page.users);
+          for (const user of page.users) {
+            classified.set(user.pk, mapRestUserToNode(user, restUserFollowsViewer(user, followerIds, followerNames)));
+          }
+          const checked = followingByPk.size;
+          report = { ...report, followingChecked: checked };
+          const total = followingTotal > 0 ? followingTotal : checked;
+          const progress =
+            followingTotal > 0 ? 50 + Math.min(45, Math.floor((checked / followingTotal) * 45)) : Math.min(95, 50 + Math.floor(checked / 10));
+          publishProgress(t('statusPhaseFollowing')(checked, total), progress, Array.from(classified.values()));
+          return 'continue';
+        };
+
+        const followingWalk = await walkList(
+          { startCursor: null, pageCap: pageCapFor(followingTotal, FOLLOWING_PAGE_SAFETY_LIMIT) },
+          walkDeps(
+            cursor => fetchFollowingPage(viewerId, cursor, timings.usersPerSearchCycle),
+            onFollowingPage,
+            () => 1,
+          ),
+        );
+
+        const followingComplete = followingWalk.end.kind === 'complete';
+        report = { ...report, followingComplete, followingChecked: followingByPk.size };
+        if (followingWalk.end.kind === 'failed') {
+          console.error('following request failed:', followingWalk.end.detail);
+          report = { ...report, failure: followingWalk.end.failure };
+          if (isInstagramBlock(followingWalk.end.failure)) {
+            startCooldown();
           }
         }
+
+        // ── Phase 3: a bounded show_many check for the few the lists did not match ──
+        if (followingComplete) {
+          publishProgress(t('statusClassifying'), 96);
+          const unmatched = idsStillNeedingSweep(Array.from(followingByPk.values()), followerIds, followerNames);
+          if (unmatched.length > 0) {
+            const sweep = await fetchFollowedByMany(unmatched);
+            sweep.followedByIds.forEach(id => {
+              const node = classified.get(id);
+              if (node) {
+                classified.set(id, { ...node, follows_viewer: true });
+              }
+            });
+          }
+        }
+
+        const results = Array.from(classified.values());
+        if (followingComplete) {
+          finish('completed', results, t('statusCompleted'));
+        } else if (followingWalk.end.kind === 'stopped') {
+          finish('stopped', results, t('statusStopped'));
+        } else if (followingWalk.end.kind === 'rejected' || results.length === 0) {
+          const reason = reasonForWalk(followingWalk);
+          finish(reason, results, statusForReason(reason));
+        } else {
+          finish('partial', results, t('followingPartialTitle'));
+        }
+      } catch (error) {
+        if (isAccountChangedError(error)) {
+          finish('account_changed', [], statusForReason('account_changed'));
+        } else {
+          console.error('Scan error:', error);
+          finish('error', [], t('statusScanError'));
+        }
+      } finally {
+        releaseWork();
       }
-
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      if (shouldStopRef.current && finishReason === 'completed') {
-        finishReason = 'stopped';
-      } else if (resultsMayBeIncomplete && finishReason === 'completed') {
-        finishReason = 'partial';
-      }
-    } catch (error) {
-      console.error('Scan error:', error);
-      finishReason = 'error';
-    } finally {
-      const finalResults = classifyFollowing(followingByPk.values(), followerIds, followerNames);
-
-      const statusByReason: Record<ScanFinishReason, string> = {
-        completed: t('statusCompleted'),
-        partial: t('statusCompleted'),
-        rate_limit: t('statusRateLimited'),
-        error: t('statusScanError'),
-        blocked: t('statusScanError'),
-        no_session: t('statusNoSession'),
-        stopped: t('statusStopped'),
-      };
-
-      setScannerState(prev => ({
-        ...prev,
-        isScanning: false,
-        progress: finishReason === 'completed' || finishReason === 'partial' ? 100 : prev.progress,
-        results: shouldPublishScanResults(finishReason, finalResults.length) ? finalResults : prev.results,
-        statusMessage: statusByReason[finishReason],
-        finishReason,
-      }));
-    }
-  }, [timings]);
+    },
+    [timings],
+  );
 
   return {
     scannerState,

@@ -219,20 +219,34 @@ function App() {
           break;
         case 'error':
         case 'stopped':
-          showToast(t('scanErrorToast'), 'warning');
+          showToast(
+            scannerState.report.savedFollowers > 0
+              ? t('followersSavedToast')(scannerState.report.savedFollowers)
+              : t('scanErrorToast'),
+            'warning',
+          );
           break;
         case 'blocked':
-          showToast(t('scanBlockedToast'), 'error');
+          showToast(
+            scannerState.report.savedFollowers > 0
+              ? t('followersSavedToast')(scannerState.report.savedFollowers)
+              : t('scanBlockedToast'),
+            'error',
+          );
           break;
         case 'no_session':
           showToast(t('statusNoSession'), 'error');
           break;
+        case 'account_changed':
+          showToast(t('scanAccountChangedToast'), 'error');
+          break;
+        case 'cooldown':
+          showToast(scannerState.statusMessage || t('scanCooldownActiveToast')('…'), 'warning');
+          break;
         case 'partial':
-          // Following list loaded fine, but the followers list (or the final
-          // show_many sweep) didn't fully resolve — results are shown, just
-          // without the "new unfollower" history/notification treatment below,
-          // since that needs fully-trustworthy data to avoid a false positive.
-          showToast(t('scanPartialFollowersToast'), 'warning');
+          // Following list was cut short after a complete followers pass —
+          // results shown are accurate for the accounts that did load.
+          showToast(t('followingPartialTitle'), 'warning');
           break;
         case 'completed': {
           const totalNew = newTraitors.length;
@@ -255,6 +269,17 @@ function App() {
 
       if (isFinished && prev.percentage === 100) {
         return prev;
+      }
+
+      // No results and the run never really started — go back to the hub.
+      if (
+        isJustFinished &&
+        processedResults.length === 0 &&
+        (scannerState.finishReason === 'cooldown' ||
+          scannerState.finishReason === 'no_session' ||
+          scannerState.finishReason === 'account_changed')
+      ) {
+        return { status: 'initial' };
       }
 
       return {
@@ -290,7 +315,7 @@ function App() {
     }
   }, [unfollowerState, state.status, showToast]);
 
-  const onScan = async () => {
+  const onScan = async (options?: { fresh?: boolean }) => {
     if (state.status !== 'initial') {
       return;
     }
@@ -329,7 +354,7 @@ function App() {
       },
     });
 
-    startScan();
+    startScan(options);
   };
 
   const handleScanFilter = (e: ChangeEvent<HTMLInputElement>) => {

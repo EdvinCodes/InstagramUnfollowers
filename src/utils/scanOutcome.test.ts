@@ -3,7 +3,7 @@ import { isSuspiciousEmptyFirstPage, RestUser } from './igListsApi';
 import {
   absorbFollowingUsers,
   classifyFollowing,
-  followersPassFailure,
+  followersLookTruncated,
   idsStillNeedingSweep,
   monitorMayCommitSnapshot,
   shouldPublishScanResults,
@@ -50,32 +50,30 @@ describe('classifyFollowing', () => {
 
   it('does not classify an empty first page as a finished scan of zero accounts', () => {
     expect(isSuspiciousEmptyFirstPage([], 2834)).toBe(true);
-    expect(shouldPublishScanResults('blocked', 0)).toBe(false);
-    // Following was already loaded, but followers came back empty. Publishing would
-    // mark every account a non-follower — the bug issue #5 kept coming back as.
-    expect(shouldPublishScanResults('blocked', 500)).toBe(false);
+    expect(shouldPublishScanResults('blocked', 0, false)).toBe(false);
+    expect(shouldPublishScanResults('blocked', 500, false)).toBe(false);
   });
 });
 
-describe('followersPassFailure', () => {
-  it('blocks when nothing was resolved and marks a partial index as partial', () => {
-    expect(followersPassFailure(0)).toBe('blocked');
-    expect(followersPassFailure(4)).toBe('partial');
+describe('followersLookTruncated', () => {
+  it('flags a list that ended far short of the profile total', () => {
+    expect(followersLookTruncated(100, 400)).toBe(true);
+    expect(followersLookTruncated(380, 400)).toBe(false);
+    expect(followersLookTruncated(0, -1)).toBe(false);
   });
 });
 
 describe('shouldPublishScanResults', () => {
-  it('publishes a completed or partial list and keeps every unfinished scan off screen', () => {
-    expect(shouldPublishScanResults('completed', 3)).toBe(true);
-    expect(shouldPublishScanResults('partial', 3)).toBe(true);
-    expect(shouldPublishScanResults('completed', 0)).toBe(false);
-    expect(shouldPublishScanResults('blocked', 3)).toBe(false);
-    // Following was already loaded, followers never ran. Publishing would mark
-    // every account a non-follower.
-    expect(shouldPublishScanResults('rate_limit', 500)).toBe(false);
-    expect(shouldPublishScanResults('error', 500)).toBe(false);
-    expect(shouldPublishScanResults('stopped', 500)).toBe(false);
-    expect(shouldPublishScanResults('no_session', 0)).toBe(false);
+  it('publishes only when the followers list finished and there is something to show', () => {
+    expect(shouldPublishScanResults('completed', 3, true)).toBe(true);
+    expect(shouldPublishScanResults('partial', 3, true)).toBe(true);
+    expect(shouldPublishScanResults('stopped', 500, true)).toBe(true);
+    expect(shouldPublishScanResults('completed', 0, true)).toBe(false);
+    expect(shouldPublishScanResults('blocked', 3, false)).toBe(false);
+    expect(shouldPublishScanResults('rate_limit', 500, false)).toBe(false);
+    expect(shouldPublishScanResults('error', 500, false)).toBe(false);
+    expect(shouldPublishScanResults('account_changed', 500, true)).toBe(false);
+    expect(shouldPublishScanResults('no_session', 0, false)).toBe(false);
   });
 });
 
